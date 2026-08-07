@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRIVE — Автомобильный Маркетплейс</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg: #090a0f;
+      --surface: #12151e;
+      --surface-border: rgba(255, 255, 255, 0.08);
+      --surface-hover: #1a1e2b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --danger: #f43f5e;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Навигация */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(9, 10, 15, 0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .navbar-inner {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Кнопки */
+    .btn {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border-color: var(--surface-border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-secondary.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Фильтры */
+    .filter-section {
+      margin: 32px 0;
+    }
+
+    .search-bar {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 8px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    input, select {
+      height: 40px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: background 0.2s;
+    }
+
+    input:focus, select:focus {
+      background: var(--surface-hover);
+    }
+
+    input::placeholder { color: var(--text-muted); }
+
+    select option {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Сетка объявлений */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .card-image-wrap {
+      width: 100%;
+      height: 180px;
+      position: relative;
+      background: var(--surface-hover);
+      overflow: hidden;
+    }
+
+    .card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .card:hover .card-image {
+      transform: scale(1.04);
+    }
+
+    .fav-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(9, 10, 15, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .fav-btn.active {
+      color: var(--danger);
+      background: rgba(244, 63, 94, 0.2);
+    }
+
+    .card-content {
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Модальное окно */
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 460px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title { font-size: 18px; font-weight: 600; }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .form-group input, .form-group textarea {
+      background: var(--bg);
+      border: 1px solid var(--surface-border);
+    }
+
+    textarea {
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--text);
+      resize: none;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="container navbar-inner">
+      <div class="brand" onclick="resetFilters()">DRIVE<span>.</span></div>
+      <div class="nav-actions">
+        <button class="btn btn-secondary" id="favFilterBtn" onclick="toggleFavFilter()">
+          ★ Избранное (<span id="favCount">0</span>)
+        </button>
+        <button class="btn btn-primary" onclick="openModal('addModal')">+ Объявление</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="filter-section">
+      <div class="search-bar">
+        <input type="text" id="searchBrand" placeholder="Марка / Модель" oninput="applyFilters()">
+        <input type="text" id="searchCity" placeholder="Город" oninput="applyFilters()">
+        <input type="number" id="priceTo" placeholder="Макс. цена ₽" oninput="applyFilters()">
+        <select id="sortBy" onchange="applyFilters()">
+          <option value="newest">Новые объявления</option>
+          <option value="price_asc">Сначала дешевле</option>
+          <option value="price_desc">Сначала дороже</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="grid" id="carsContainer"></section>
+  </main>
+
+  <!-- Модальное окно подачи объявления -->
+  <div class="modal" id="addModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">Новое объявление</div>
+        <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+      </div>
+      <form id="createForm" onsubmit="handleCreate(event)">
+        <div class="form-group">
+          <input type="text" id="formTitle" placeholder="Заголовок (напр. Porsche 911 GT3)" required>
+          <input type="text" id="formBrand" placeholder="Марка" required>
+          <input type="number" id="formYear" placeholder="Год выпуска" required>
+          <input type="number" id="formPrice" placeholder="Цена (₽)" required>
+          <input type="number" id="formMileage" placeholder="Пробег (км)" required>
+          <input type="text" id="formCity" placeholder="Город" required>
+          <input type="text" id="formPhone" placeholder="Телефон" required>
+          <input type="url" id="formImage" placeholder="Ссылка на фото (URL)">
+          <textarea id="formDesc" placeholder="Описание..." rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Опубликовать</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно просмотра -->
+  <div class="modal" id="detailsModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title" id="detailTitle"></div>
+        <button class="close-btn" onclick="closeModal('detailsModal')">&times;</button>
+      </div>
+      <img id="detailImg" src="" style="width:100%; height:200px; object-fit:cover; border-radius:12px; margin-bottom:12px;">
+      <div id="detailPrice" style="font-size:22px; font-weight:700; color:var(--accent); margin-bottom:8px;"></div>
+      <div id="detailMeta" style="font-size:12px; color:var(--text-muted); margin-bottom:12px;"></div>
+      <p id="detailDesc" style="font-size:13px; color:var(--text-muted); margin-bottom:16px; line-height:1.6;"></p>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="detailPhone" style="font-size:14px; font-weight:600;"></span>
+        <div id="detailDeleteBtn"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultCars = [
+      {
+        id: 1,
+        title: 'Porsche 911 Carrera S',
+        brand: 'Porsche',
+        year: 2022,
+        price: 16800000,
+        mileage: 12000,
+        city: 'Москва',
+        phone: '+7 (999) 000-00-01',
+        description: 'Идеальное состояние, полный сток, кузов в защитной пленке.',
+        image_url: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
+        createdAt: Date.now()
+      },
+      {
+        id: 2,
+        title: 'Audi RS6 Avant',
+        brand: 'Audi',
+        year: 2021,
+        price: 13500000,
+        mileage: 28000,
+        city: 'Санкт-Петербург',
+        phone: '+7 (999) 000-00-02',
+        description: 'Обслуживание у официального дилера, максимальная комплектация.',
+        image_url: 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&w=800&q=80',
+        createdAt: Date.now() - 3600000
+      }
+    ];
+
+    let cars = JSON.parse(localStorage.getItem('drive_cars')) || defaultCars;
+    let favorites = JSON.parse(localStorage.getItem('drive_favs')) || [];
+    let favFilterActive = false;
+
+    function saveState() {
+      localStorage.setItem('drive_cars', JSON.stringify(cars));
+      localStorage.setItem('drive_favs', JSON.stringify(favorites));
+    }
+
+    function renderCars(data) {
+      const container = document.getElementById('carsContainer');
+      document.getElementById('favCount').innerText = favorites.length;
+
+      if (!data.length) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Ничего не найдено</div>';
+        return;
+      }
+
+      container.innerHTML = data.map(car => {
+        const isFav = favorites.includes(car.id);
+        return `
+          <div class="card" onclick="openDetails(${car.id})">
+            <div class="card-image-wrap">
+              <img src="${car.image_url}" class="card-image" onerror="this.src='https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80'">
+              <button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFav(${car.id})">★</button>
+            </div>
+            <div class="card-content">
+              <div class="card-title">${car.title}</div>
+              <div class="card-price">${Number(car.price).toLocaleString()} ₽</div>
+              <div class="card-meta">
+                <span>${car.year} г. • ${car.mileage.toLocaleString()} км</span>
+                <span>${car.city}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function applyFilters() {
+      let result = [...cars];
+      if (favFilterActive) result = result.filter(c => favorites.includes(c.id));
+
+      const brand = document.getElementById('searchBrand').value.toLowerCase().trim();
+      const city = document.getElementById('searchCity').value.toLowerCase().trim();
+      const priceTo = Number(document.getElementById('priceTo').value);
+      const sortBy = document.getElementById('sortBy').value;
+
+      result = result.filter(item => {
+        if (brand && !item.title.toLowerCase().includes(brand) && !item.brand.toLowerCase().includes(brand)) return false;
+        if (city && !item.city.toLowerCase().includes(city)) return false;
+        if (priceTo && item.price > priceTo) return false;
+        return true;
+      });
+
+      if (sortBy === 'price_asc') result.sort((a,b) => a.price - b.price);
+      if (sortBy === 'price_desc') result.sort((a,b) => b.price - a.price);
+      if (sortBy === 'newest') result.sort((a,b) => b.createdAt - a.createdAt);
+
+      renderCars(result);
+    }
+
+    function toggleFav(id) {
+      favorites = favorites.includes(id) ? favorites.filter(f => f !== id) : [...favorites, id];
+      saveState();
+      applyFilters();
+    }
+
+    function toggleFavFilter() {
+      favFilterActive = !favFilterActive;
+      document.getElementById('favFilterBtn').classList.toggle('active', favFilterActive);
+      applyFilters();
+    }
+
+    function resetFilters() {
+      document.getElementById('searchBrand').value = '';
+      document.getElementById('searchCity').value = '';
+      document.getElementById('priceTo').value = '';
+      favFilterActive = false;
+      document.getElementById('favFilterBtn').classList.remove('active');
+      applyFilters();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function handleCreate(e) {
+      e.preventDefault();
+      const newCar = {
+        id: Date.now(),
+        title: document.getElementById('formTitle').value,
+        brand: document.getElementById('formBrand').value,
+        year: Number(document.getElementById('formYear').value),
+        price: Number(document.getElementById('formPrice').value),
+        mileage: Number(document.getElementById('formMileage').value),
+        city: document.getElementById('formCity').value,
+        phone: document.getElementById('formPhone').value,
+        image_url: document.getElementById('formImage').value || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
+        description: document.getElementById('formDesc').value,
+        createdAt: Date.now()
+      };
+
+      cars.unshift(newCar);
+      saveState();
+      closeModal('addModal');
+      document.getElementById('createForm').reset();
+      applyFilters();
+    }
+
+    function openDetails(id) {
+      const car = cars.find(c => c.id === id);
+      if (!car) return;
+
+      document.getElementById('detailTitle').innerText = car.title;
+      document.getElementById('detailImg').src = car.image_url;
+      document.getElementById('detailPrice').innerText = `${Number(car.price).toLocaleString()} ₽`;
+      document.getElementById('detailMeta').innerText = `${car.year} г. • ${car.mileage.toLocaleString()} км • ${car.city}`;
+      document.getElementById('detailDesc').innerText = car.description || 'Описание отсутствует.';
+      document.getElementById('detailPhone').innerText = `📞 ${car.phone}`;
+      document.getElementById('detailDeleteBtn').innerHTML = `<button class="btn btn-secondary" onclick="deleteCar(${car.id})">Удалить</button>`;
+
+      openModal('detailsModal');
+    }
+
+    function deleteCar(id) {
+      cars = cars.filter(c => c.id !== id);
+      favorites = favorites.filter(f => f !== id);
+      saveState();
+      closeModal('detailsModal');
+      applyFilters();
+    }
+
+    applyFilters();
+  </script>
+</body>
+</html>
