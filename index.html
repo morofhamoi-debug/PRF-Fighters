@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Shift: House on the Hill</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #fff;
+        }
+
+        /* --- СТАРТОВЫЙ ЭКРАН --- */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, rgba(20, 10, 10, 0.9) 0%, rgba(2, 2, 4, 0.98) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #start-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .game-title {
+            font-size: clamp(32px, 8vw, 64px);
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #ff2222;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+            margin-bottom: 10px;
+        }
+
+        .story-card {
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #ff2222;
+            padding: 15px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ccc;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .btn-start {
+            padding: 16px 48px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(135deg, #aa0000 0%, #550000 100%);
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            outline: none;
+        }
+
+        /* --- ЭФФЕКТЫ КАТСЦЕНЫ (ОБМОРОК) --- */
+        #blackout {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            opacity: 0;
+            z-index: 150;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* --- ИГРОВОЙ ИНТЕРФЕЙС --- */
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            pointer-events: none;
+            font-size: 13px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            display: none;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 90;
+            display: none;
+        }
+        #msg {
+            position: absolute;
+            top: 70px;
+            width: 100%;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ff5555;
+            text-shadow: 1px 1px 4px #000;
+            pointer-events: none;
+            z-index: 100;
+            padding: 0 10px;
+            display: none;
+        }
+        
+        .mobile-btn {
+            position: absolute;
+            z-index: 120;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: #fff;
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+        }
+        #btn-action { right: 25px; bottom: 110px; }
+        #btn-light { right: 100px; bottom: 35px; }
+
+        #joystick-zone {
+            position: absolute;
+            left: 25px;
+            bottom: 35px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            z-index: 120;
+            display: none;
+        }
+        #joystick-stick {
+            position: absolute;
+            left: 35px;
+            top: 35px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        #touch-look-zone {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60%;
+            height: 100%;
+            z-index: 80;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <h1 class="game-title">The Shift</h1>
+        <div class="story-card">
+            Вы получили ночной вызов: обрыв линии электропередачи у старого дома в лесу. Отправляйтесь на место и выясните причины неполадок...
+        </div>
+        <button id="start-btn" class="btn-start">НАЧАТЬ ИГРУ</button>
+    </div>
+
+    <div id="blackout"></div>
+
+    <div id="ui">
+        <div>БАТАРЕЯ: <span id="battery">100</span>%</div>
+        <div>ИНВЕНТАРЬ: <span id="item">Пусто</span></div>
+        <div>ЭТАЖ: <span id="floor-name">Подвал</span></div>
+    </div>
+    <div id="crosshair"></div>
+    <div id="msg">Осмотритесь и найдите способ выбраться...</div>
+
+    <div id="touch-look-zone"></div>
+    <div id="btn-action" class="mobile-btn">E</div>
+    <div id="btn-light" class="mobile-btn">🔦</div>
+    <div id="joystick-zone"><div id="joystick-stick"></div></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- ЗВУКОВОЙ ДВИЖОК (WEB AUDIO API) ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            playEngine() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(40, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                return { osc, gain };
+            }
+            playSlam() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.8, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.4);
+            }
+            playHit() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.6);
+                gain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.6);
+            }
+            playClick() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+        }
+
+        const sounds = new SoundEngine();
+
+        // --- СОСТОЯНИЕ ИГРЫ ---
+        let cutsceneActive = false;
+        let gameStarted = false;
+        let battery = 100;
+        let flashlightOn = true;
+        let inventory = null;
+        let isGameOver = false;
+
+        // --- СЦЕНА ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050508, 0.06);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+
+        const player = new THREE.Group();
+        scene.add(player);
+        player.add(camera);
+
+        // --- ОБЩИЙ СВЕТ И ФОНАРЬ ---
+        const ambientLight = new THREE.AmbientLight(0x1a2030, 0.4);
+        scene.add(ambientLight);
+
+        // Рука с фонариком
+        const handGroup = new THREE.Group();
+        const handMat = new THREE.MeshStandardMaterial({ color: 0x8a6f5d, roughness: 0.8 });
+        const flashMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.2 });
+
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.4), handMat);
+        arm.rotation.x = Math.PI / 3;
+        arm.position.set(0.25, -0.25, -0.35);
+
+        const flashlightModel = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.25), flashMat);
+        flashlightModel.rotation.x = Math.PI / 2;
+        flashlightModel.position.set(0.25, -0.15, -0.45);
+
+        handGroup.add(arm, flashlightModel);
+        camera.add(handGroup);
+
+        const flashLight = new THREE.SpotLight(0xfffaed, 25, 22, Math.PI / 5, 0.2, 1);
+        flashLight.position.set(0.25, -0.15, -0.45);
+        flashLight.target.position.set(0, 0, -2);
+        camera.add(flashLight);
+        camera.add(flashLight.target);
+
+        // --- МАСШТАБНЫЙ ДОМ (Подвал = y:0, 1 Этаж = y:5, 2 Этаж = y:10) ---
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x2b1d0c, roughness: 0.9 });
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x3d352e, roughness: 0.8 });
+        const concreteMat = new THREE.MeshStandardMaterial({ color: 0x1f2226, roughness: 0.9 });
+
+        // Улица (Для катсцены)
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x0a0f0d }));
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = 4.9;
+        scene.add(ground);
+
+        // Машина для катсцены
+        const car = new THREE.Group();
+        const carBody = new THREE.Mesh(new THREE.BoxGeometry(2, 1.2, 4), new THREE.MeshStandardMaterial({ color: 0x112233 }));
+        carBody.position.y = 5.6;
+        car.add(carBody);
+        car.position.set(0, 0, 35);
+        scene.add(car);
+
+        // Бита для катсцены
+        const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.05, 0.9), new THREE.MeshStandardMaterial({ color: 0x5c4033 }));
+        bat.position.set(0, 6.5, 0);
+        bat.visible = false;
+        scene.add(bat);
+
+        // Структура дома
+        function createRoom(x, y, z, w, h, d) {
+            const group = new THREE.Group();
+            const fl = new THREE.Mesh(new THREE.BoxGeometry(w, 0.2, d), y === 0 ? concreteMat : woodMat);
+            fl.position.set(x, y, z);
+            group.add(fl);
+
+            const wl1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, h, d), wallMat);
+            wl1.position.set(x - w/2, y + h/2, z);
+            const wl2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, h, d), wallMat);
+            wl2.position.set(x + w/2, y + h/2, z);
+            const wl3 = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.2), wallMat);
+            wl3.position.set(x, y + h/2, z - d/2);
+
+            group.add(wl1, wl2, wl3);
+            return group;
+        }
+
+        // Подвал (0м)
+        scene.add(createRoom(0, 0, 0, 12, 4, 12));
+        // 1 Этаж (5м)
+        scene.add(createRoom(0, 5, 0, 12, 4, 12));
+        // 2 Этаж (10м)
+        scene.add(createRoom(0, 10, 0, 12, 4, 12));
+
+        // Входная дверь на 1 этаже
+        const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(2, 3.5, 0.2), new THREE.MeshStandardMaterial({ color: 0x4a0000 }));
+        mainDoor.position.set(0, 6.75, 5.9);
+        scene.add(mainDoor);
+
+        // Предмет: Домкрат
+        const jack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xdd8800 }));
+        jack.position.set(-4, 0.3, -4);
+        jack.name = "jack";
+        scene.add(jack);
+
+        // --- ЗАПУСК КАТСЦЕНЫ ---
+        document.getElementById('start-btn').addEventListener('click', () => {
+            sounds.init();
+            document.getElementById('start-screen').classList.add('hidden');
+            runCutscene();
+        });
+
+        function runCutscene() {
+            cutsceneActive = true;
+            const engineSound = sounds.playEngine();
+            player.position.set(0, 6.5, 35);
+
+            let progress = 0;
+            const driveInterval = setInterval(() => {
+                progress += 0.008;
+                player.position.z = THREE.MathUtils.lerp(35, 12, progress);
+                car.position.z = player.position.z;
+
+                if (progress >= 1) {
+                    clearInterval(driveInterval);
+                    if (engineSound) engineSound.osc.stop();
+                    
+                    // Шаги к дому
+                    setTimeout(() => {
+                        let walkProgress = 0;
+                        const walkInterval = setInterval(() => {
+                            walkProgress += 0.02;
+                            player.position.z = THREE.MathUtils.lerp(12, 4, walkProgress);
+                            
+                            if (walkProgress >= 1) {
+                                clearInterval(walkInterval);
+                                // Вход в дом и захлопывание двери
+                                sounds.playSlam();
+                                mainDoor.position.z = 6;
+                                
+                                // Атака битой
+                                setTimeout(() => {
+                                    bat.visible = true;
+                                    bat.position.set(player.position.x + 0.5, player.position.y + 0.2, player.position.z - 0.5);
+                                    
+                                    setTimeout(() => {
+                                        sounds.playHit();
+                                        document.getElementById('blackout').style.opacity = '1';
+                                        
+                                        // Пробуждение в подвале
+                                        setTimeout(() => {
+                                            bat.visible = false;
+                                            player.position.set(0, 1.6, 0);
+                                            document.getElementById('blackout').style.opacity = '0';
+                                            cutsceneActive = false;
+                                            gameStarted = true;
+                                            enableUI();
+                                        }, 1500);
+                                    }, 400);
+                                }, 600);
+                            }
+                        }, 40);
+                    }, 800);
+                }
+            }, 30);
+        }
+
+        function enableUI() {
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('msg').style.display = 'block';
+            document.getElementById('btn-action').style.display = 'flex';
+            document.getElementById('btn-light').style.display = 'flex';
+            document.getElementById('joystick-zone').style.display = 'block';
+            document.getElementById('touch-look-zone').style.display = 'block';
+        }
+
+        // --- УПРАВЛЕНИЕ ---
+        let yaw = 0, pitch = 0;
+        let lookTouchId = null;
+        let lastTouchX = 0, lastTouchY = 0;
+
+        const lookZone = document.getElementById('touch-look-zone');
+        lookZone.addEventListener('touchstart', (e) => {
+            if (!gameStarted || cutsceneActive) return;
+            for (let t of e.changedTouches) {
+                if (lookTouchId === null) {
+                    lookTouchId = t.identifier;
+                    lastTouchX = t.clientX;
+                    lastTouchY = t.clientY;
+                }
+            }
+        });
+
+        lookZone.addEventListener('touchmove', (e) => {
+            if (!gameStarted || cutsceneActive) return;
+            for (let t of e.changedTouches) {
+                if (t.identifier === lookTouchId) {
+                    let dx = t.clientX - lastTouchX;
+                    let dy = t.clientY - lastTouchY;
+                    yaw -= dx * 0.004;
+                    pitch -= dy * 0.004;
+                    pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
+                    player.rotation.y = yaw;
+                    camera.rotation.x = pitch;
+                    lastTouchX = t.clientX;
+                    lastTouchY = t.clientY;
+                }
+            }
+        });
+
+        const resetLook = (e) => {
+            for (let t of e.changedTouches) {
+                if (t.identifier === lookTouchId) lookTouchId = null;
+            }
+        };
+        lookZone.addEventListener('touchend', resetLook);
+        lookZone.addEventListener('touchcancel', resetLook);
+
+        let moveVector = { x: 0, z: 0 };
+        const joyZone = document.getElementById('joystick-zone');
+        const joyStick = document.getElementById('joystick-stick');
+
+        joyZone.addEventListener('touchmove', (e) => {
+            if (!gameStarted || cutsceneActive) return;
+            e.preventDefault();
+            const rect = joyZone.getBoundingClientRect();
+            const touch = e.touches[0];
+            let x = touch.clientX - rect.left - 60;
+            let y = touch.clientY - rect.top - 60;
+            let dist = Math.hypot(x, y);
+            if (dist > 35) { x = (x / dist) * 35; y = (y / dist) * 35; }
+            joyStick.style.transform = `translate(${x}px, ${y}px)`;
+            moveVector.x = x / 35;
+            moveVector.z = y / 35;
+        });
+
+        joyZone.addEventListener('touchend', () => {
+            joyStick.style.transform = `translate(0px, 0px)`;
+            moveVector = { x: 0, z: 0 };
+        });
+
+        document.getElementById('btn-light').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameStarted) {
+                sounds.playClick();
+                flashlightOn = !flashlightOn;
+                flashLight.visible = flashlightOn && battery > 0;
+                handGroup.visible = flashlightOn;
+            }
+        });
+
+        document.getElementById('btn-action').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameStarted) return;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(), camera);
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            if (intersects.length > 0 && intersects[0].distance < 3) {
+                if (intersects[0].object.name === "jack") {
+                    inventory = "Домкрат";
+                    document.getElementById('item').innerText = inventory;
+                    scene.remove(intersects[0].object);
+                    document.getElementById('msg').innerText = "Вы нашли домкрат!";
+                }
+            }
+        });
+
+        // --- ИГРОВОЙ ЦИКЛ ---
+        let walkTimer = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameStarted && !cutsceneActive) {
+                const speed = 0.05;
+                if (moveVector.x !== 0 || moveVector.z !== 0) {
+                    const dir = new THREE.Vector3(moveVector.x, 0, moveVector.z).normalize();
+                    dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+                    player.position.addScaledVector(dir, speed);
+
+                    // Покачивание рук при ходьбе (Head Bobbing)
+                    walkTimer += 0.15;
+                    handGroup.position.y = Math.sin(walkTimer) * 0.02;
+                    handGroup.position.x = Math.cos(walkTimer * 0.5) * 0.01;
+                }
+
+                // Ограничения стен
+                player.position.x = Math.max(-5.5, Math.min(5.5, player.position.x));
+                player.position.z = Math.max(-5.5, Math.min(5.5, player.position.z));
+
+                // Определение этажа
+                if (player.position.y < 3) document.getElementById('floor-name').innerText = "Подвал";
+                else if (player.position.y < 8) document.getElementById('floor-name').innerText = "1 Этаж";
+                else document.getElementById('floor-name').innerText = "2 Этаж";
+
+                // Разрядка батареи
+                if (flashlightOn && battery > 0) {
+                    battery -= 0.01;
+                    document.getElementById('battery').innerText = Math.max(0, Math.floor(battery));
+                    if (battery <= 0) {
+                        flashLight.visible = false;
+                        handGroup.visible = false;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
