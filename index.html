@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vexa Messenger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #d8b4fe 100%);
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(126, 34, 206, 0.15);
+        }
+
+        @media (min-width: 481px) {
+            .app-container {
+                height: 85vh;
+                border-radius: 24px;
+            }
+        }
+
+        /* Экран авторизации */
+        .auth-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            z-index: 100;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .auth-screen.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .auth-logo {
+            font-size: 36px;
+            font-weight: 800;
+            color: #7c3aed;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .auth-subtitle {
+            font-size: 15px;
+            color: #6b7280;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            max-width: 320px;
+            padding: 14px 18px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .auth-input:focus {
+            border-color: #7c3aed;
+        }
+
+        .auth-btn {
+            width: 100%;
+            max-width: 320px;
+            padding: 14px;
+            background: #7c3aed;
+            border: none;
+            border-radius: 14px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+            transition: background 0.2s;
+        }
+
+        .auth-btn:disabled {
+            background: #d8b4fe;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Шапка */
+        .header {
+            padding: 15px 20px;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
+            height: 60px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #7c3aed;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7c3aed;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Экраны мессенджера */
+        .screen {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            transition: transform 0.3s ease;
+        }
+
+        .screen.hidden-left {
+            transform: translateX(-100%);
+        }
+
+        .screen.hidden-right {
+            transform: translateX(100%);
+        }
+
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Модальное окно поиска по номеру */
+        .search-modal {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .search-modal.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .search-btn {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Элементы списка чатов */
+        .chat-item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            gap: 15px;
+            background: #ffffff;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #f3e8ff;
+            color: #7c3aed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .chat-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1f2937;
+        }
+
+        .chat-last-message {
+            font-size: 14px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            display: flex;
+            z-index: 1;
+        }
+
+        .action-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            width: 80px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .action-archive { background: #3b82f6; }
+        .action-delete { background: #ef4444; }
+
+        /* Окно переписки */
+        .back-btn {
+            background: none;
+            border: none;
+            color: #7c3aed;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        .chat-title-container {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #faf5ff;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.incoming {
+            background: #ffffff;
+            color: #1f2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .message.outgoing {
+            background: #7c3aed;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message img {
+            max-width: 100%;
+            border-radius: 10px;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .chat-footer {
+            padding: 12px 15px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .attach-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7c3aed;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: #1f2937;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #7c3aed;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.25);
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .send-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="auth-screen" id="authScreen">
+            <div class="auth-logo">Vexa</div>
+            <div class="auth-subtitle">Войдите по номеру телефона (+7)</div>
+            
+            <input type="tel" id="phoneInput" class="auth-input" value="+7" maxlength="12" oninput="validatePhone()" placeholder="+79990000000">
+            <input type="text" id="codeInput" class="auth-input" placeholder="Код подтверждения (тест: 1234)" style="display: none;" oninput="validateCode()">
+            
+            <button class="auth-btn" id="authBtn" onclick="handleAuth()" disabled>Получить код</button>
+        </div>
+
+        <div class="screen" id="chatsScreen">
+            <div class="header">
+                <div class="logo">Vexa</div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="toggleSearch()" title="Найти по номеру">🔍</button>
+                </div>
+            </div>
+
+            <div class="search-modal hidden" id="searchModal">
+                <input type="tel" id="searchPhoneInput" class="search-input" value="+7" maxlength="12" placeholder="Введите номер (+7...)">
+                <button class="search-btn" onclick="findUserByPhone()">Найти</button>
+            </div>
+
+            <div class="chats-list" id="chatsListContainer">
+                <div class="chat-item-wrapper" id="chat-support">
+                    <div class="chat-item" onclick="openChat('Техподдержка Vexa', 'Привет! Чем можем помочь?')">
+                        <div class="chat-avatar">TV</div>
+                        <div class="chat-info">
+                            <div class="chat-name">Техподдержка Vexa</div>
+                            <div class="chat-last-message">+79000000000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen hidden-right" id="chatScreen">
+            <div class="header">
+                <button class="back-btn" onclick="closeChat()">‹ Назад</button>
+                <div class="chat-title-container" id="activeChatTitle">Чат</div>
+                <div style="width: 50px;"></div>
+            </div>
+
+            <div class="chat-body" id="chatBody"></div>
+
+            <div class="chat-footer">
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="sendImage(event)">
+                <button class="attach-btn" onclick="document.getElementById('imageInput').click()" title="Отправить фото">📎</button>
+
+                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение..." oninput="handleInputTyping()" onkeypress="checkEnter(event)">
+                
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let authStep = 1;
+
+        // Проверка номера телефона при регистрации (+7 и ровно 11 цифр)
+        function validatePhone() {
+            const input = document.getElementById('phoneInput');
+            const btn = document.getElementById('authBtn');
+            
+            // Гарантируем, что всегда начинается с +7
+            if (!input.value.startsWith('+7')) {
+                input.value = '+7' + input.value.replace(/[^0-9]/g, '');
+            }
+            
+            // Удаляем всё лишнее кроме плюса и цифр
+            let val = input.value;
+            if (val.length > 12) val = val.substring(0, 12);
+            input.value = val;
+
+            // Проверка: ровно 11 символов (+7 и 10 цифр)
+            if (val.length === 12) {
+                btn.removeAttribute('disabled');
+            } else {
+                btn.setAttribute('disabled', 'true');
+            }
+        }
+
+        function validateCode() {
+            const codeInput = document.getElementById('codeInput');
+            const btn = document.getElementById('authBtn');
+            if (codeInput.value.trim().length > 0) {
+                btn.removeAttribute('disabled');
+            } else {
+                btn.setAttribute('disabled', 'true');
+            }
+        }
+
+        function handleAuth() {
+            const phoneInput = document.getElementById('phoneInput');
+            const codeInput = document.getElementById('codeInput');
+            const authBtn = document.getElementById('authBtn');
+
+            if (authStep === 1) {
+                phoneInput.style.display = 'none';
+                codeInput.style.display = 'block';
+                codeInput.focus();
+                authBtn.textContent = 'Подтвердить';
+                authBtn.setAttribute('disabled', 'true');
+                authStep = 2;
+            } else {
+                if (codeInput.value.trim() === '') return;
+                document.getElementById('authScreen').classList.add('hidden');
+            }
+        }
+
+        // Управление поиском по номеру
+        function toggleSearch() {
+            const modal = document.getElementById('searchModal');
+            modal.classList.toggle('hidden');
+        }
+
+        function findUserByPhone() {
+            const searchInput = document.getElementById('searchPhoneInput');
+            let phone = searchInput.value.trim();
+
+            if (phone.length !== 12 || !phone.startsWith('+7')) {
+                alert('Введите корректный российский номер (+7 и 10 цифр)');
+                return;
+            }
+
+            // Создаем или находим чат с этим пользователем
+            let chatId = 'user-' + phone.replace('+', '');
+            let existingChat = document.getElementById(chatId);
+
+            if (!existingChat) {
+                const listContainer = document.getElementById('chatsListContainer');
+                const newChatHtml = `
+                    <div class="chat-item-wrapper" id="${chatId}">
+                        <div class="chat-item" onclick="openChat('${phone}', 'Чат создан по номеру')">
+                            <div class="chat-avatar">${phone.slice(-2)}</div>
+                            <div class="chat-info">
+                                <div class="chat-name">${phone}</div>
+                                <div class="chat-last-message">Начните общение</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('afterbegin', newChatHtml);
+            }
+
+            toggleSearch();
+            openChat(phone, 'Чат создан по номеру');
+        }
+
+        let currentChatName = '';
+
+        function openChat(name, lastMessage) {
+            currentChatName = name;
+            document.getElementById('activeChatTitle').textContent = name;
+            
+            const chatBody = document.getElementById('chatBody');
+            chatBody.innerHTML = `<div class="message incoming">${lastMessage}</div>`;
+
+            document.getElementById('chatsScreen').classList.add('hidden-left');
+            document.getElementById('chatScreen').classList.remove('hidden-right');
+        }
+
+        function closeChat() {
+            document.getElementById('chatsScreen').classList.remove('hidden-left');
+            document.getElementById('chatScreen').classList.add('hidden-right');
+        }
+
+        // Управление кнопкой отправки текста
+        function handleInputTyping() {
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (input.value.trim().length > 0) {
+                sendBtn.classList.add('visible');
+            } else {
+                sendBtn.classList.remove('visible');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const chatBody = document.getElementById('chatBody');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (input.value.trim() === '') return;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message outgoing';
+            msgDiv.textContent = input.value;
+            chatBody.appendChild(msgDiv);
+
+            input.value = '';
+            sendBtn.classList.remove('visible');
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // Отправка картинки из галереи
+        function sendImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const chatBody = document.getElementById('chatBody');
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message outgoing';
+                msgDiv.innerHTML = `<img src="${e.target.result}" alt="photo">`;
+                chatBody.appendChild(msgDiv);
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+            reader.readAsDataURL(file);
+            event.target.value = ''; // Сбрасываем выбор файла
+        }
+
+        function checkEnter(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
