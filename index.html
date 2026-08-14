@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vexa Messenger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #0f0f0f;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            background: #18181b;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 481px) {
+            .app-container {
+                height: 85vh;
+                border-radius: 20px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            }
+        }
+
+        /* Общие элементы шапки */
+        .header {
+            padding: 15px 20px;
+            background: #202024;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #27272a;
+            height: 60px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #a855f7;
+            letter-spacing: 0.5px;
+        }
+
+        /* Экран со списком чатов */
+        .screen {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #18181b;
+            transition: transform 0.3s ease;
+        }
+
+        .screen.hidden-left {
+            transform: translateX(-100%);
+        }
+
+        .screen.hidden-right {
+            transform: translateX(100%);
+        }
+
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            gap: 15px;
+            border-bottom: 1px solid #222225;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-item:active {
+            background: #27272a;
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #3f3f46;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .chat-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #fff;
+        }
+
+        .chat-last-message {
+            font-size: 14px;
+            color: #a1a1aa;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Экран самого чата */
+        .back-btn {
+            background: none;
+            border: none;
+            color: #a855f7;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chat-title-container {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message.incoming {
+            background: #27272a;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.outgoing {
+            background: #9333ea;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-footer {
+            padding: 12px 15px;
+            background: #202024;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #27272a;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #a855f7;
+        }
+
+        .send-btn {
+            background: #9333ea;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #fff;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ЭКРАН 1: Список чатов -->
+        <div class="screen" id="chatsScreen">
+            <div class="header">
+                <div class="logo">Vexa</div>
+            </div>
+            <div class="chats-list">
+                <div class="chat-item" onclick="openChat('Техподдержка Vexa', 'Привет! Чем можем помочь?')">
+                    <div class="chat-avatar" style="background: #9333ea;">TV</div>
+                    <div class="chat-info">
+                        <div class="chat-name">Техподдержка Vexa</div>
+                        <div class="chat-last-message">Привет! Чем можем помочь?</div>
+                    </div>
+                </div>
+                <div class="chat-item" onclick="openChat('Иван', 'Скинь код проекта, когда будет время')">
+                    <div class="chat-avatar" style="background: #2563eb;">И</div>
+                    <div class="chat-info">
+                        <div class="chat-name">Иван</div>
+                        <div class="chat-last-message">Скинь код проекта, когда будет время</div>
+                    </div>
+                </div>
+                <div class="chat-item" onclick="openChat('Группа разработчиков', 'Обсуждаем новый интерфейс')">
+                    <div class="chat-avatar" style="background: #16a34a;">ГД</div>
+                    <div class="chat-info">
+                        <div class="chat-name">Группа разработчиков</div>
+                        <div class="chat-last-message">Обсуждаем новый интерфейс</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 2: Окно переписки (скрыто справа по умолчанию) -->
+        <div class="screen hidden-right" id="chatScreen">
+            <div class="header">
+                <button class="back-btn" onclick="closeChat()">‹ Назад</button>
+                <div class="chat-title-container" id="activeChatTitle">Чат</div>
+                <div style="width: 50px;"></div> <!-- Пустой блок для выравнивания по центру -->
+            </div>
+
+            <div class="chat-body" id="chatBody">
+                <!-- Сюда падают сообщения -->
+            </div>
+
+            <div class="chat-footer">
+                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение..." onkeypress="checkEnter(event)">
+                <button class="send-btn" onclick="sendMessage()">➔</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentChatName = '';
+
+        function openChat(name, lastMessage) {
+            currentChatName = name;
+            document.getElementById('activeChatTitle').textContent = name;
+            
+            // Очищаем чат и добавляем стартовое сообщение
+            const chatBody = document.getElementById('chatBody');
+            chatBody.innerHTML = `<div class="message incoming">${lastMessage}</div>`;
+
+            // Переключаем экраны анимацией
+            document.getElementById('chatsScreen').classList.add('hidden-left');
+            document.getElementById('chatScreen').classList.remove('hidden-right');
+        }
+
+        function closeChat() {
+            document.getElementById('chatsScreen').classList.remove('hidden-left');
+            document.getElementById('chatScreen').classList.add('hidden-right');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const chatBody = document.getElementById('chatBody');
+            
+            if (input.value.trim() === '') return;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message outgoing';
+            msgDiv.textContent = input.value;
+            chatBody.appendChild(msgDiv);
+
+            input.value = '';
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function checkEnter(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
