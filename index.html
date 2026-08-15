@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Vexa Messenger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #d8b4fe 100%);
+            color: #1f2937;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(126, 34, 206, 0.15);
+        }
+
+        @media (min-width: 481px) {
+            .app-container {
+                height: 85vh;
+                border-radius: 24px;
+            }
+        }
+
+        /* Шапка */
+        .header {
+            padding: 12px 16px;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f4f6;
+            height: 65px;
+            flex-shrink: 0;
+        }
+
+        .pill-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #7c3aed;
+            cursor: pointer;
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .header-actions-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill-icon-btn {
+            background: transparent;
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #7c3aed;
+        }
+
+        .pill-icon-btn svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* Полоса поиска */
+        .search-bar-container {
+            padding: 8px 16px 10px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .search-bar {
+            background: #f1f3f5;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #8e8e93;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .search-bar svg {
+            width: 16px;
+            height: 16px;
+            fill: #8e8e93;
+        }
+
+        /* Экраны мессенджера */
+        .screen {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #ffffff;
+            transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        #chatsScreen {
+            z-index: 1;
+        }
+
+        #chatScreen {
+            z-index: 2;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        #chatScreen.active {
+            transform: translateY(0);
+        }
+
+        .chats-content-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chats-list {
+            flex: 1;
+        }
+
+        /* Список чатов */
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 14px;
+            background: #ffffff;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+        }
+
+        .chat-item:active {
+            background: #f9fafb;
+        }
+
+        .chat-avatar-container {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .chat-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 600;
+            font-size: 20px;
+            color: white;
+            overflow: hidden;
+        }
+
+        .chat-info {
+            flex: 1;
+            overflow: hidden;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 12px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .chat-item:last-child .chat-info {
+            border-bottom: none;
+        }
+
+        .chat-name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .chat-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .verified-icon {
+            width: 14px;
+            height: 14px;
+            fill: #3b82f6;
+        }
+
+        .chat-time {
+            font-size: 13px;
+            color: #8e8e93;
+            font-weight: 400;
+        }
+
+        .chat-snippet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-last-message {
+            font-size: 14px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            padding-right: 10px;
+        }
+
+        .status-check {
+            width: 16px;
+            height: 16px;
+            fill: #10b981;
+            flex-shrink: 0;
+        }
+
+        /* Нижняя навигация Telegram */
+        .telegram-nav {
+            display: flex;
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            height: 54px;
+            flex-shrink: 0;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            height: 100%;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #8e8e93;
+            gap: 2px;
+            position: relative;
+        }
+
+        .nav-item.active {
+            color: #7c3aed;
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .nav-item span {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 6px;
+            right: 26%;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        /* Окно переписки */
+        .back-btn {
+            background: none;
+            border: none;
+            color: #7c3aed;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-weight: 500;
+        }
+
+        .chat-title-container {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #faf5ff;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 15px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.incoming {
+            background: #ffffff;
+            color: #1f2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .message.outgoing {
+            background: #7c3aed;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-footer {
+            padding: 10px 15px;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .attach-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #7c3aed;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: #1f2937;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #7c3aed;
+        }
+
+        .send-btn {
+            background: #7c3aed;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #fff;
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .send-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="screen" id="chatsScreen">
+            <div class="header">
+                <button class="pill-btn">Изм.</button>
+                <div class="header-title-container">
+                    <div class="header-title">Чаты</div>
+                </div>
+                <div class="header-actions-pill">
+                    <button class="pill-icon-btn" title="Поиск">
+                        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    </button>
+                    <button class="pill-icon-btn" title="Новый чат">
+                        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-bar-container">
+                <div class="search-bar">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <span>Поиск по чатам и сообщениям</span>
+                </div>
+            </div>
+
+            <div class="chats-content-area">
+                <div class="chats-list" id="chatsListContainer">
+                    <div class="chat-item" onclick="openChat('Арсен др', 'Егор мангол', '07.08', true)">
+                        <div class="chat-avatar-container">
+                            <div class="chat-avatar" style="background: #3b82f6;">А</div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name-row">
+                                <div class="chat-name">Арсен др</div>
+                                <div class="chat-time">07.08</div>
+                            </div>
+                            <div class="chat-snippet-row">
+                                <div class="chat-last-message">
+                                    <svg class="status-check" viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4.14 14.1 9 19 20.36 7.72l-1.36-1.36z"/></svg>
+                                    Егор мангол
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-item" onclick="openChat('Джамал', '📷 9 фото', '07.08', true)">
+                        <div class="chat-avatar-container">
+                            <div class="chat-avatar" style="background: #10b981;">Д</div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name-row">
+                                <div class="chat-name">Джамал</div>
+                                <div class="chat-time">07.08</div>
+                            </div>
+                            <div class="chat-snippet-row">
+                                <div class="chat-last-message">
+                                    <svg class="status-check" viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4.14 14.1 9 19 20.36 7.72l-1.36-1.36z"/></svg>
+                                    📷 9 фото
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-item" onclick="openChat('Максим', 'Ебать пролетело', '06.08', true)">
+                        <div class="chat-avatar-container">
+                            <div class="chat-avatar" style="background: #f59e0b;">М</div>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name-row">
+                                <div class="chat-name">Максим</div>
+                                <div class="chat-time">06.08</div>
+                            </div>
+                            <div class="chat-snippet-row">
+                                <div class="chat-last-message">
+                                    <svg class="status-check" viewBox="0 0 24 24"><path d="M9 16.2l-3.5-3.5L4.14 14.1 9 19 20.36 7.72l-1.36-1.36z"/></svg>
+                                    Ебать пролетело
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="telegram-nav">
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>Контакты</span>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                    <span>Звонки</span>
+                </button>
+                <button class="nav-item active">
+                    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    <span class="nav-badge">8</span>
+                    <span>Чаты</span>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    <span class="nav-badge" style="background:#7c3aed;">32</span>
+                    <span>Настройки</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="screen" id="chatScreen">
+            <div class="header" id="chatHeader">
+                <button class="back-btn" onclick="closeChat()">‹ Назад</button>
+                <div class="chat-title-container" id="activeChatTitle">Чат</div>
+                <div style="width: 50px;"></div>
+            </div>
+
+            <div class="chat-body" id="chatBody"></div>
+
+            <div class="chat-footer">
+                <button class="attach-btn" title="Прикрепить">📎</button>
+                <input type="text" id="messageInput" class="chat-input" placeholder="Сообщение..." oninput="handleInputTyping()" onkeypress="checkEnter(event)">
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const chatScreen = document.getElementById('chatScreen');
+        const chatHeader = document.getElementById('chatHeader');
+
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        function openChat(name, lastMessage, date, isOutgoing) {
+            document.getElementById('activeChatTitle').textContent = name;
+            
+            const chatBody = document.getElementById('chatBody');
+            let messagesHtml = `<div class="message incoming">${lastMessage}</div>`;
+            if (isOutgoing) {
+                messagesHtml += `<div class="message outgoing">Привет! Как дела?</div>`;
+            }
+            chatBody.innerHTML = messagesHtml;
+
+            chatScreen.classList.add('active');
+            chatScreen.style.transform = 'translateY(0)';
+        }
+
+        function closeChat() {
+            chatScreen.style.transition = 'transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1)';
+            chatScreen.classList.remove('active');
+            chatScreen.style.transform = 'translateY(100%)';
+        }
+
+        // Логика свайпа вниз за шапку чата
+        chatHeader.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            chatScreen.style.transition = 'none';
+        });
+
+        chatHeader.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentY = e.touches[0].clientY;
+            let deltaY = currentY - startY;
+
+            if (deltaY > 0) {
+                chatScreen.style.transform = `translateY(${deltaY}px)`;
+            }
+        });
+
+        chatHeader.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            let deltaY = currentY - startY;
+
+            chatScreen.style.transition = 'transform 0.3s cubic-bezier(0.1, 0.9, 0.2, 1)';
+
+            if (deltaY > 120) {
+                closeChat();
+            } else {
+                chatScreen.style.transform = 'translateY(0)';
+            }
+            startY = 0;
+            currentY = 0;
+        });
+
+        function handleInputTyping() {
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (input.value.trim().length > 0) {
+                sendBtn.classList.add('visible');
+            } else {
+                sendBtn.classList.remove('visible');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const chatBody = document.getElementById('chatBody');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (input.value.trim() === '') return;
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message outgoing';
+            msgDiv.textContent = input.value;
+            chatBody.appendChild(msgDiv);
+
+            input.value = '';
+            sendBtn.classList.remove('visible');
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function checkEnter(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
