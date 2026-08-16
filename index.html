@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Horror Room Modernized</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; }
+        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 10; }
+        h1 { color: #800; text-shadow: 0 0 10px #f00; }
+        button { padding: 20px 50px; font-size: 24px; cursor: pointer; background: #111; color: #a00; border: 2px solid #500; transition: 0.3s; }
+        button:hover { background: #200; color: #fff; }
+        #ui-controls { position: absolute; bottom: 20px; left: 20px; color: white; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <h1>THE ROOM</h1>
+        <button onclick="startGame()">НАЧАТЬ</button>
+    </div>
+    <div id="ui-controls">Используйте экран для осмотра</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        let scene, camera, renderer, composer, light;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Пост-обработка (Bloom для хоррор-атмосферы)
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85));
+
+            // Стены комнаты
+            const roomMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.BackSide });
+            const roomGeometry = new THREE.BoxGeometry(10, 6, 10);
+            const room = new THREE.Mesh(roomGeometry, roomMaterial);
+            scene.add(room);
+
+            // Телевизор
+            const tv = new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 0.2), new THREE.MeshStandardMaterial({ color: 0x050505 }));
+            tv.position.set(0, 1, -4.9);
+            scene.add(tv);
+
+            // Освещение
+            light = new THREE.PointLight(0xffffff, 2, 15);
+            light.position.set(0, 2, 0);
+            scene.add(light);
+
+            camera.position.set(0, 1.6, 0);
+
+            // Управление касанием для iPhone
+            let lastX = 0;
+            document.addEventListener('touchmove', (e) => {
+                const deltaX = (e.touches[0].pageX - lastX) * 0.005;
+                camera.rotation.y -= deltaX;
+                lastX = e.touches[0].pageX;
+            });
+            document.addEventListener('touchstart', (e) => { lastX = e.touches[0].pageX; });
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            // Эффект мигания света
+            if(Math.random() > 0.99) light.intensity = Math.random() * 2;
+            composer.render();
+        }
+
+        window.startGame = () => {
+            document.getElementById('overlay').style.display = 'none';
+            init();
+        };
+    </script>
+</body>
+</html>
