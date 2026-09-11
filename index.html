@@ -1,518 +1,922 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>The Echo of the Room - Horror</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            padding: 20px;
-        }
-        #start-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #050505;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            pointer-events: auto;
-        }
-        h1 {
-            color: #b00;
-            text-shadow: 0 0 10px rgba(255,0,0,0.5);
-            font-size: 26px;
-            text-align: center;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-            padding: 0 15px;
-        }
-        .btn {
-            background: #222;
-            color: #fff;
-            border: 2px solid #500;
-            padding: 18px 45px;
-            font-size: 22px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255,0,0,0.3);
-            border-radius: 8px;
-            pointer-events: auto;
-            -webkit-tap-highlight-color: transparent;
-        }
-        #action-btn, #exit-hide-btn {
-            pointer-events: auto;
-            background: rgba(40, 40, 40, 0.9);
-            color: white;
-            border: 2px solid #888;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            display: none;
-            margin-bottom: 20px;
-            -webkit-tap-highlight-color: transparent;
-        }
-        #exit-hide-btn {
-            background: rgba(120, 20, 20, 0.9);
-            border-color: #f55;
-        }
-        #instructions {
-            color: #777;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 20px;
-            max-width: 320px;
-            line-height: 1.4;
-            padding: 0 15px;
-        }
-        #story-text {
-            color: #fff;
-            font-size: 15px;
-            text-align: center;
-            text-shadow: 0 0 5px #000;
-            margin-top: 20px;
-        }
-    </style>
-    <!-- Подключаем Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gemini — Google AI</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS — GOOGLE GEMINI SYSTEM
+============================================================ */
+:root{
+  --page-bg: #ffffff;
+  --sidebar-bg: #f0f4f9;
+  --sidebar-hover: #e9eeef;
+  --sidebar-active: #d3e3fd;
+
+  --glass-fill: rgba(255,255,255,0.8);
+  --glass-fill-strong: rgba(255,255,255,0.95);
+  --glass-fill-solid: #ffffff;
+  --glass-border-top: rgba(255,255,255,1);
+  --glass-border-bottom: rgba(220,225,230,0.6);
+  --glass-border: rgba(220,225,230,0.8);
+  --glass-blur: 16px;
+  --glass-blur-lg: 24px;
+
+  --ink-1: #1f1f1f;
+  --ink-2: #444746;
+  --ink-3: #5e6368;
+  --ink-4: #8e918f;
+
+  --gemini-blue: #1a73e8;
+  --gemini-purple: #8ab4f8;
+  --gemini-grad-1: #4285f4;
+  --gemini-grad-2: #9b72cb;
+  --gemini-grad-3: #d96570;
+
+  --accent: #1a73e8;
+  --accent-strong: #1557b0;
+  --accent-soft: rgba(26,115,232,0.12);
+  --accent-soft-border: rgba(26,115,232,0.3);
+
+  --danger: #b3261e;
+  --danger-soft: rgba(179,38,30,0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-glass: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-glass-lg: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-float: 0 6px 16px rgba(0,0,0,0.1);
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-med: 250ms;
+  --dur-slow: 400ms;
+
+  --sidebar-w: 280px;
+  --content-max: 780px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: "Google Sans", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink-1);
+  background: var(--page-bg);
+  overflow:hidden;
+  font-size:14px;
+  line-height:1.6;
+}
+::selection{ background: var(--accent-soft); color: var(--ink-1); }
+button{ font-family:inherit; }
+::-webkit-scrollbar{ width:6px; height:6px; }
+::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.15); border-radius:6px; }
+::-webkit-scrollbar-thumb:hover{ background: rgba(0,0,0,0.25); }
+
+/* ============================================================
+   GEMINI LIVING BACKGROUND (Subtle clean gradient mesh)
+============================================================ */
+.ambient{
+  position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  background: #ffffff;
+}
+.lightsrc{
+  position:absolute; border-radius:50%; will-change: transform, filter;
+  filter: blur(100px);
+  opacity: 0.15;
+}
+.lightsrc.l1{ width:50vw; height:50vw; top:-10%; left:-10%; background: #4285f4; }
+.lightsrc.l2{ width:45vw; height:45vw; bottom:-10%; right:-10%; background: #9b72cb; }
+.lightsrc.l3{ width:40vw; height:40vw; top:30%; left:30%; background: #34a853; opacity: 0.08; }
+
+.grain, .vignette, .raysheet{ display:none; }
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+.app{ position:relative; z-index:1; display:flex; height:100vh; background: var(--page-bg); }
+
+/* ---------- SIDEBAR (Gemini Navigation Drawer) ---------- */
+.sidebar{
+  width: var(--sidebar-w); flex-shrink:0; height:100%;
+  padding: 12px;
+  background: var(--sidebar-bg);
+  border-right: none;
+  display:flex; flex-direction:column;
+  transition: transform var(--dur-med) var(--ease);
+  z-index: 50;
+}
+
+.brand{ display:flex; align-items:center; gap:12px; padding:8px 12px 16px; }
+.brand-mark{
+  width:28px; height:28px; position:relative; overflow:hidden;
+  background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
+}
+.brand-name{ font-weight:500; font-size:18px; letter-spacing:-0.02em; color: var(--ink-1); }
+
+.btn-newchat{
+  display:flex; align-items:center; gap:12px; width:auto;
+  padding:12px 16px; border-radius: var(--radius-pill);
+  border: none; background: #c2e7ff;
+  color: #001d35; font-weight:500; font-size:14px; cursor:pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: background var(--dur-fast), box-shadow var(--dur-fast);
+  margin-bottom: 20px;
+}
+.btn-newchat:hover{ background: #b3dfdb; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.btn-newchat svg{ flex-shrink:0; }
+
+.search-box{
+  display:flex; align-items:center; gap:8px; margin-bottom:12px;
+  padding:8px 12px; border-radius: var(--radius-pill);
+  background: rgba(0,0,0,0.04);
+  border: 1px solid transparent;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.search-box:focus-within{ background: #fff; border-color: var(--accent); box-shadow: 0 1px 4px rgba(26,115,232,0.2); }
+.search-box input{ border:none; outline:none; background:transparent; flex:1; font-size:13px; color: var(--ink-1); }
+.search-box input::placeholder{ color: var(--ink-3); }
+.kbd{
+  font-size:10px; color: var(--ink-3); background: rgba(0,0,0,0.06);
+  padding:2px 5px; border-radius:4px;
+}
+
+.history{ flex:1; overflow-y:auto; padding-right:2px; }
+.history-group-label{ font-size:12px; font-weight:500; color: var(--ink-3); padding:8px 12px 4px; }
+.history-item{
+  position:relative; display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-radius: var(--radius-pill); cursor:pointer;
+  font-size:13px; color: var(--ink-2); margin-bottom:2px;
+  transition: background var(--dur-fast);
+}
+.history-item:hover{ background: var(--sidebar-hover); }
+.history-item.active{
+  background: var(--sidebar-active);
+  color: #001d35;
+  font-weight: 500;
+}
+.history-item .pin-ico{ color: var(--accent); flex-shrink:0; }
+.history-item span.title{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-item .more-btn{ opacity:0; border:none; background:transparent; color: var(--ink-3); cursor:pointer; padding:2px 4px; border-radius:4px; }
+.history-item:hover .more-btn{ opacity:1; }
+
+.sidebar-footer{ border-top: 1px solid rgba(0,0,0,0.08); padding-top:10px; margin-top:6px; padding-bottom: var(--safe-b); }
+.profile-row{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius: var(--radius-pill); cursor:pointer; transition: background var(--dur-fast); }
+.profile-row:hover{ background: var(--sidebar-hover); }
+.avatar{ width:32px; height:32px; border-radius:50%; flex-shrink:0; background: linear-gradient(135deg, #1a73e8, #9b72cb); color: #fff; display:flex; align-items:center; justify-content:center; font-weight: 500; }
+.profile-meta{ flex:1; overflow:hidden; }
+.profile-name{ font-size:13px; font-weight:500; color: var(--ink-1); }
+.profile-plan{ font-size:11px; color: var(--ink-3); }
+
+/* ---------- MAIN ---------- */
+.main{ flex:1; display:flex; flex-direction:column; min-width:0; position:relative; background: #fff; }
+
+.topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 12px 24px; flex-shrink:0; }
+.topbar-left{ display:flex; align-items:center; gap:12px; }
+.menu-btn{ display:flex; border:none; background: transparent; border-radius: 50%; width: 40px; height: 40px; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-2); }
+.menu-btn:hover{ background: rgba(0,0,0,0.05); }
+
+.model-selector{
+  display:flex; align-items:center; gap:8px; padding:6px 14px;
+  border-radius: var(--radius-pill); border: 1px solid rgba(0,0,0,0.1);
+  background: #fff; font-size:15px; font-weight:500; cursor:pointer; position:relative;
+  color: var(--ink-1);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.model-selector:hover{ background: #f8f9fa; border-color: rgba(0,0,0,0.2); }
+.model-dot{ width:8px; height:8px; border-radius:50%; background: linear-gradient(135deg, #4285f4, #9b72cb); }
+.topbar-right{ display:flex; align-items:center; gap:8px; }
+.icon-btn{
+  width:40px; height:40px; border-radius: 50%; border: none;
+  background: transparent; color: var(--ink-2); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition: background var(--dur-fast);
+}
+.icon-btn:hover{ background: rgba(0,0,0,0.05); color: var(--ink-1); }
+
+.model-dropdown{
+  position:absolute; top:calc(100% + 8px); left:0; width:280px; z-index:40;
+  border-radius: var(--radius-lg); padding:8px; background: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.08);
+  opacity:0; transform: translateY(-8px); pointer-events:none;
+  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.model-selector.open .model-dropdown{ opacity:1; transform: translateY(0); pointer-events:auto; }
+.model-option{ display:flex; align-items:flex-start; gap:12px; padding:10px 12px; border-radius: var(--radius-md); cursor:pointer; transition: background var(--dur-fast); }
+.model-option:hover{ background: #f0f4f9; }
+.model-option.selected{ background: #e9eeef; }
+.model-option .mo-icon{ width:24px; height:24px; border-radius:6px; flex-shrink:0; margin-top:2px; background: linear-gradient(135deg, #4285f4, #9b72cb); }
+.mo-title{ font-size:14px; font-weight:500; color: var(--ink-1); }
+.mo-desc{ font-size:12px; color: var(--ink-3); margin-top:2px; }
+
+/* ---------- HOME ---------- */
+.home{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; transition: opacity var(--dur-slow) var(--ease); }
+.home.leaving{ opacity:0; pointer-events:none; }
+
+.greeting{
+  font-size:38px; font-weight:400; letter-spacing:-0.02em; margin-bottom:6px;
+  background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.home h1{ font-size:38px; font-weight:400; letter-spacing:-0.02em; margin:0 0 32px; color: var(--ink-4); }
+.home p.sub{ display:none; }
+
+.examples{ display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; width:100%; max-width:850px; margin-top:32px; }
+.example-card{
+  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; text-align:left;
+  padding:16px; border-radius: var(--radius-lg); cursor:pointer;
+  background: #f0f4f9; border: 1px solid transparent;
+  min-height: 140px;
+  transition: background var(--dur-fast), box-shadow var(--dur-fast);
+}
+.example-card:hover{ background: #e2e8f0; }
+.example-card .ex-icon{
+  width:36px; height:36px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+  background: #ffffff; color: var(--ink-2);
+}
+.example-card span.ex-text{ font-size:14px; color: var(--ink-1); line-height:1.4; font-weight: 400; }
+
+/* ---------- AI CORE / SPARKLE ICON ---------- */
+.core-wrap{ position:relative; width:36px; height:36px; margin-bottom:16px; display:flex; align-items:center; justify-content:center; }
+.core-dot{
+  width:24px; height:24px; position:relative; z-index:1;
+  background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
+}
+.core-glow, .core-ring{ display:none; }
+.core-wrap.thinking .core-dot{ animation: pulse 1.5s infinite ease-in-out; }
+@keyframes pulse{ 0%, 100%{ opacity: 1; transform: scale(1); } 50%{ opacity: 0.4; transform: scale(0.9); } }
+.core-tiny{ width:24px; height:24px; margin-bottom:0; }
+.core-tiny .core-dot{ width:18px; height:18px; }
+
+.home-input-wrap{ width:100%; max-width:var(--content-max); }
+
+/* ---------- CHAT ---------- */
+.chat-scroll{ flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding: 12px 24px; }
+.chat-inner{ width:100%; max-width: var(--content-max); display:flex; flex-direction:column; gap:24px; padding-bottom:24px; }
+.chat-hidden{ display:none; }
+
+.msg{ display:flex; gap:16px; }
+.msg.user{ justify-content:flex-end; }
+.msg.user .bubble{
+  background: #f0f4f9;
+  border-radius: var(--radius-xl);
+  padding:12px 20px; max-width: 80%;
+  font-size:15px; color: var(--ink-1);
+}
+.msg.assistant{ align-items:flex-start; width: 100%; }
+.assistant-avatar{ flex-shrink:0; margin-top:4px; }
+.assistant-body{ flex:1; min-width:0; }
+.assistant-meta{ display:none; }
+.assistant-content{ font-size:15px; color: var(--ink-1); line-height:1.7; }
+.assistant-content p{ margin: 0 0 12px; }
+.assistant-content p:last-child{ margin-bottom:0; }
+.assistant-content ul, .assistant-content ol{ margin:0 0 12px; padding-left:20px; }
+.assistant-content li{ margin-bottom:4px; }
+.assistant-content strong{ font-weight:600; color: var(--ink-1); }
+.assistant-content code.inline{
+  background: rgba(0,0,0,0.06); border-radius:4px;
+  padding:2px 6px; font-size:13px; font-family: "Google Sans Mono", monospace;
+}
+.caret{ display:inline-block; width:2px; height:1em; background: var(--accent); margin-left:2px; vertical-align:-2px; animation: blink 0.9s steps(1) infinite; }
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* tool status */
+.tool-card{ display:inline-flex; align-items:center; gap:8px; padding:6px 12px; margin-bottom:12px; border-radius: var(--radius-pill); background: #f0f4f9; font-size:13px; color: var(--ink-2); }
+.tool-dot{ width:6px; height:6px; border-radius:50%; background: var(--accent); }
+
+.thinking-row{ display:flex; align-items:center; gap:10px; }
+.sweep-bar{ display:none; }
+.thinking-text{ font-size:14px; color: var(--ink-3); }
+
+/* code block */
+.code-block{ margin:16px 0; border-radius: var(--radius-md); overflow:hidden; border: 1px solid rgba(0,0,0,0.1); background: #f8f9fa; }
+.code-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background: #f0f4f9; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.code-lang{ font-size:12px; color: var(--ink-3); font-family: monospace; }
+.copy-btn{
+  display:flex; align-items:center; gap:5px; font-size:12px; color: var(--ink-2);
+  background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: var(--radius-pill); padding:4px 10px;
+  cursor:pointer; transition: background var(--dur-fast);
+}
+.copy-btn:hover{ background: #f1f3f4; }
+.copy-btn.copied{ color: #137333; }
+.code-block pre{ margin:0; padding:16px; overflow-x:auto; }
+.code-block code{ font-family: monospace; font-size:13px; line-height:1.5; color:#202124; }
+.tok-kw{ color:#1a73e8; } .tok-str{ color:#137333; } .tok-com{ color:#5f6368; font-style:italic; }
+
+/* actions */
+.msg-actions{ display:flex; align-items:center; gap:4px; margin-top:12px; }
+.action-btn{
+  width:32px; height:32px; border-radius: 50%; border: none; background: transparent; color: var(--ink-3);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.action-btn:hover{ background: rgba(0,0,0,0.05); color: var(--ink-1); }
+.action-btn.liked{ color: #1a73e8; }
+
+/* jump to latest */
+.jump-btn{
+  position:absolute; bottom:90px; left:50%; transform: translateX(-50%);
+  display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius: var(--radius-pill);
+  background: #fff; border: 1px solid rgba(0,0,0,0.15); box-shadow: var(--shadow-float);
+  font-size:13px; color: var(--ink-2); cursor:pointer; opacity:0; pointer-events:none;
+  transition: opacity var(--dur-fast);
+}
+.jump-btn.show{ opacity:1; pointer-events:auto; }
+
+/* ---------- INPUT (Gemini Floating Prompt Box) ---------- */
+.input-region{ padding: 12px 24px 24px; display:flex; justify-content:center; flex-shrink:0; background: #fff; }
+.input-shell{ width:100%; max-width: var(--content-max); position:relative; }
+.input-card{
+  position:relative;
+  background: #f0f4f9;
+  border-radius: var(--radius-xl);
+  border: 1px solid transparent;
+  padding: 12px 16px;
+  transition: background var(--dur-fast), box-shadow var(--dur-fast);
+}
+.input-card.focused{ background: #f0f4f9; box-shadow: 0 1px 6px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.1); }
+
+.attach-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.attach-chip{
+  display:flex; align-items:center; gap:8px; padding:6px 10px; background: #fff;
+  border: 1px solid rgba(0,0,0,0.1); border-radius: var(--radius-md); font-size:12px; color: var(--ink-2);
+}
+.attach-chip .file-ico{ width:20px; height:20px; border-radius:4px; background: #e8f0fe; display:flex; align-items:center; justify-content:center; color: var(--accent); font-size:9px; font-weight:700; }
+.attach-chip .rm{ cursor:pointer; color: var(--ink-3); }
+
+.input-row{ display:flex; align-items:flex-end; gap:12px; }
+textarea#composer{
+  flex:1; resize:none; border:none; outline:none; background:transparent;
+  font-family:inherit; font-size:15px; line-height:1.5; color: var(--ink-1);
+  max-height:180px; padding:6px 0; min-height:24px;
+}
+textarea#composer::placeholder{ color: var(--ink-3); }
+.input-tools{ display:flex; align-items:center; gap:4px; }
+.send-btn{
+  width:36px; height:36px; border-radius: 50%; border: none; cursor:pointer;
+  background: rgba(0,0,0,0.08); color: var(--ink-4);
+  display:flex; align-items:center; justify-content:center;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.send-btn.ready{ background: #0b57d0; color: #fff; }
+.send-btn.ready:hover{ background: #0b57d0; opacity: 0.9; }
+
+.mic-btn.recording{ background: #fce8e6; color: #c5221f; }
+
+.hint-row{ display:flex; justify-content:center; margin-top:8px; }
+.hint-row span{ font-size:12px; color: var(--ink-3); }
+.hint-row .kbd{ margin:0 2px; }
+
+/* ============================================================
+   MODALS / PALETTE / TOASTS
+============================================================ */
+.overlay{
+  position:fixed; inset:0; z-index:100; background: rgba(0,0,0,0.4);
+  display:flex; align-items:flex-start; justify-content:center;
+  padding-top:12vh; opacity:0; pointer-events:none; transition: opacity var(--dur-med) var(--ease);
+}
+.overlay.show{ opacity:1; pointer-events:auto; }
+.overlay.center{ align-items:center; padding-top:0; }
+
+.palette{
+  width:min(560px, 92vw); border-radius: var(--radius-lg); overflow:hidden;
+  background: #fff; box-shadow: var(--shadow-glass-lg);
+  transform: translateY(-12px); transition: transform var(--dur-med) var(--ease);
+}
+.overlay.show .palette{ transform: translateY(0); }
+.palette-search{ display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.palette-search input{ flex:1; border:none; outline:none; font-size:16px; background:transparent; color: var(--ink-1); }
+.palette-list{ max-height:340px; overflow-y:auto; padding:8px; }
+.palette-item{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius: var(--radius-md); cursor:pointer; font-size:14px; color: var(--ink-1); transition: background var(--dur-fast); }
+.palette-item.hi{ background: #f0f4f9; }
+.palette-item .p-ico{ color: var(--ink-3); }
+.palette-item .p-sub{ margin-left:auto; font-size:12px; color: var(--ink-4); }
+
+.modal{
+  width:min(520px, 92vw); max-height:80vh; overflow:hidden; display:flex; flex-direction:column;
+  background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-glass-lg);
+  transform: scale(0.96); opacity:0;
+  transition: transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease);
+}
+.overlay.show .modal{ transform: scale(1); opacity:1; }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.modal-head h3{ margin:0; font-size:18px; font-weight:400; }
+.modal-body{ padding:8px; overflow-y:auto; }
+.settings-tabs{ display:flex; gap:8px; padding:12px 16px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.settings-tab{ padding:8px 16px; border-radius: var(--radius-pill); font-size:13px; color: var(--ink-2); cursor:pointer; }
+.settings-tab.active{ background: #c2e7ff; color: #001d35; font-weight: 500; }
+.settings-section{ padding:16px; }
+.setting-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); gap:16px; }
+.setting-row:last-child{ border-bottom:none; }
+.setting-label{ font-size:14px; color: var(--ink-1); }
+.setting-desc{ font-size:12px; color: var(--ink-3); margin-top:2px; }
+.seg{ display:flex; background: #f0f4f9; border-radius: var(--radius-pill); padding:2px; }
+.seg button{ border:none; background:transparent; padding:6px 14px; font-size:13px; border-radius: var(--radius-pill); cursor:pointer; color: var(--ink-2); }
+.seg button.active{ background: #fff; color: var(--ink-1); font-weight:500; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.accent-swatches{ display:flex; gap:8px; }
+.swatch{ width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
+.swatch.active{ border-color: var(--ink-1); }
+.gswitch{ width:44px; height:24px; border-radius:12px; background: rgba(0,0,0,0.2); position:relative; cursor:pointer; transition: background var(--dur-fast); }
+.gswitch::after{ content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition: transform var(--dur-fast); }
+.gswitch.on{ background: #0b57d0; }
+.gswitch.on::after{ transform: translateX(20px); }
+
+.confirm-modal{ width:min(380px,90vw); padding:24px; }
+.confirm-modal h4{ margin:0 0 8px; font-size:16px; }
+.confirm-modal p{ margin:0 0 20px; font-size:14px; color: var(--ink-3); }
+.confirm-actions{ display:flex; justify-content:flex-end; gap:8px; }
+.btn{ padding:8px 16px; border-radius: var(--radius-pill); font-size:14px; font-weight:500; cursor:pointer; border: 1px solid rgba(0,0,0,0.15); background: #fff; }
+.btn.danger{ background: #b3261e; border-color: transparent; color:#fff; }
+.btn.ghost:hover{ background: #f8f9fa; }
+
+.toast-stack{ position:fixed; bottom: 24px; right:24px; z-index:200; display:flex; flex-direction:column; gap:8px; }
+.toast{
+  display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius: var(--radius-md);
+  background: #323232; color: #fff; font-size:14px; box-shadow: var(--shadow-glass-lg);
+  transform: translateY(20px); opacity:0; animation: toastIn var(--dur-med) var(--ease) forwards;
+}
+.toast.out{ opacity:0; transition: opacity var(--dur-fast); }
+@keyframes toastIn{ to{ transform: translateY(0); opacity:1; } }
+.toast .t-ico{ color: #8ab4f8; }
+
+.sidebar-backdrop{ display:none; }
+
+@media (max-width: 820px){
+  .sidebar{ position:fixed; top:0; left:0; transform: translateX(-100%); }
+  .sidebar.open{ transform: translateX(0); }
+  .sidebar-backdrop{ display:block; position:fixed; inset:0; background: rgba(0,0,0,0.4); z-index:45; opacity:0; pointer-events:none; transition: opacity var(--dur-med); }
+  .sidebar-backdrop.show{ opacity:1; pointer-events:auto; }
+  .examples{ grid-template-columns: 1fr 1fr; }
+  .greeting, .home h1{ font-size:28px; }
+}
+</style>
 </head>
-<body>
+<body data-motion="normal">
 
-    <div id="start-screen">
-        <h1>THE ECHO OF THE ROOM</h1>
-        <button class="btn" id="start-btn">НАЧАТЬ</button>
-        <div id="instructions">Левая половина экрана — движение вперед.<br>Правая половина — осмотр комнаты (свайп).<br>Кнопка действия появляется рядом с объектами.</div>
+<div class="ambient" id="ambient">
+  <div class="lightsrc l1"></div>
+  <div class="lightsrc l2"></div>
+  <div class="lightsrc l3"></div>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Gemini</div>
     </div>
 
-    <div id="ui-layer">
-        <div id="story-text">Осмотрите комнату...</div>
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <button id="exit-hide-btn">ВЫЙТИ ИЗ ШКАФА</button>
-            <button id="action-btn">ДЕЙСТВИЕ</button>
+    <button class="btn-newchat" id="newChatBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Новый чат
+    </button>
+
+    <div class="search-box" id="sidebarSearch">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5e6368" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" placeholder="Поиск чатов" id="historySearchInput">
+      <span class="kbd">⌘K</span>
+    </div>
+
+    <div class="history" id="historyList">
+      <div class="history-group-label">Недавние</div>
+      <div class="history-item active" data-title="Объясни React хуки">
+        <span class="title">Объясни React хуки</span>
+        <button class="more-btn">⋯</button>
+      </div>
+      <div class="history-item" data-title="Напиши письмо клиенту">
+        <span class="title">Напиши письмо клиенту</span>
+        <button class="more-btn">⋯</button>
+      </div>
+      <div class="history-item" data-title="Отладка Python-скрипта">
+        <span class="title">Отладка Python-скрипта</span>
+        <button class="more-btn">⋯</button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="profile-row" id="profileBtn">
+        <div class="avatar">М</div>
+        <div class="profile-meta">
+          <div class="profile-name">Мария</div>
+          <div class="profile-plan">Advanced</div>
         </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Открыть меню">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div class="model-selector" id="modelSelector">
+          <span class="model-dot"></span>
+          <span id="modelName">Gemini 1.5 Pro</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          <div class="model-dropdown">
+            <div class="model-option selected" data-name="Gemini 1.5 Pro">
+              <div class="mo-icon"></div>
+              <div><div class="mo-title">Gemini 1.5 Pro</div><div class="mo-desc">Для сложных задач и анализа кода</div></div>
+            </div>
+            <div class="model-option" data-name="Gemini 1.5 Flash">
+              <div class="mo-icon" style="background:#34a853"></div>
+              <div><div class="mo-title">Gemini 1.5 Flash</div><div class="mo-desc">Быстрые ответы на каждый день</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="settingsBtn" aria-label="Настройки">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </div>
     </div>
 
-    <script>
-        let scene, camera, renderer;
-        let moveForward = false;
-        let pitch = 0, yaw = 0;
-        let roomLight, tvScreen;
-        let audioCtx;
-        
-        let gameState = 0; 
-        let interactableObjects = [];
-        let currentTargetObject = null;
-        let isHiding = false;
+    <!-- HOME -->
+    <div class="home" id="homeScreen">
+      <div class="greeting" id="greetingText">Привет, Мария</div>
+      <h1>Чем я могу помочь?</h1>
 
-        let leftTouchId = null;
-        let rightTouchId = null;
-        let prevTouchX = 0, prevTouchY = 0;
+      <div class="home-input-wrap"></div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const startBtn = document.getElementById('start-btn');
-            const actionBtn = document.getElementById('action-btn');
-            const exitHideBtn = document.getElementById('exit-hide-btn');
+      <div class="examples" id="examplesGrid">
+        <div class="example-card" data-prompt="Объясни квантовые вычисления простыми словами">
+          <span class="ex-text">Объясни сложную тему простыми словами</span>
+          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg></div>
+        </div>
+        <div class="example-card" data-prompt="Напиши Python-скрипт, который сортирует список файлов по размеру">
+          <span class="ex-text">Напиши Python-скрипт</span>
+          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+        </div>
+        <div class="example-card" data-prompt="Помоги спланировать запуск нового продукта по неделям">
+          <span class="ex-text">Помоги спланировать проект</span>
+          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        </div>
+        <div class="example-card" data-prompt="Придумай идеи для подарка другу-программисту">
+          <span class="ex-text">Придумай идеи для подарка</span>
+          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg></div>
+        </div>
+      </div>
+    </div>
 
-            startBtn.addEventListener('touchend', (e) => { e.preventDefault(); startGame(); });
-            startBtn.addEventListener('click', (e) => { e.preventDefault(); startGame(); });
+    <!-- CHAT -->
+    <div class="chat-scroll chat-hidden" id="chatScroll">
+      <div class="chat-inner" id="chatInner"></div>
+    </div>
+    <button class="jump-btn" id="jumpBtn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0-6-6m6 6 6-6"/></svg>
+      Новый ответ
+    </button>
 
-            actionBtn.addEventListener('touchend', (e) => { e.preventDefault(); triggerAction(); });
-            actionBtn.addEventListener('click', (e) => { e.preventDefault(); triggerAction(); });
+    <!-- INPUT -->
+    <div class="input-region">
+      <div class="input-shell">
+        <div class="input-card" id="inputCard">
+          <div class="attach-row" id="attachRow" style="display:none;"></div>
+          <div class="input-row">
+            <textarea id="composer" rows="1" placeholder="Введите запрос для Gemini…"></textarea>
+          </div>
+          <div class="input-row" style="justify-content:space-between; margin-top:8px;">
+            <div class="input-tools">
+              <button class="icon-btn" id="attachBtn" aria-label="Добавить файл" title="Добавить файл">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button class="icon-btn mic-btn" id="micBtn" aria-label="Голосовой ввод" title="Голосовой ввод">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4"/></svg>
+              </button>
+            </div>
+            <button class="send-btn" id="sendBtn" aria-label="Отправить">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="hint-row">
+          <span>Gemini может допускать неточности. Проверяйте важную информацию.</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
-            exitHideBtn.addEventListener('touchend', (e) => { e.preventDefault(); exitHiding(); });
-            exitHideBtn.addEventListener('click', (e) => { e.preventDefault(); exitHiding(); });
-        });
+<!-- COMMAND PALETTE -->
+<div class="overlay" id="paletteOverlay">
+  <div class="palette">
+    <div class="palette-search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5e6368" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="paletteInput" placeholder="Введите команду или поиск…">
+      <span class="kbd">Esc</span>
+    </div>
+    <div class="palette-list" id="paletteList"></div>
+  </div>
+</div>
 
-        function startGame() {
-            const startScreen = document.getElementById('start-screen');
-            if (startScreen) startScreen.style.display = 'none';
+<!-- SETTINGS MODAL -->
+<div class="overlay center" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Настройки</h3>
+      <button class="icon-btn" id="closeSettings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="settings-tabs" id="settingsTabs">
+      <div class="settings-tab active" data-tab="general">Общие</div>
+      <div class="settings-tab" data-tab="data">Данные</div>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section" data-panel="general">
+        <div class="setting-row"><div class="setting-label">Язык интерфейса</div><div class="setting-desc">Русский</div></div>
+        <div class="setting-row">
+          <div><div class="setting-label">Тема</div></div>
+          <div class="seg" id="themeSeg">
+            <button class="active" data-v="light">Светлая</button>
+            <button data-v="dark">Тёмная</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section" data-panel="data" style="display:none;">
+        <div class="setting-row"><div class="setting-label">Очистить историю действий</div><div class="setting-desc">Удалить все сохраненные диалоги</div></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-            initAudio();
-            init3D();
-            setupControls();
-            startStorySequence();
-        }
+<!-- DELETE CONFIRM -->
+<div class="overlay center" id="deleteOverlay">
+  <div class="modal confirm-modal">
+    <h4>Удалить разговор?</h4>
+    <p>Это действие нельзя отменить.</p>
+    <div class="confirm-actions">
+      <button class="btn ghost" id="cancelDelete">Отмена</button>
+      <button class="btn danger" id="confirmDelete">Удалить</button>
+    </div>
+  </div>
+</div>
 
-        function initAudio() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-            } catch (e) {}
-        }
+<div class="toast-stack" id="toastStack"></div>
 
-        function playSound(type) {
-            if (!audioCtx) return;
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            let now = audioCtx.currentTime;
+<script>
+(function(){
+  "use strict";
+  const $ = (s, ctx) => (ctx||document).querySelector(s);
+  const $$ = (s, ctx) => Array.from((ctx||document).querySelectorAll(s));
 
-            if (type === 'switch') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(40, now + 0.05);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
-                osc.start(now);
-                osc.stop(now + 0.05);
-            } else if (type === 'static') {
-                let bufferSize = audioCtx.sampleRate * 2;
-                let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                let output = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-                let whiteNoise = audioCtx.createBufferSource();
-                whiteNoise.buffer = buffer;
-                whiteNoise.loop = true;
-                whiteNoise.connect(gain);
-                gain.gain.setValueAtTime(0.05, now);
-                whiteNoise.start(now);
-                setTimeout(() => whiteNoise.stop(), 3000);
-            } else if (type === 'scary') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(80, now);
-                osc.frequency.linearRampToValueAtTime(300, now + 4);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0.4, now + 4);
-                osc.start(now);
-                osc.stop(now + 4);
-            }
-        }
+  function toast(msg){
+    const stack = $("#toastStack");
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.innerHTML = `<span>${msg}</span>`;
+    stack.appendChild(el);
+    setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(), 200); }, 2500);
+  }
 
-        function init3D() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x151518);
-            scene.fog = new THREE.FogExp2(0x151518, 0.04);
+  (function greet(){
+    const h = new Date().getHours();
+    const g = h < 5 ? "Доброй ночи, Мария" : h < 12 ? "Доброе утро, Мария" : h < 18 ? "Добрый день, Мария" : "Добрый вечер, Мария";
+    $("#greetingText").textContent = g;
+  })();
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.6, 2);
+  const sidebar = $("#sidebar"), backdrop = $("#sidebarBackdrop");
+  function openSidebar(){ sidebar.classList.add("open"); backdrop.classList.add("show"); }
+  function closeSidebar(){ sidebar.classList.remove("open"); backdrop.classList.remove("show"); }
+  $("#menuBtn").addEventListener("click", openSidebar);
+  backdrop.addEventListener("click", closeSidebar);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+  $$(".history-item").forEach(it=>{
+    it.addEventListener("click", (e)=>{
+      if(e.target.closest(".more-btn")) return;
+      $$(".history-item").forEach(x=>x.classList.remove("active"));
+      it.classList.add("active");
+      closeSidebar();
+    });
+  });
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-            scene.add(ambientLight);
+  let pendingDeleteItem = null;
+  $$(".more-btn").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      pendingDeleteItem = btn.closest(".history-item");
+      openOverlay("#deleteOverlay");
+    });
+  });
+  $("#cancelDelete").addEventListener("click", ()=>closeOverlay("#deleteOverlay"));
+  $("#confirmDelete").addEventListener("click", ()=>{
+    if(pendingDeleteItem){ pendingDeleteItem.remove(); toast("Разговор удалён"); }
+    closeOverlay("#deleteOverlay");
+  });
 
-            roomLight = new THREE.PointLight(0xfff5e6, 1.0, 12);
-            roomLight.position.set(0, 3.5, 0);
-            scene.add(roomLight);
+  $("#historySearchInput").addEventListener("input", (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    $$(".history-item").forEach(it=>{
+      const t = it.dataset.title.toLowerCase();
+      it.style.display = t.includes(q) ? "" : "none";
+    });
+  });
 
-            const textureLoader = new THREE.TextureLoader();
-            
-            // Текстура пола (ламинат) из image_8.png
-            const floorTexture = textureLoader.load('image_8.png');
-            floorTexture.wrapS = THREE.RepeatWrapping;
-            floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(3, 3);
-            const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.5 });
+  $("#newChatBtn").addEventListener("click", ()=>{
+    resetToHome();
+    closeSidebar();
+  });
 
-            // Стены: сплошной серый цвет
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x888890, roughness: 0.8 });
+  const modelSelector = $("#modelSelector");
+  modelSelector.addEventListener("click", (e)=>{
+    if(e.target.closest(".model-option")) return;
+    modelSelector.classList.toggle("open");
+  });
+  $$(".model-option").forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+      $$(".model-option").forEach(o=>o.classList.remove("selected"));
+      opt.classList.add("selected");
+      $("#modelName").textContent = opt.dataset.name;
+      modelSelector.classList.remove("open");
+    });
+  });
+  document.addEventListener("click", (e)=>{
+    if(!e.target.closest("#modelSelector")) modelSelector.classList.remove("open");
+  });
 
-            // Белый потолок
-            const ceilingMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.9 });
+  function openOverlay(sel){ $(sel).classList.add("show"); }
+  function closeOverlay(sel){ $(sel).classList.remove("show"); }
+  $$(".overlay").forEach(ov=>{
+    ov.addEventListener("click", (e)=>{ if(e.target === ov) closeOverlay("#"+ov.id); });
+  });
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape"){ $$(".overlay.show").forEach(ov=>closeOverlay("#"+ov.id)); }
+  });
 
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            scene.add(floor);
+  $("#settingsBtn").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
+  $("#closeSettings").addEventListener("click", ()=>closeOverlay("#settingsOverlay"));
 
-            const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), ceilingMat);
-            ceiling.position.set(0, 5, 0);
-            ceiling.rotation.x = Math.PI / 2;
-            scene.add(ceiling);
+  $$(".settings-tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+      $$(".settings-tab").forEach(t=>t.classList.remove("active"));
+      tab.classList.add("active");
+      $$(".settings-section").forEach(s=>s.style.display = (s.dataset.panel === tab.dataset.tab) ? "" : "none");
+    });
+  });
 
-            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 5), wallMat);
-            backWall.position.set(0, 2.5, -4);
-            scene.add(backWall);
+  const commands = [
+    {label:"Новый чат", icon:"＋", action:()=>{ resetToHome(); }},
+    {label:"Настройки", icon:"⚙", action:()=>openOverlay("#settingsOverlay")},
+    {label:"Сменить модель", icon:"◈", action:()=>modelSelector.classList.toggle("open")},
+  ];
+  function renderPalette(query){
+    const list = $("#paletteList");
+    const q = (query||"").toLowerCase();
+    const filtered = commands.filter(c=>c.label.toLowerCase().includes(q));
+    list.innerHTML = filtered.map((c,i)=>`
+      <div class="palette-item ${i===0?'hi':''}" data-idx="${i}">
+        <span class="p-ico">${c.icon}</span><span>${c.label}</span>
+      </div>`).join("") || `<div style="padding:20px;text-align:center;color:var(--ink-3);font-size:14px;">Ничего не найдено</div>`;
+    list.querySelectorAll(".palette-item").forEach(it=>{
+      it.addEventListener("click", ()=>{
+        filtered[+it.dataset.idx].action();
+        closeOverlay("#paletteOverlay");
+      });
+    });
+  }
+  function openPalette(){
+    openOverlay("#paletteOverlay");
+    $("#paletteInput").value = "";
+    renderPalette("");
+    setTimeout(()=>$("#paletteInput").focus(), 50);
+  }
+  $("#paletteInput").addEventListener("input", (e)=>renderPalette(e.target.value));
+  document.addEventListener("keydown", (e)=>{
+    if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){
+      e.preventDefault(); openPalette();
+    }
+  });
 
-            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(8, 5), wallMat);
-            leftWall.position.set(-4, 2.5, 0);
-            leftWall.rotation.y = Math.PI / 2;
-            scene.add(leftWall);
+  const attachRow = $("#attachRow");
+  let attachments = [];
+  $("#attachBtn").addEventListener("click", ()=>{
+    const id = Math.random().toString(36).slice(2,7);
+    attachments.push(id);
+    renderAttachments();
+    toast("Файл добавлен");
+  });
+  function renderAttachments(){
+    if(attachments.length === 0){ attachRow.style.display = "none"; attachRow.innerHTML=""; return; }
+    attachRow.style.display = "flex";
+    attachRow.innerHTML = attachments.map(id=>`
+      <div class="attach-chip" data-id="${id}">
+        <div class="file-ico">PDF</div>
+        <div><span>document-${id}.pdf</span></div>
+        <span class="rm">✕</span>
+      </div>`).join("");
+    attachRow.querySelectorAll(".rm").forEach(rm=>{
+      rm.addEventListener("click", ()=>{
+        const id = rm.closest(".attach-chip").dataset.id;
+        attachments = attachments.filter(a=>a!==id);
+        renderAttachments();
+      });
+    });
+  }
 
-            // --- ТЕЛЕВИЗОР И ТУМБА ---
-            const tvStandMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.3 });
-            const tvStand = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 0.6), tvStandMat);
-            tvStand.position.set(1.2, 0.25, -3.6);
-            scene.add(tvStand);
+  const micBtn = $("#micBtn");
+  let recording = false;
+  micBtn.addEventListener("click", ()=>{
+    recording = !recording;
+    micBtn.classList.toggle("recording", recording);
+    if(recording) toast("Идёт запись…"); else toast("Голос распознан");
+  });
 
-            const tvGroup = new THREE.Group();
-            const tvBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.05), new THREE.MeshStandardMaterial({ color: 0x111111 }));
-            tvBody.position.set(0, 0.4, 0);
-            tvGroup.add(tvBody);
+  const composer = $("#composer");
+  const inputCard = $("#inputCard");
+  const sendBtn = $("#sendBtn");
+  composer.addEventListener("input", ()=>{
+    composer.style.height = "auto";
+    composer.style.height = Math.min(composer.scrollHeight, 180) + "px";
+    sendBtn.classList.toggle("ready", composer.value.trim().length > 0);
+  });
+  composer.addEventListener("focus", ()=>inputCard.classList.add("focused"));
+  composer.addEventListener("blur", ()=>inputCard.classList.remove("focused"));
+  composer.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      trySend();
+    }
+  });
+  sendBtn.addEventListener("click", ()=>trySend());
 
-            const tvScreenMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
-            tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.34, 0.74, 0.01), tvScreenMat);
-            tvScreen.position.set(0, 0.4, 0.03);
-            tvGroup.add(tvScreen);
+  $$(".example-card").forEach(card=>{
+    card.addEventListener("click", ()=>{
+      composer.value = card.dataset.prompt;
+      composer.dispatchEvent(new Event("input"));
+      trySend();
+    });
+  });
 
-            const legMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-            const legLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.2), legMat);
-            legLeft.position.set(-0.5, -0.05, 0);
-            legLeft.rotation.x = 0.3;
-            tvGroup.add(legLeft);
-            const legRight = legLeft.clone();
-            legRight.position.x = 0.5;
-            tvGroup.add(legRight);
+  const homeScreen = $("#homeScreen");
+  const chatScroll = $("#chatScroll");
+  const chatInner = $("#chatInner");
+  const ambient = $("#ambient");
+  let started = false;
 
-            tvGroup.position.set(1.2, 0.5, -3.6);
-            scene.add(tvGroup);
-            registerInteractable(tvScreen, "Телевизор", () => {});
+  function resetToHome(){
+    started = false;
+    chatInner.innerHTML = "";
+    chatScroll.classList.add("chat-hidden");
+    homeScreen.classList.remove("leaving");
+    homeScreen.style.display = "flex";
+    composer.value = "";
+    composer.dispatchEvent(new Event("input"));
+  }
 
-            // --- ШКАФ ---
-            const closetGroup = new THREE.Group();
-            const woodMat = new THREE.MeshStandardMaterial({ color: 0xc8b195, roughness: 0.6 });
-            
-            const closetBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.6, 0.8), woodMat);
-            closetBody.position.set(0, 1.3, 0);
-            closetGroup.add(closetBody);
+  function trySend(){
+    const text = composer.value.trim();
+    if(!text) return;
+    if(!started){
+      started = true;
+      homeScreen.classList.add("leaving");
+      setTimeout(()=>{ homeScreen.style.display = "none"; }, 300);
+      chatScroll.classList.remove("chat-hidden");
+    }
+    addUserMessage(text, attachments.slice());
+    attachments = []; renderAttachments();
+    composer.value = "";
+    composer.style.height = "auto";
+    sendBtn.classList.remove("ready");
+    scrollToBottom(true);
+    runAssistantTurn(text);
+  }
 
-            const handleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8 });
-            const handle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.3), handleMat);
-            handle1.position.set(-0.1, 1.4, 0.41);
-            closetGroup.add(handle1);
-            const handle2 = handle1.clone();
-            handle2.position.x = 0.1;
-            closetGroup.add(handle2);
+  function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-            closetGroup.position.set(-1.5, 0, -3.6);
-            scene.add(closetGroup);
-            
-            registerInteractable(closetBody, "Шкаф (Спрятаться)", () => {
-                if (gameState === 4 && !isHiding) {
-                    isHiding = true;
-                    camera.position.set(-1.5, 1.6, -3.2);
-                    document.getElementById('story-text').innerText = "Вы в шкафу. Тихо...";
-                    document.getElementById('exit-hide-btn').style.display = 'block';
-                    
-                    setTimeout(() => {
-                        gameState = 5;
-                        document.getElementById('story-text').innerText = "Найдите электрический счетчик на стене!";
-                    }, 4000);
-                }
-            });
+  function addUserMessage(text, files){
+    const wrap = document.createElement("div");
+    wrap.className = "msg user";
+    let filesHtml = "";
+    if(files && files.length){
+      filesHtml = `<div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">` +
+        files.map(()=>`<span style="font-size:12px;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:4px;">📎 файл</span>`).join("") +
+        `</div>`;
+    }
+    wrap.innerHTML = `<div class="bubble">${filesHtml}${escapeHtml(text)}</div>`;
+    chatInner.appendChild(wrap);
+  }
 
-            // Выключатель
-            const sw = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.2), new THREE.MeshBasicMaterial({ color: 0xdddddd }));
-            sw.position.set(-3.95, 1.4, -1);
-            scene.add(sw);
-            registerInteractable(sw, "Выключатель света", () => {
-                if (gameState < 3) {
-                    roomLight.visible = !roomLight.visible;
-                    playSound('switch');
-                }
-            });
-
-            // Электрический счетчик
-            const fuseBox = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0x666666 }));
-            fuseBox.position.set(-3.95, 1.5, 1.5);
-            scene.add(fuseBox);
-            registerInteractable(fuseBox, "Электрический счетчик", () => {
-                if (gameState === 5) {
-                    roomLight.visible = true;
-                    roomLight.intensity = 1.0;
-                    playSound('switch');
-                    gameState = 6;
-                    document.getElementById('story-text').innerText = "Свет включен! Вы победили.";
-                    document.getElementById('action-btn').style.display = 'none';
-                    document.getElementById('exit-hide-btn').style.display = 'none';
-                }
-            });
-
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        function exitHiding() {
-            if (isHiding) {
-                isHiding = false;
-                camera.position.set(0, 1.6, 2);
-                document.getElementById('story-text').innerText = "Вы вышли из шкафа.";
-                document.getElementById('exit-hide-btn').style.display = 'none';
-            }
-        }
-
-        function registerInteractable(mesh, name, action) {
-            interactableObjects.push({ mesh, name, action });
-        }
-
-        function setupControls() {
-            window.addEventListener('touchstart', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    let touch = e.changedTouches[i];
-                    if (touch.clientX < window.innerWidth / 2) {
-                        if (leftTouchId === null) {
-                            leftTouchId = touch.identifier;
-                            moveForward = true;
-                        }
-                    } else {
-                        if (rightTouchId === null) {
-                            rightTouchId = touch.identifier;
-                            prevTouchX = touch.clientX;
-                            prevTouchY = touch.clientY;
-                        }
-                    }
-                }
-            });
-
-            window.addEventListener('touchmove', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    let touch = e.changedTouches[i];
-                    if (touch.identifier === rightTouchId) {
-                        let deltaX = touch.clientX - prevTouchX;
-                        let deltaY = touch.clientY - prevTouchY;
-                        yaw -= deltaX * 0.005;
-                        pitch -= deltaY * 0.005;
-                        pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch));
-                        prevTouchX = touch.clientX;
-                        prevTouchY = touch.clientY;
-                    }
-                }
-            });
-
-            window.addEventListener('touchend', (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    let touch = e.changedTouches[i];
-                    if (touch.identifier === leftTouchId) {
-                        leftTouchId = null;
-                        moveForward = false;
-                    }
-                    if (touch.identifier === rightTouchId) {
-                        rightTouchId = null;
-                    }
-                }
-            });
-
-            window.addEventListener('touchcancel', (e) => {
-                leftTouchId = null;
-                rightTouchId = null;
-                moveForward = false;
-            });
-        }
-
-        function startStorySequence() {
-            setTimeout(() => {
-                gameState = 1;
-                document.getElementById('story-text').innerText = "...";
-                let flickers = 0;
-                let interval = setInterval(() => {
-                    roomLight.visible = !roomLight.visible;
-                    playSound('switch');
-                    flickers++;
-                    if (flickers > 6) {
-                        roomLight.visible = true;
-                        clearInterval(interval);
-                        
-                        setTimeout(() => {
-                            document.getElementById('story-text').innerText = "Вам показалось, что кто-то позади...";
-                            
-                            setTimeout(() => {
-                                gameState = 2;
-                                tvScreen.material.color.setHex(0x336699);
-                                playSound('static');
-                                document.getElementById('story-text').innerText = "Телевизор включился сам...";
-                                
-                                setTimeout(() => {
-                                    gameState = 3;
-                                    playSound('scary');
-                                    roomLight.visible = false;
-                                    document.getElementById('story-text').innerText = "Свет погас! Срочно спрячьтесь в шкаф!";
-                                    gameState = 4;
-                                }, 5000);
-                            }, 4000);
-                        }, 3000);
-                    }
-                }, 400);
-            }, 5000);
-        }
-
-        function checkRaycast() {
-            if (isHiding) return;
-            
-            let raycaster = new THREE.Raycaster();
-            let dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            raycaster.set(camera.position, dir);
-
-            let meshes = interactableObjects.map(o => o.mesh);
-            let intersects = raycaster.intersectObjects(meshes);
-
-            let actionBtn = document.getElementById('action-btn');
-            if (intersects.length > 0 && intersects[0].distance < 3.5) {
-                let obj = interactableObjects.find(o => o.mesh === intersects[0].object);
-                if (obj) {
-                    currentTargetObject = obj;
-                    actionBtn.style.display = 'block';
-                    actionBtn.innerText = obj.name;
-                    return;
-                }
-            }
-            currentTargetObject = null;
-            if(gameState !== 6) actionBtn.style.display = 'none';
-        }
-
-        function triggerAction() {
-            if (currentTargetObject) {
-                currentTargetObject.action();
-            }
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (moveForward && !isHiding) {
-                let dir = new THREE.Vector3();
-                camera.getWorldDirection(dir);
-                dir.y = 0;
-                dir.normalize();
-                camera.position.addScaledVector(dir, 0.03);
-                camera.position.x = Math.max(-3.5, Math.min(3.5, camera.position.x));
-                camera.position.z = Math.max(-3.5, Math.min(3.5, camera.position.z));
-            }
-
-            let euler = new THREE.Euler(0, 0, 0, 'YXZ');
-            euler.x = pitch;
-            euler.y = yaw;
-            camera.quaternion.setFromEuler(euler);
-
-            checkRaycast();
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-    </script>
-</body>
-</html>
+  function renderMarkdown(md){
+    const codeBlocks = [];
+    md = md.replace(/```(\w+)?\n([\s\S]*?)
