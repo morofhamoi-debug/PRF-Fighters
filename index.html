@@ -474,6 +474,29 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   .examples{ grid-template-columns: 1fr 1fr; }
   .greeting, .home h1{ font-size:28px; }
 }
+
+/* ============================================================
+   iOS 26 MODERN GLASSMORPHIC DROPDOWN STYLES
+============================================================ */
+.model-dropdown{
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.5) !important;
+}
+.model-option{
+  background: transparent !important;
+  border-radius: 12px !important;
+  margin: 4px 0 !important;
+  transition: background 0.2s ease, transform 0.2s ease !important;
+}
+.model-option:hover{
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+.model-option.selected{
+  background: rgba(26, 115, 232, 0.1) !important;
+}
 </style>
 </head>
 <body data-motion="normal">
@@ -541,16 +564,16 @@ textarea#composer::placeholder{ color: var(--ink-3); }
         </button>
         <div class="model-selector" id="modelSelector">
           <span class="model-dot"></span>
-          <span id="modelName">MOROF 1.5 Pro</span>
+          <span id="modelName">MOROF Ultra</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
           <div class="model-dropdown">
-            <div class="model-option selected" data-name="MOROF 1.5 Pro">
+            <div class="model-option selected" data-name="MOROF Ultra">
               <div class="mo-icon"></div>
-              <div><div class="mo-title">MOROF 1.5 Pro</div><div class="mo-desc">Для сложных задач и анализа кода</div></div>
+              <div><div class="mo-title">MOROF Ultra</div><div class="mo-desc">Максимальная мощность и глубокий анализ</div></div>
             </div>
-            <div class="model-option" data-name="MOROF 1.5 Flash">
+            <div class="model-option" data-name="MOROF Core">
               <div class="mo-icon" style="background:#34a853"></div>
-              <div><div class="mo-title">MOROF 1.5 Flash</div><div class="mo-desc">Быстрые ответы на каждый день</div></div>
+              <div><div class="mo-title">MOROF Core</div><div class="mo-desc">Оптимизирован для повседневных задач</div></div>
             </div>
           </div>
         </div>
@@ -1087,23 +1110,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       </div>
     `;
     chatInner.appendChild(wrap);
-    scrollToBottom(true);
-
-    setTimeout(()=>{
-      const contentEl = wrap.querySelector(".assistant-content");
-      wrap.querySelector(".core-wrap").classList.remove("thinking");
-      
-      let reply = `Привет! Я MOROF, твоя нейросеть. Получил твой запрос: "${promptText}". Все системы работают отлично, настройки применены, а живой переливающийся фон активен. Чем еще могу помочь?`;
-      
-      contentEl.innerHTML = renderMarkdown(reply);
-      scrollToBottom(true);
-
-      const currentSession = chatHistoryData.find(s => s.id === currentChatId);
-      if(currentSession){
-        currentSession.messages.push({role: 'assistant', text: reply});
-        saveHistoryToStorage();
-      }
-    }, 1000);
   }
 
   const chatScrollEl = $("#chatScroll");
@@ -1111,7 +1117,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   chatScrollEl.addEventListener("scroll", ()=>{
     const dist = chatScrollEl.scrollHeight - chatScrollEl.scrollTop - chatScrollEl.clientHeight;
     if(dist > 250) jumpBtn.classList.add("show");
-    else jumpBtn.classList.remove("show");
+    else jumpBtn.classList.add("hidden");
   });
   jumpBtn.addEventListener("click", ()=>scrollToBottom(true));
 
