@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Gemini — Google AI</title>
+<title>MOROF — AI</title>
 <style>
 /* ============================================================
-   DESIGN TOKENS — GOOGLE GEMINI SYSTEM
+   DESIGN TOKENS — MOROF SYSTEM
 ============================================================ */
 :root{
   --page-bg: #ffffff;
@@ -85,7 +85,7 @@ button{ font-family:inherit; }
 ::-webkit-scrollbar-thumb:hover{ background: rgba(0,0,0,0.25); }
 
 /* ============================================================
-   GEMINI LIVING BACKGROUND (Subtle clean gradient mesh)
+   MOROF LIVING BACKGROUND (Shifting iridescent gradient mesh)
 ============================================================ */
 .ambient{
   position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
@@ -93,21 +93,28 @@ button{ font-family:inherit; }
 }
 .lightsrc{
   position:absolute; border-radius:50%; will-change: transform, filter;
-  filter: blur(100px);
-  opacity: 0.15;
+  filter: blur(120px);
+  opacity: 0.35;
+  animation: morofFloat 12s infinite alternate ease-in-out;
 }
-.lightsrc.l1{ width:50vw; height:50vw; top:-10%; left:-10%; background: #4285f4; }
-.lightsrc.l2{ width:45vw; height:45vw; bottom:-10%; right:-10%; background: #9b72cb; }
-.lightsrc.l3{ width:40vw; height:40vw; top:30%; left:30%; background: #34a853; opacity: 0.08; }
+.lightsrc.l1{ width:60vw; height:60vw; top:-15%; left:-15%; background: #4285f4; animation-delay: 0s; }
+.lightsrc.l2{ width:55vw; height:55vw; bottom:-15%; right:-15%; background: #9b72cb; animation-delay: -4s; }
+.lightsrc.l3{ width:50vw; height:50vw; top:25%; left:25%; background: #d96570; opacity: 0.25; animation-delay: -8s; }
+
+@keyframes morofFloat {
+  0% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.1); }
+  100% { transform: translate(-30px, 40px) scale(0.95); }
+}
 
 .grain, .vignette, .raysheet{ display:none; }
 
 /* ============================================================
    APP SHELL
 ============================================================ */
-.app{ position:relative; z-index:1; display:flex; height:100vh; background: var(--page-bg); }
+.app{ position:relative; z-index:1; display:flex; height:100vh; background: transparent; }
 
-/* ---------- SIDEBAR (Gemini Navigation Drawer) ---------- */
+/* ---------- SIDEBAR (MOROF Navigation Drawer) ---------- */
 .sidebar{
   width: var(--sidebar-w); flex-shrink:0; height:100%;
   padding: 12px;
@@ -125,7 +132,7 @@ button{ font-family:inherit; }
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
 }
-.brand-name{ font-weight:500; font-size:18px; letter-spacing:-0.02em; color: var(--ink-1); }
+.brand-name{ font-weight:600; font-size:18px; letter-spacing:-0.02em; background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
 .btn-newchat{
   display:flex; align-items:center; gap:12px; width:auto;
@@ -182,7 +189,7 @@ button{ font-family:inherit; }
 .profile-plan{ font-size:11px; color: var(--ink-3); }
 
 /* ---------- MAIN ---------- */
-.main{ flex:1; display:flex; flex-direction:column; min-width:0; position:relative; background: #fff; }
+.main{ flex:1; display:flex; flex-direction:column; min-width:0; position:relative; background: transparent; }
 
 .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 12px 24px; flex-shrink:0; }
 .topbar-left{ display:flex; align-items:center; gap:12px; }
@@ -238,11 +245,12 @@ button{ font-family:inherit; }
 .example-card{
   display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; text-align:left;
   padding:16px; border-radius: var(--radius-lg); cursor:pointer;
-  background: #f0f4f9; border: 1px solid transparent;
+  background: rgba(240,244,249,0.8); border: 1px solid rgba(255,255,255,0.6);
   min-height: 140px;
+  backdrop-filter: blur(8px);
   transition: background var(--dur-fast), box-shadow var(--dur-fast);
 }
-.example-card:hover{ background: #e2e8f0; }
+.example-card:hover{ background: rgba(226,232,240,0.9); }
 .example-card .ex-icon{
   width:36px; height:36px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
   background: #ffffff; color: var(--ink-2);
@@ -273,7 +281,8 @@ button{ font-family:inherit; }
 .msg{ display:flex; gap:16px; }
 .msg.user{ justify-content:flex-end; }
 .msg.user .bubble{
-  background: #f0f4f9;
+  background: rgba(240,244,249,0.9);
+  backdrop-filter: blur(8px);
   border-radius: var(--radius-xl);
   padding:12px 20px; max-width: 80%;
   font-size:15px; color: var(--ink-1);
@@ -338,18 +347,19 @@ button{ font-family:inherit; }
 }
 .jump-btn.show{ opacity:1; pointer-events:auto; }
 
-/* ---------- INPUT (Gemini Floating Prompt Box) ---------- */
-.input-region{ padding: 12px 24px 24px; display:flex; justify-content:center; flex-shrink:0; background: #fff; }
+/* ---------- INPUT (MOROF Floating Prompt Box) ---------- */
+.input-region{ padding: 12px 24px 24px; display:flex; justify-content:center; flex-shrink:0; background: transparent; }
 .input-shell{ width:100%; max-width: var(--content-max); position:relative; }
 .input-card{
   position:relative;
-  background: #f0f4f9;
+  background: rgba(240,244,249,0.85);
+  backdrop-filter: blur(12px);
   border-radius: var(--radius-xl);
-  border: 1px solid transparent;
+  border: 1px solid rgba(255,255,255,0.6);
   padding: 12px 16px;
   transition: background var(--dur-fast), box-shadow var(--dur-fast);
 }
-.input-card.focused{ background: #f0f4f9; box-shadow: 0 1px 6px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.1); }
+.input-card.focused{ background: rgba(240,244,249,0.95); box-shadow: 0 1px 6px rgba(0,0,0,0.1); border-color: rgba(26,115,232,0.3); }
 
 .attach-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
 .attach-chip{
@@ -481,7 +491,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark"></div>
-      <div class="brand-name">Gemini</div>
+      <div class="brand-name">MOROF</div>
     </div>
 
     <button class="btn-newchat" id="newChatBtn">
@@ -531,16 +541,16 @@ textarea#composer::placeholder{ color: var(--ink-3); }
         </button>
         <div class="model-selector" id="modelSelector">
           <span class="model-dot"></span>
-          <span id="modelName">Gemini 1.5 Pro</span>
+          <span id="modelName">MOROF 1.5 Pro</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
           <div class="model-dropdown">
-            <div class="model-option selected" data-name="Gemini 1.5 Pro">
+            <div class="model-option selected" data-name="MOROF 1.5 Pro">
               <div class="mo-icon"></div>
-              <div><div class="mo-title">Gemini 1.5 Pro</div><div class="mo-desc">Для сложных задач и анализа кода</div></div>
+              <div><div class="mo-title">MOROF 1.5 Pro</div><div class="mo-desc">Для сложных задач и анализа кода</div></div>
             </div>
-            <div class="model-option" data-name="Gemini 1.5 Flash">
+            <div class="model-option" data-name="MOROF 1.5 Flash">
               <div class="mo-icon" style="background:#34a853"></div>
-              <div><div class="mo-title">Gemini 1.5 Flash</div><div class="mo-desc">Быстрые ответы на каждый день</div></div>
+              <div><div class="mo-title">MOROF 1.5 Flash</div><div class="mo-desc">Быстрые ответы на каждый день</div></div>
             </div>
           </div>
         </div>
@@ -594,7 +604,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
         <div class="input-card" id="inputCard">
           <div class="attach-row" id="attachRow" style="display:none;"></div>
           <div class="input-row">
-            <textarea id="composer" rows="1" placeholder="Введите запрос для Gemini…"></textarea>
+            <textarea id="composer" rows="1" placeholder="Введите запрос для MOROF…"></textarea>
           </div>
           <div class="input-row" style="justify-content:space-between; margin-top:8px;">
             <div class="input-tools">
@@ -611,7 +621,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
           </div>
         </div>
         <div class="hint-row">
-          <span>Gemini может допускать неточности. Проверяйте важную информацию.</span>
+          <span>MOROF может допускать неточности. Проверяйте важную информацию.</span>
         </div>
       </div>
     </div>
@@ -642,6 +652,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     <div class="settings-tabs" id="settingsTabs">
       <div class="settings-tab active" data-tab="general">Общие</div>
       <div class="settings-tab" data-tab="data">Данные</div>
+      <div class="settings-tab" data-tab="advanced">Расширенные</div>
     </div>
     <div class="modal-body">
       <div class="settings-section" data-panel="general">
@@ -653,9 +664,39 @@ textarea#composer::placeholder{ color: var(--ink-3); }
             <button data-v="dark">Тёмная</button>
           </div>
         </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Звуковые эффекты</div>
+            <div class="setting-desc">Звук при отправке сообщений</div>
+          </div>
+          <div class="gswitch on" id="soundSwitch"></div>
+        </div>
       </div>
       <div class="settings-section" data-panel="data" style="display:none;">
-        <div class="setting-row"><div class="setting-label">Очистить историю действий</div><div class="setting-desc">Удалить все сохраненные диалоги</div></div>
+        <div class="setting-row"><div class="setting-label">Очистить историю действий</div><div class="setting-desc"><button class="btn ghost" id="clearAllHistoryBtn" style="padding:4px 10px; font-size:12px;">Удалить все</button></div></div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Автосохранение истории</div>
+            <div class="setting-desc">Сохранять чаты локально</div>
+          </div>
+          <div class="gswitch on" id="historySwitch"></div>
+        </div>
+      </div>
+      <div class="settings-section" data-panel="advanced" style="display:none;">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Температура генерации</div>
+            <div class="setting-desc">Креативность ответов (0.7)</div>
+          </div>
+          <input type="range" min="0" max="1" step="0.1" value="0.7" id="tempRange">
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Потоковый вывод</div>
+            <div class="setting-desc">Анимация набора текста</div>
+          </div>
+          <div class="gswitch on" id="streamSwitch"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -702,38 +743,99 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   $("#menuBtn").addEventListener("click", openSidebar);
   backdrop.addEventListener("click", closeSidebar);
 
-  $$(".history-item").forEach(it=>{
-    it.addEventListener("click", (e)=>{
-      if(e.target.closest(".more-btn")) return;
-      $$(".history-item").forEach(x=>x.classList.remove("active"));
-      it.classList.add("active");
-      closeSidebar();
+  // Chat History Management & LocalStorage
+  let chatHistoryData = JSON.parse(localStorage.getItem("morof_history") || "null") || [
+    {id: "1", title: "Объясни React хуки", messages: []},
+    {id: "2", title: "Напиши письмо клиенту", messages: []},
+    {id: "3", title: "Отладка Python-скрипта", messages: []}
+  ];
+
+  function saveHistoryToStorage(){
+    localStorage.setItem("morof_history", JSON.stringify(chatHistoryData));
+  }
+
+  function renderHistoryList(filter=""){
+    const listEl = $("#historyList");
+    const q = filter.toLowerCase();
+    const filtered = chatHistoryData.filter(item => item.title.toLowerCase().includes(q));
+    
+    listEl.innerHTML = `<div class="history-group-label">Недавние</div>` + 
+      filtered.map(item => `
+        <div class="history-item ${item.id === currentChatId ? 'active' : ''}" data-id="${item.id}" data-title="${escapeHtml(item.title)}">
+          <span class="title">${escapeHtml(item.title)}</span>
+          <button class="more-btn">⋯</button>
+        </div>
+      `).join("");
+
+    listEl.querySelectorAll(".history-item").forEach(it=>{
+      it.addEventListener("click", (e)=>{
+        if(e.target.closest(".more-btn")) return;
+        const id = it.dataset.id;
+        loadChatSession(id);
+        closeSidebar();
+      });
     });
-  });
+
+    listEl.querySelectorAll(".more-btn").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        pendingDeleteItem = btn.closest(".history-item").dataset.id;
+        openOverlay("#deleteOverlay");
+      });
+    });
+  }
+
+  let currentChatId = "1";
+  function loadChatSession(id){
+    currentChatId = id;
+    $$(".history-item").forEach(x=>{
+      if(x.dataset.id === id) x.classList.add("active");
+      else x.classList.remove("active");
+    });
+    const session = chatHistoryData.find(s => s.id === id);
+    if(session && session.messages && session.messages.length > 0){
+      started = true;
+      homeScreen.classList.add("leaving");
+      setTimeout(()=>{ homeScreen.style.display = "none"; }, 300);
+      chatScroll.classList.remove("chat-hidden");
+      chatInner.innerHTML = "";
+      session.messages.forEach(m => {
+        if(m.role === 'user') addUserMessage(m.text, m.files);
+        else addAssistantMessageDirect(m.text);
+      });
+    } else {
+      resetToHome();
+    }
+  }
+
+  renderHistoryList();
 
   let pendingDeleteItem = null;
-  $$(".more-btn").forEach(btn=>{
-    btn.addEventListener("click", (e)=>{
-      e.stopPropagation();
-      pendingDeleteItem = btn.closest(".history-item");
-      openOverlay("#deleteOverlay");
-    });
-  });
   $("#cancelDelete").addEventListener("click", ()=>closeOverlay("#deleteOverlay"));
   $("#confirmDelete").addEventListener("click", ()=>{
-    if(pendingDeleteItem){ pendingDeleteItem.remove(); toast("Разговор удалён"); }
+    if(pendingDeleteItem){
+      chatHistoryData = chatHistoryData.filter(s => s.id !== pendingDeleteItem);
+      saveHistoryToStorage();
+      renderHistoryList($("#historySearchInput").value);
+      toast("Разговор удалён");
+      if(currentChatId === pendingDeleteItem){
+        resetToHome();
+      }
+    }
     closeOverlay("#deleteOverlay");
   });
 
   $("#historySearchInput").addEventListener("input", (e)=>{
-    const q = e.target.value.trim().toLowerCase();
-    $$(".history-item").forEach(it=>{
-      const t = it.dataset.title.toLowerCase();
-      it.style.display = t.includes(q) ? "" : "none";
-    });
+    renderHistoryList(e.target.value);
   });
 
   $("#newChatBtn").addEventListener("click", ()=>{
+    const newId = Date.now().toString();
+    const newSession = {id: newId, title: "Новый чат", messages: []};
+    chatHistoryData.unshift(newSession);
+    saveHistoryToStorage();
+    currentChatId = newId;
+    renderHistoryList();
     resetToHome();
     closeSidebar();
   });
@@ -775,8 +877,25 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     });
   });
 
+  // Toggle switches functionality
+  $$(".gswitch").forEach(sw => {
+    sw.addEventListener("click", () => {
+      sw.classList.toggle("on");
+      toast("Настройка изменена");
+    });
+  });
+
+  $("#clearAllHistoryBtn").addEventListener("click", () => {
+    chatHistoryData = [];
+    saveHistoryToStorage();
+    renderHistoryList();
+    resetToHome();
+    toast("Вся история очищена");
+    closeOverlay("#settingsOverlay");
+  });
+
   const commands = [
-    {label:"Новый чат", icon:"＋", action:()=>{ resetToHome(); }},
+    {label:"Новый чат", icon:"＋", action:()=>{ $("#newChatBtn").click(); }},
     {label:"Настройки", icon:"⚙", action:()=>openOverlay("#settingsOverlay")},
     {label:"Сменить модель", icon:"◈", action:()=>modelSelector.classList.toggle("open")},
   ];
@@ -894,6 +1013,19 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       chatScroll.classList.remove("chat-hidden");
     }
     addUserMessage(text, attachments.slice());
+    
+    let currentSession = chatHistoryData.find(s => s.id === currentChatId);
+    if(!currentSession){
+      currentSession = {id: currentChatId, title: text.slice(0, 30), messages: []};
+      chatHistoryData.unshift(currentSession);
+    } else if(currentSession.title === "Новый чат" || currentSession.messages.length === 0){
+      currentSession.title = text.slice(0, 30);
+    }
+    currentSession.messages.push({role: 'user', text, files: attachments.slice()});
+    saveHistoryToStorage();
+    renderHistoryList($("#historySearchInput").value);
+
+    const savedFiles = attachments.slice();
     attachments = []; renderAttachments();
     composer.value = "";
     composer.style.height = "auto";
@@ -917,6 +1049,73 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     chatInner.appendChild(wrap);
   }
 
+  function addAssistantMessageDirect(text){
+    const wrap = document.createElement("div");
+    wrap.className = "msg assistant";
+    wrap.innerHTML = `
+      <div class="assistant-avatar">
+        <div class="core-wrap core-tiny"><div class="core-dot"></div></div>
+      </div>
+      <div class="assistant-body">
+        <div class="assistant-content">${renderMarkdown(text)}</div>
+      </div>
+    `;
+    chatInner.appendChild(wrap);
+  }
+
   function renderMarkdown(md){
-    const codeBlocks = [];
-    md = md.replace(/```(\w+)?\n([\s\S]*?)
+    md = escapeHtml(md);
+    md = md.replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
+    md = md.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    md = md.replace(/\n/g, '<br>');
+    return md;
+  }
+
+  function scrollToBottom(smooth){
+    chatScroll.scrollTo({top: chatScroll.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
+  }
+
+  function runAssistantTurn(promptText){
+    const wrap = document.createElement("div");
+    wrap.className = "msg assistant";
+    wrap.innerHTML = `
+      <div class="assistant-avatar">
+        <div class="core-wrap core-tiny thinking"><div class="core-dot"></div></div>
+      </div>
+      <div class="assistant-body">
+        <div class="assistant-content"><span class="thinking-text">MOROF думает...</span></div>
+      </div>
+    `;
+    chatInner.appendChild(wrap);
+    scrollToBottom(true);
+
+    setTimeout(()=>{
+      const contentEl = wrap.querySelector(".assistant-content");
+      wrap.querySelector(".core-wrap").classList.remove("thinking");
+      
+      let reply = `Привет! Я MOROF, твоя нейросеть. Получил твой запрос: "${promptText}". Все системы работают отлично, настройки применены, а живой переливающийся фон активен. Чем еще могу помочь?`;
+      
+      contentEl.innerHTML = renderMarkdown(reply);
+      scrollToBottom(true);
+
+      const currentSession = chatHistoryData.find(s => s.id === currentChatId);
+      if(currentSession){
+        currentSession.messages.push({role: 'assistant', text: reply});
+        saveHistoryToStorage();
+      }
+    }, 1000);
+  }
+
+  const chatScrollEl = $("#chatScroll");
+  const jumpBtn = $("#jumpBtn");
+  chatScrollEl.addEventListener("scroll", ()=>{
+    const dist = chatScrollEl.scrollHeight - chatScrollEl.scrollTop - chatScrollEl.clientHeight;
+    if(dist > 250) jumpBtn.classList.add("show");
+    else jumpBtn.classList.remove("show");
+  });
+  jumpBtn.addEventListener("click", ()=>scrollToBottom(true));
+
+})();
+</script>
+</body>
+</html>
