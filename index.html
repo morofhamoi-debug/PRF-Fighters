@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -277,7 +277,6 @@ button{ font-family:inherit; }
 }
 .brand-name{ font-weight:600; font-size:18px; letter-spacing:-0.02em; background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-/* Поисковик перемещен чуть выше */
 .search-box{
   display:flex; align-items:center; gap:8px; margin-bottom:12px;
   padding:8px 12px; border-radius: var(--radius-pill);
@@ -293,7 +292,6 @@ button{ font-family:inherit; }
   padding:2px 5px; border-radius:4px;
 }
 
-/* Кнопки настроек и три полоски теперь ниже поисковика */
 .sidebar-actions-row {
   display: flex;
   gap: 8px;
@@ -498,6 +496,31 @@ button{ font-family:inherit; }
 }
 [data-theme="dark"] .assistant-content code.inline{ background: rgba(255,255,255,0.1); }
 
+/* Message Actions Toolbar */
+.msg-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity var(--dur-fast);
+}
+.msg.assistant:hover .msg-actions { opacity: 1; }
+.msg-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.msg-action-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-1); }
+[data-theme="dark"] .msg-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--ink-1); }
+
 /* jump to latest */
 .jump-btn{
   position:absolute; bottom:90px; left:50%; transform: translateX(-50%);
@@ -550,7 +573,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 .mic-btn.recording{ background: #fce8e6; color: #c5221f; }
 [data-theme="dark"] .mic-btn.recording{ background: rgba(179,38,30,0.3); color: #f28b82; }
 
-.hint-row{ display:flex; justify-content:center; margin-top:8px; display: none; }
+.hint-row{ display:flex; justify-content:center; margin-top:8px; }
 .hint-row span{ font-size:12px; color: var(--ink-3); }
 .hint-row .kbd{ margin:0 2px; }
 
@@ -582,7 +605,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 .palette-item .p-ico{ color: var(--ink-3); }
 .palette-item .p-sub{ margin-left:auto; font-size:12px; color: var(--ink-4); }
 
-/* Модальное окно настроек */
 .settings-modal-panel{
   width: min(480px, 94vw);
   max-height: calc(100dvh - 32px);
@@ -684,7 +706,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 .gswitch.on{ background: #34c759; }
 .gswitch.on::after{ transform: translateX(18px); }
 
-/* Модальное окно аккаунта со всеми данными и кнопкой выхода */
 .account-modal-panel {
   width: min(400px, 90vw);
   background: var(--glass-fill-solid);
@@ -788,14 +809,12 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       <div class="brand-name">MOROF</div>
     </div>
 
-    <!-- Поисковик чатов теперь чуть выше -->
     <div class="search-box" id="sidebarSearch">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5e6368" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input type="text" placeholder="Поиск чатов" id="historySearchInput">
       <span class="kbd">⌘K</span>
     </div>
 
-    <!-- Кнопки настроек и три полоски теперь расположены ниже поисковика -->
     <div class="sidebar-actions-row">
       <button class="sidebar-action-btn" id="sidebarSettingsBtn" title="Настройки">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -807,7 +826,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       </button>
     </div>
 
-    <!-- Кнопка создания нового чата -->
     <button class="btn-newchat" id="newChatBtn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Новый чат
@@ -815,22 +833,9 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 
     <div class="history" id="historyList">
       <div class="history-group-label">Недавние</div>
-      <div class="history-item active" data-title="Объясни React хуки">
-        <span class="title">Объясни React хуки</span>
-        <button class="more-btn" title="Опции">⋯</button>
-      </div>
-      <div class="history-item" data-title="Напиши письмо клиенту">
-        <span class="title">Напиши письмо клиенту</span>
-        <button class="more-btn" title="Опции">⋯</button>
-      </div>
-      <div class="history-item" data-title="Отладка Python-скрипта">
-        <span class="title">Отладка Python-скрипта</span>
-        <button class="more-btn" title="Опции">⋯</button>
-      </div>
     </div>
 
     <div class="sidebar-footer">
-      <!-- Нажатие на профиль открывает всю информацию и возможность выйти -->
       <div class="profile-row" id="profileBtn">
         <div class="avatar">М</div>
         <div class="profile-meta">
@@ -875,8 +880,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     <div class="home" id="homeScreen">
       <div class="greeting" id="greetingText">Привет, Мария</div>
       <h1>Чем я могу помочь?</h1>
-
-      <div class="home-input-wrap"></div>
 
       <div class="examples" id="examplesGrid">
         <div class="example-card" data-prompt="Объясни квантовые вычисления простыми словами">
@@ -972,13 +975,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
             <button data-v="dark">Тёмная</button>
           </div>
         </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Язык интерфейса</div>
-            <div class="setting-desc">Системный по умолчанию</div>
-          </div>
-          <div style="font-size:13px; color:var(--ink-2); font-weight:500;">Русский</div>
-        </div>
       </div>
 
       <div class="settings-section-title">AI и Модели</div>
@@ -997,13 +993,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
           </div>
           <div class="gswitch on" id="streamSwitch"></div>
         </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Использовать Gemini API</div>
-            <div class="setting-desc">Интеграция с облачными моделями</div>
-          </div>
-          <div class="gswitch on" id="geminiSwitch"></div>
-        </div>
       </div>
 
       <div class="settings-section-title">Уведомления и Звук</div>
@@ -1015,24 +1004,10 @@ textarea#composer::placeholder{ color: var(--ink-3); }
           </div>
           <div class="gswitch on" id="soundSwitch"></div>
         </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Пуш-уведомления</div>
-            <div class="setting-desc">Уведомления о готовности ответов</div>
-          </div>
-          <div class="gswitch on" id="notifSwitch"></div>
-        </div>
       </div>
 
       <div class="settings-section-title">Данные и История</div>
       <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Автосохранение истории</div>
-            <div class="setting-desc">Сохранять чаты локально</div>
-          </div>
-          <div class="gswitch on" id="historySwitch"></div>
-        </div>
         <div class="setting-row">
           <div>
             <div class="setting-label">Очистить всю историю</div>
@@ -1041,29 +1016,11 @@ textarea#composer::placeholder{ color: var(--ink-3); }
           <button class="btn ghost" id="clearAllHistoryBtn" style="padding:6px 12px; font-size:12px;">Удалить все</button>
         </div>
       </div>
-
-      <div class="settings-section-title">Приватность и Аккаунт</div>
-      <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Безопасный режим</div>
-            <div class="setting-desc">Фильтрация чувствительного контента</div>
-          </div>
-          <div class="gswitch on" id="safeSwitch"></div>
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Аккаунт</div>
-            <div class="setting-desc">Мария (Advanced Plan)</div>
-          </div>
-          <div style="font-size:13px; color:var(--accent); font-weight:500; cursor:pointer;" id="settingsAccountLink">Управление</div>
-        </div>
-      </div>
     </div>
   </div>
 </div>
 
-<!-- ACCOUNT MODAL (ВСЕ ДАННЫЕ, ПОЧТА И КНОПКА ВЫХОДА) -->
+<!-- ACCOUNT MODAL -->
 <div class="overlay center" id="accountOverlay">
   <div class="account-modal-panel">
     <div class="account-avatar-large">М</div>
@@ -1087,7 +1044,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 
     <div style="display:flex; gap:8px; margin-top:16px;">
       <button class="btn ghost" id="closeAccountModal" style="flex:1;">Закрыть</button>
-      <button class="btn danger" id="logoutBtn" style="flex:1;">Выйти из аккаунта</button>
+      <button class="btn danger" id="logoutBtn" style="flex:1;">Выйти</button>
     </div>
   </div>
 </div>
@@ -1121,6 +1078,10 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(), 200); }, 2500);
   }
 
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
   (function greet(){
     const h = new Date().getHours();
     const g = h < 5 ? "Доброй ночи, Мария" : h < 12 ? "Доброе утро, Мария" : h < 18 ? "Добрый день, Мария" : "Добрый вечер, Мария";
@@ -1141,7 +1102,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     if(sidebar.classList.contains("open")) closeSidebar();
     else openSidebar();
   });
-  // Кнопка трех полосок внутри сайдбара также управляет открытием/закрытием меню
   $("#sidebarToggleBtn").addEventListener("click", (e)=>{
     e.stopPropagation();
     closeSidebar();
@@ -1149,7 +1109,10 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   backdrop.addEventListener("click", closeSidebar);
 
   let chatHistoryData = JSON.parse(localStorage.getItem("morof_history") || "null") || [
-    {id: "1", title: "Объясни React хуки", messages: []},
+    {id: "1", title: "Объясни React хуки", messages: [
+      {role: "user", text: "Объясни React хуки"},
+      {role: "assistant", text: "React хуки — это функции, которые позволяют использовать состояние и другие возможности React без написания классов. Основные хуки: <strong>useState</strong>, <strong>useEffect</strong> и <strong>useContext</strong>."}
+    ]},
     {id: "2", title: "Напиши письмо клиенту", messages: []},
     {id: "3", title: "Отладка Python-скрипта", messages: []}
   ];
@@ -1157,6 +1120,8 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   function saveHistoryToStorage(){
     localStorage.setItem("morof_history", JSON.stringify(chatHistoryData));
   }
+
+  let currentChatId = "1";
 
   function renderHistoryList(filter=""){
     const listEl = $("#historyList");
@@ -1189,7 +1154,18 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     });
   }
 
-  let currentChatId = "1";
+  const homeScreen = $("#homeScreen"), chatScroll = $("#chatScroll"), chatInner = $("#chatInner");
+  let started = false;
+
+  function resetToHome(){
+    started = false;
+    chatScroll.classList.add("chat-hidden");
+    homeScreen.style.display = "flex";
+    setTimeout(()=>homeScreen.classList.remove("leaving"), 10);
+    chatInner.innerHTML = "";
+    renderHistoryList();
+  }
+
   function loadChatSession(id){
     currentChatId = id;
     $$(".history-item").forEach(x=>{
@@ -1204,8 +1180,8 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       chatScroll.classList.remove("chat-hidden");
       chatInner.innerHTML = "";
       session.messages.forEach(m => {
-        if(m.role === 'user') addUserMessage(m.text, m.files);
-        else addAssistantMessageDirect(m.text);
+        if(m.role === 'user') appendUserMessageDOM(m.text, m.files);
+        else appendAssistantMessageDOM(m.text);
       });
     } else {
       resetToHome();
@@ -1229,7 +1205,6 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     closeOverlay("#deleteOverlay");
   });
 
-  /* Поисковик чатов теперь полноценно ищет по истории */
   $("#historySearchInput").addEventListener("input", (e)=>{
     renderHistoryList(e.target.value);
   });
@@ -1256,6 +1231,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
       opt.classList.add("selected");
       $("#modelName").textContent = opt.dataset.name;
       modelSelector.classList.remove("open");
+      toast("Модель изменена: " + opt.dataset.name);
     });
   });
   document.addEventListener("click", (e)=>{
@@ -1273,11 +1249,9 @@ textarea#composer::placeholder{ color: var(--ink-3); }
 
   $("#settingsBtn").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
   $("#sidebarSettingsBtn").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
-  $("#closeSettings").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
+  $("#closeSettings").addEventListener("click", ()=>closeOverlay("#settingsOverlay"));
 
-  /* Логика модального окна аккаунта с почтой, данными и выходом */
   $("#profileBtn").addEventListener("click", ()=>openOverlay("#accountOverlay"));
-  $("#settingsAccountLink").addEventListener("click", ()=>openOverlay("#accountOverlay"));
   $("#closeAccountModal").addEventListener("click", ()=>closeOverlay("#accountOverlay"));
   $("#logoutBtn").addEventListener("click", ()=>{
     toast("Выход из аккаунта выполнен");
@@ -1309,7 +1283,7 @@ textarea#composer::placeholder{ color: var(--ink-3); }
   $$(".gswitch").forEach(sw => {
     sw.addEventListener("click", () => {
       sw.classList.toggle("on");
-      toast("Настройка изменена");
+      toast("Настройка обновлена");
     });
   });
 
@@ -1355,191 +1329,236 @@ textarea#composer::placeholder{ color: var(--ink-3); }
     }
   });
 
+  // Attachments Handling
   const attachRow = $("#attachRow");
   let attachments = [];
-  $("#attachBtn").addEventListener("click", ()=>{
-    const id = Math.random().toString(36).slice(2,7);
-    attachments.push(id);
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.multiple = true;
+  fileInput.style.display = "none";
+  document.body.appendChild(fileInput);
+
+  $("#attachBtn").addEventListener("click", ()=>fileInput.click());
+  fileInput.addEventListener("change", (e)=>{
+    const files = Array.from(e.target.files);
+    files.forEach(f=>{
+      attachments.push({name: f.name, size: (f.size/1024).toFixed(1) + " KB"});
+    });
     renderAttachments();
-    toast("Файл добавлен");
+    fileInput.value = "";
   });
+
   function renderAttachments(){
-    if(attachments.length === 0){ attachRow.style.display = "none"; attachRow.innerHTML=""; return; }
+    if(attachments.length === 0){
+      attachRow.style.display = "none";
+      attachRow.innerHTML = "";
+      return;
+    }
     attachRow.style.display = "flex";
-    attachRow.innerHTML = attachments.map(id=>`
-      <div class="attach-chip" data-id="${id}">
-        <div class="file-ico">PDF</div>
-        <div><span>document-${id}.pdf</span></div>
-        <span class="rm">✕</span>
-      </div>`).join("");
-    attachRow.querySelectorAll(".rm").forEach(rm=>{
-      rm.addEventListener("click", ()=>{
-        const id = rm.closest(".attach-chip").dataset.id;
-        attachments = attachments.filter(a=>a!==id);
+    attachRow.innerHTML = attachments.map((att, idx)=>`
+      <div class="attach-chip">
+        <div class="file-ico">FILE</div>
+        <span>${escapeHtml(att.name)}</span>
+        <span class="rm" data-idx="${idx}">✕</span>
+      </div>
+    `).join("");
+    attachRow.querySelectorAll(".rm").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        attachments.splice(+btn.dataset.idx, 1);
         renderAttachments();
       });
     });
   }
 
-  const micBtn = $("#micBtn");
-  let recording = false;
-  micBtn.addEventListener("click", ()=>{
-    recording = !recording;
-    micBtn.classList.toggle("recording", recording);
-    if(recording) toast("Идёт запись…"); else toast("Голос распознан");
+  // Voice recording simulation
+  let isRecording = false;
+  $("#micBtn").addEventListener("click", ()=>{
+    isRecording = !isRecording;
+    const btn = $("#micBtn");
+    if(isRecording){
+      btn.classList.add("recording");
+      toast("Голосовой ввод активен...");
+    } else {
+      btn.classList.remove("recording");
+      toast("Голос распознан");
+      $("#composer.value") = $("#composer.value") + " Привет, MOROF!";
+      checkComposerReady();
+    }
   });
 
   const composer = $("#composer");
-  const inputCard = $("#inputCard");
   const sendBtn = $("#sendBtn");
+  const inputCard = $("#inputCard");
+
+  composer.addEventListener("focus", ()=>inputCard.classList.add("focused"));
+  composer.addEventListener("blur", ()=>inputCard.classList.remove("focused"));
   composer.addEventListener("input", ()=>{
     composer.style.height = "auto";
     composer.style.height = Math.min(composer.scrollHeight, 180) + "px";
-    sendBtn.classList.toggle("ready", composer.value.trim().length > 0);
+    checkComposerReady();
   });
-  composer.addEventListener("focus", ()=>inputCard.classList.add("focused"));
-  composer.addEventListener("blur", ()=>inputCard.classList.remove("focused"));
-  composer.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" && !e.shiftKey){
-      e.preventDefault();
-      trySend();
+
+  function checkComposerReady(){
+    if(composer.value.trim().length > 0 || attachments.length > 0){
+      sendBtn.classList.add("ready");
+    } else {
+      sendBtn.classList.remove("ready");
     }
-  });
-  sendBtn.addEventListener("click", ()=>trySend());
-
-  $$(".example-card").forEach(card=>{
-    card.addEventListener("click", ()=>{
-      composer.value = card.dataset.prompt;
-      composer.dispatchEvent(new Event("input"));
-      trySend();
-    });
-  });
-
-  const homeScreen = $("#homeScreen");
-  const chatScroll = $("#chatScroll");
-  const chatInner = $("#chatInner");
-  let started = false;
-
-  function resetToHome(){
-    started = false;
-    chatInner.innerHTML = "";
-    chatScroll.classList.add("chat-hidden");
-    homeScreen.classList.remove("leaving");
-    homeScreen.style.display = "flex";
-    composer.value = "";
-    composer.dispatchEvent(new Event("input"));
   }
 
-  function trySend(){
+  function addUserMessageDOM(text, files=[]){
+    const div = document.createElement("div");
+    div.className = "msg user";
+    let fileHtml = files.map(f => `<div style="font-size:12px;opacity:0.8;margin-bottom:4px;">📎 ${escapeHtml(f.name)}</div>`).join("");
+    div.innerHTML = `<div class="bubble">${fileHtml}${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+    chatInner.appendChild(div);
+    scrollToBottom();
+  }
+
+  function appendAssistantMessageDOM(text){
+    const div = document.createElement("div");
+    div.className = "msg assistant";
+    div.innerHTML = `
+      <div class="assistant-avatar">
+        <div class="core-wrap core-tiny"><div class="core-dot"></div></div>
+      </div>
+      <div class="assistant-body">
+        <div class="assistant-content"><p>${text.replace(/\n/g, "<br>")}</p></div>
+        <div class="msg-actions">
+          <button class="msg-action-btn copy-btn" title="Копировать">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span>Копировать</span>
+          </button>
+          <button class="msg-action-btn regen-btn" title="Повторить">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.63-5.5"/></svg>
+            <span>Повторить</span>
+          </button>
+          <button class="msg-action-btn share-btn" title="Поделиться">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+    chatInner.appendChild(div);
+    scrollToBottom();
+
+    div.querySelector(".copy-btn").addEventListener("click", ()=>{
+      navigator.clipboard.writeText(text).then(()=>{
+        toast("Скопировано в буфер обмена");
+      }).catch(()=>{
+        toast("Ошибка копирования");
+      });
+    });
+
+    div.querySelector(".regen-btn").addEventListener("click", ()=>{
+      toast("Генерация нового ответа...");
+      setTimeout(()=>{
+        div.querySelector(".assistant-content").innerHTML = `<p>Повторный ответ: ${text}</p>`;
+        toast("Ответ обновлен");
+      }, 800);
+    });
+
+    div.querySelector(".share-btn").addEventListener("click", ()=>{
+      if(navigator.share){
+        navigator.share({title: "MOROF AI", text: text}).catch(()=>{});
+      } else {
+        navigator.clipboard.writeText(text);
+        toast("Ссылка скопирована для шаринга");
+      }
+    });
+  }
+
+  function scrollToBottom(){
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }
+
+  async function handleSendMessage(){
     const text = composer.value.trim();
-    if(!text) return;
+    if(!text && attachments.length === 0) return;
+
     if(!started){
       started = true;
       homeScreen.classList.add("leaving");
       setTimeout(()=>{ homeScreen.style.display = "none"; }, 300);
       chatScroll.classList.remove("chat-hidden");
     }
-    addUserMessage(text, attachments.slice());
-    
-    let currentSession = chatHistoryData.find(s => s.id === currentChatId);
-    if(!currentSession){
-      currentSession = {id: currentChatId, title: text.slice(0, 30), messages: []};
-      chatHistoryData.unshift(currentSession);
-    } else if(currentSession.title === "Новый чат" || currentSession.messages.length === 0){
-      currentSession.title = text.slice(0, 30);
-    }
-    currentSession.messages.push({role: 'user', text, files: attachments.slice()});
-    saveHistoryToStorage();
-    renderHistoryList($("#historySearchInput").value);
 
-    attachments = []; renderAttachments();
+    const currentFiles = [...attachments];
+    attachments = [];
+    renderAttachments();
     composer.value = "";
     composer.style.height = "auto";
-    sendBtn.classList.remove("ready");
-    scrollToBottom(true);
-    runAssistantTurn(text);
-  }
+    checkComposerReady();
 
-  function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    addUserMessageDOM(text, currentFiles);
 
-  function addUserMessage(text, files){
-    const wrap = document.createElement("div");
-    wrap.className = "msg user";
-    let filesHtml = "";
-    if(files && files.length){
-      filesHtml = `<div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">` +
-        files.map(()=>`<span style="font-size:12px;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:4px;">📎 файл</span>`).join("") +
-        `</div>`;
+    const session = chatHistoryData.find(s => s.id === currentChatId);
+    if(session){
+      if(session.title === "Новый чат" || !session.title){
+        session.title = text.length > 30 ? text.substring(0, 30) + "..." : text;
+      }
+      session.messages.push({role: "user", text, files: currentFiles});
+      saveHistoryToStorage();
+      renderHistoryList($("#historySearchInput").value);
     }
-    wrap.innerHTML = `<div class="bubble">${filesHtml}${escapeHtml(text)}</div>`;
-    chatInner.appendChild(wrap);
-  }
 
-  function addAssistantMessageDirect(text){
-    const wrap = document.createElement("div");
-    wrap.className = "msg assistant";
-    wrap.innerHTML = `
-      <div class="assistant-avatar">
-        <div class="core-wrap core-tiny"><div class="core-dot"></div></div>
-      </div>
-      <div class="assistant-body">
-        <div class="assistant-content">${renderMarkdown(text)}</div>
-      </div>
-    `;
-    chatInner.appendChild(wrap);
-  }
-
-  function renderMarkdown(md){
-    md = escapeHtml(md);
-    md = md.replace(/`([^`]+)`/g, '<code class="inline">$1</code>');
-    md = md.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    md = md.replace(/\n/g, '<br>');
-    return md;
-  }
-
-  function scrollToBottom(smooth){
-    chatScroll.scrollTo({top: chatScroll.scrollHeight, behavior: smooth ? 'smooth' : 'auto'});
-  }
-
-  function runAssistantTurn(promptText){
-    const wrap = document.createElement("div");
-    wrap.className="msg assistant";
-    wrap.innerHTML = `
+    // Thinking indicator
+    const loadingDiv = document.createElement("div");
+    loadingDiv.className = "msg assistant";
+    loadingDiv.innerHTML = `
       <div class="assistant-avatar">
         <div class="core-wrap core-tiny thinking"><div class="core-dot"></div></div>
       </div>
       <div class="assistant-body">
-        <div class="assistant-content"><span class="thinking-text" style="color:var(--ink-3);">MOROF думает...</span></div>
+        <div class="assistant-content" style="color:var(--ink-3);">MOROF думает...</div>
       </div>
     `;
-    chatInner.appendChild(wrap);
-    scrollToBottom(true);
+    chatInner.appendChild(loadingDiv);
+    scrollToBottom();
 
+    // Simulating response generation
     setTimeout(()=>{
-      const contentEl = wrap.querySelector(".assistant-content");
-      wrap.querySelector(".core-wrap").classList.remove("thinking");
-      
-      let reply = `Привет! Я MOROF, твоя нейросеть. Получил твой запрос: "${promptText}". Все системы работают отлично, меню полностью интерактивно, а живой переливающийся фон активен. Чем еще могу помочь?`;
-      
-      contentEl.innerHTML = renderMarkdown(reply);
-      scrollToBottom(true);
+      loadingDiv.remove();
+      const replyText = `Отличный вопрос! Основываясь на вашем запросе «${text}», система MOROF обработала данные в соответствии с параметрами модели. Все модули функционируют в штатном режиме.`;
+      appendAssistantMessageDOM(replyText);
 
-      const currentSession = chatHistoryData.find(s => s.id === currentChatId);
-      if(currentSession){
-        currentSession.messages.push({role: 'assistant', text: reply});
+      if(session){
+        session.messages.push({role: "assistant", text: replyText});
         saveHistoryToStorage();
       }
-    }, 1000);
+    }, 1200);
   }
 
-  const chatScrollEl = $("#chatScroll");
-  const jumpBtn = $("#jumpBtn");
-  chatScrollEl.addEventListener("scroll", ()=>{
-    const dist = chatScrollEl.scrollHeight - chatScrollEl.scrollTop - chatScrollEl.clientHeight;
-    if(dist > 250) jumpBtn.classList.add("show");
-    else jumpBtn.classList.remove("show");
+  sendBtn.addEventListener("click", handleSendMessage);
+  composer.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      handleSendMessage();
+    }
   });
-  jumpBtn.addEventListener("click", ()=>scrollToBottom(true));
+
+  $$(".example-card").forEach(card=>{
+    card.addEventListener("click", ()=>{
+      const p = card.dataset.prompt;
+      composer.value = p;
+      checkComposerReady();
+      handleSendMessage();
+    });
+  });
+
+  chatScroll.addEventListener("scroll", ()=>{
+    const distFromBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight;
+    if(distFromBottom > 150){
+      $("#jumpBtn").classList.add("show");
+    } else {
+      $("#jumpBtn").classList.remove("show");
+    }
+  });
+
+  $("#jumpBtn").addEventListener("click", ()=>{
+    scrollToBottom();
+    $("#jumpBtn").classList.remove("show");
+  });
 
 })();
 </script>
