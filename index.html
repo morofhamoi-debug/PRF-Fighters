@@ -2,1565 +2,487 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>MOROF</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0e1013">
+<title>Rubik's Cube Solver</title>
 <style>
-/* ============================================================
-   DESIGN TOKENS — MOROF SYSTEM
-============================================================ */
 :root{
-  --page-bg: #ffffff;
-  --sidebar-bg: rgba(240, 244, 249, 0.75);
-  --sidebar-hover: rgba(0, 0, 0, 0.04);
-  --sidebar-active: rgba(26, 115, 232, 0.12);
-
-  --glass-fill: rgba(255,255,255,0.8);
-  --glass-fill-strong: rgba(255,255,255,0.95);
-  --glass-fill-solid: #ffffff;
-  --glass-border-top: rgba(255,255,255,1);
-  --glass-border-bottom: rgba(220,225,230,0.6);
-  --glass-border: rgba(220,225,230,0.8);
-  --glass-blur: 24px;
-  --glass-blur-lg: 32px;
-
-  --ink-1: #1f1f1f;
-  --ink-2: #444746;
-  --ink-3: #5e6368;
-  --ink-4: #8e918f;
-
-  --gemini-blue: #1a73e8;
-  --gemini-purple: #8ab4f8;
-  --gemini-grad-1: #4285f4;
-  --gemini-grad-2: #9b72cb;
-  --gemini-grad-3: #d96570;
-
-  --accent: #1a73e8;
-  --accent-strong: #1557b0;
-  --accent-soft: rgba(26,115,232,0.12);
-  --accent-soft-border: rgba(26,115,232,0.3);
-
-  --danger: #b3261e;
-  --danger-soft: rgba(179,38,30,0.1);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-pill: 999px;
-
-  --shadow-glass: 0 4px 24px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-  --shadow-glass-lg: 0 12px 40px rgba(0,0,0,0.12);
-  --shadow-float: 0 6px 16px rgba(0,0,0,0.1);
-
-  --ease: cubic-bezier(0.32, 0.72, 0, 1);
-  --dur-fast: 150ms;
-  --dur-med: 250ms;
-  --dur-slow: 400ms;
-
-  --sidebar-w: 300px;
-  --content-max: 780px;
-  --safe-b: env(safe-area-inset-bottom, 0px);
-  --safe-t: env(safe-area-inset-top, 0px);
-}
-
-[data-theme="dark"]{
-  --page-bg: #121212;
-  --sidebar-bg: rgba(30, 30, 30, 0.75);
-  --sidebar-hover: rgba(255, 255, 255, 0.06);
-  --sidebar-active: rgba(138, 180, 248, 0.18);
-
-  --glass-fill: rgba(30,30,30,0.8);
-  --glass-fill-strong: rgba(30,30,30,0.95);
-  --glass-fill-solid: #1e1e1e;
-  --glass-border-top: rgba(255,255,255,0.1);
-  --glass-border-bottom: rgba(0,0,0,0.6);
-  --glass-border: rgba(255,255,255,0.1);
-
-  --ink-1: #f1f1f1;
-  --ink-2: #c4c7c5;
-  --ink-3: #9aa0a6;
-  --ink-4: #80868b;
-
-  --accent: #8ab4f8;
-  --accent-strong: #aecbfa;
-  --accent-soft: rgba(138,180,248,0.15);
-  --accent-soft-border: rgba(138,180,248,0.3);
-
-  --shadow-glass: 0 4px 24px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
-  --shadow-glass-lg: 0 12px 40px rgba(0,0,0,0.5);
-  --shadow-float: 0 6px 16px rgba(0,0,0,0.4);
-}
-
-[data-theme="dark"] .ambient{ background: #121212; }
-[data-theme="dark"] .lightsrc{ opacity: 0.2; }
-[data-theme="dark"] .btn-newchat{
-  background: rgba(138, 180, 248, 0.15);
-  color: #8ab4f8;
-  border: 1px solid rgba(138, 180, 248, 0.3);
-}
-[data-theme="dark"] .btn-newchat:hover{ background: rgba(138, 180, 248, 0.25); }
-[data-theme="dark"] .search-box{ background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.08); }
-[data-theme="dark"] .search-box input{ color: var(--ink-1); }
-[data-theme="dark"] .kbd{ background: rgba(255,255,255,0.1); color: var(--ink-3); }
-[data-theme="dark"] .model-selector{
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.1);
-  color: var(--ink-1);
-}
-[data-theme="dark"] .model-selector:hover{
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.2);
-}
-[data-theme="dark"] .model-dropdown,
-[data-theme="dark"] .palette,
-[data-theme="dark"] .modal,
-[data-theme="dark"] .settings-modal-panel{
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  color: var(--ink-1);
-}
-[data-theme="dark"] .model-option:hover{ background: rgba(255,255,255,0.06); }
-[data-theme="dark"] .model-option.selected{ background: rgba(138,180,248,0.15); }
-[data-theme="dark"] .example-card{
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.08);
-}
-[data-theme="dark"] .example-card:hover{ background: rgba(255,255,255,0.08); }
-[data-theme="dark"] .example-card .ex-icon{ background: rgba(255,255,255,0.08); color: var(--ink-2); }
-[data-theme="dark"] .msg.user .bubble{
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.06);
-}
-[data-theme="dark"] .input-card{
-  background: rgba(30,30,30,0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-[data-theme="dark"] .input-card.focused{
-  background: rgba(30,30,30,0.9);
-  border-color: rgba(138,180,248,0.4);
-}
-[data-theme="dark"] .attach-chip{
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.1);
-  color: var(--ink-1);
-}
-[data-theme="dark"] .attach-chip .file-ico{ background: rgba(138,180,248,0.2); color: var(--accent); }
-[data-theme="dark"] .send-btn.ready{ background: #8ab4f8; color: #121212; }
-[data-theme="dark"] .seg{ background: rgba(255,255,255,0.06); }
-[data-theme="dark"] .seg button.active{ background: rgba(255,255,255,0.15); color: var(--ink-1); }
-[data-theme="dark"] .btn{
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.15);
-  color: var(--ink-1);
-}
-[data-theme="dark"] .btn.ghost:hover{ background: rgba(255,255,255,0.12); }
-[data-theme="dark"] .palette-search,
-[data-theme="dark"] .modal-head,
-[data-theme="dark"] .settings-tabs,
-[data-theme="dark"] .setting-row{
-  border-color: rgba(255,255,255,0.08);
-}
-[data-theme="dark"] .palette-item.hi{ background: rgba(255,255,255,0.06); }
-[data-theme="dark"] .jump-btn{
-  background: rgba(30,30,30,0.85);
-  backdrop-filter: blur(12px);
-  border-color: rgba(255,255,255,0.15);
-  color: var(--ink-1);
-}
-
-@media(prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --page-bg: #121212;
-    --sidebar-bg: rgba(30, 30, 30, 0.75);
-    --sidebar-hover: rgba(255, 255, 255, 0.06);
-    --sidebar-active: rgba(138, 180, 248, 0.18);
-    --glass-fill: rgba(30,30,30,0.8);
-    --glass-fill-strong: rgba(30,30,30,0.95);
-    --glass-fill-solid: #1e1e1e;
-    --glass-border-top: rgba(255,255,255,0.1);
-    --glass-border-bottom: rgba(0,0,0,0.6);
-    --glass-border: rgba(255,255,255,0.1);
-    --ink-1: #f1f1f1;
-    --ink-2: #c4c7c5;
-    --ink-3: #9aa0a6;
-    --ink-4: #80868b;
-    --accent: #8ab4f8;
-    --accent-strong: #aecbfa;
-    --accent-soft: rgba(138,180,248,0.15);
-    --accent-soft-border: rgba(138,180,248,0.3);
-    --shadow-glass: 0 4px 24px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
-    --shadow-glass-lg: 0 12px 40px rgba(0,0,0,0.5);
-    --shadow-float: 0 6px 16px rgba(0,0,0,0.4);
-  }
-}
-
-@media (prefers-reduced-motion: reduce){
-  *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
-}
-
-*{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-html,body{ height:100%; }
-body{
-  margin:0;
-  font-family: "Google Sans", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: var(--ink-1);
-  background: var(--page-bg);
-  overflow:hidden;
-  font-size:14px;
-  line-height:1.6;
-}
-::selection{ background: var(--accent-soft); color: var(--ink-1); }
-button{ font-family:inherit; }
-::-webkit-scrollbar{ width:6px; height:6px; }
-::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.15); border-radius:6px; }
-::-webkit-scrollbar-thumb:hover{ background: rgba(0,0,0,0.25); }
-
-/* ============================================================
-   MOROF LIVING BACKGROUND
-============================================================ */
-.ambient{
-  position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
-  background: var(--page-bg);
-  transition: background var(--dur-med) var(--ease);
-}
-.lightsrc{
-  position:absolute; border-radius:50%; will-change: transform, filter;
-  filter: blur(120px);
-  opacity: 0.35;
-  animation: morofFloat 12s infinite alternate ease-in-out;
-}
-.lightsrc.l1{ width:60vw; height:60vw; top:-15%; left:-15%; background: #4285f4; animation-delay: 0s; }
-.lightsrc.l2{ width:55vw; height:55vw; bottom:-15%; right:-15%; background: #9b72cb; animation-delay: -4s; }
-.lightsrc.l3{ width:50vw; height:50vw; top:25%; left:25%; background: #d96570; opacity: 0.25; animation-delay: -8s; }
-
-@keyframes morofFloat {
-  0% { transform: translate(0px, 0px) scale(1); }
-  50% { transform: translate(40px, -30px) scale(1.1); }
-  100% { transform: translate(-30px, 40px) scale(0.95); }
-}
-
-/* ============================================================
-   APP SHELL & Z-INDEX LAYERING ARCHITECTURE
-============================================================ */
-.app{ position:relative; z-index:1; display:flex; height:100vh; background: transparent; }
-
-/* ---------- SIDEBAR / FLOATING LIQUID GLASS MENU ---------- */
-.sidebar{
-  width: var(--sidebar-w); 
-  flex-shrink:0; 
-  height:100vh;
-  padding: 16px 12px;
-  background: var(--sidebar-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-right: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
-  display:flex; 
-  flex-direction:column;
-  transition: transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease);
-  z-index: 100;
-  position: relative;
-}
-
-.brand{ display:flex; align-items:center; gap:12px; padding:8px 12px 16px; }
-.brand-mark{
-  width:28px; height:28px; position:relative; overflow:hidden;
-  background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
-}
-.brand-name{ font-weight:600; font-size:18px; letter-spacing:-0.02em; background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-.search-box{
-  display:flex; align-items:center; gap:8px; margin-bottom:12px;
-  padding:8px 12px; border-radius: var(--radius-pill);
-  background: rgba(0,0,0,0.04);
-  border: 1px solid transparent;
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-.search-box:focus-within{ background: var(--page-bg); border-color: var(--accent); box-shadow: 0 1px 4px rgba(26,115,232,0.2); }
-.search-box input{ border:none; outline:none; background:transparent; flex:1; font-size:13px; color: var(--ink-1); }
-.search-box input::placeholder{ color: var(--ink-3); }
-.kbd{
-  font-size:10px; color: var(--ink-3); background: rgba(0,0,0,0.06);
-  padding:2px 5px; border-radius:4px;
-}
-
-.sidebar-actions-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.sidebar-action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.02);
-  color: var(--ink-1);
-  font-weight: 500;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-[data-theme="dark"] .sidebar-action-btn {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.08);
-}
-.sidebar-action-btn:hover {
-  background: rgba(0,0,0,0.06);
-}
-[data-theme="dark"] .sidebar-action-btn:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-.btn-newchat{
-  display:flex; align-items:center; gap:12px; width:100%;
-  padding:12px 16px; border-radius: var(--radius-pill);
-  border: none; background: #c2e7ff;
-  color: #001d35; font-weight:500; font-size:14px; cursor:pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: background var(--dur-fast), box-shadow var(--dur-fast), transform var(--dur-fast);
-  margin-bottom: 16px;
-}
-.btn-newchat:hover{ background: #b3dfdb; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transform: scale(0.99); }
-.btn-newchat:active{ transform: scale(0.97); }
-.btn-newchat svg{ flex-shrink:0; }
-
-.history{ flex:1; overflow-y:auto; padding-right:2px; -webkit-overflow-scrolling: touch; }
-.history-group-label{ font-size:12px; font-weight:500; color: var(--ink-3); padding:8px 12px 4px; }
-.history-item{
-  position:relative; display:flex; align-items:center; gap:10px;
-  padding:10px 14px; border-radius: var(--radius-pill); cursor:pointer;
-  font-size:13px; color: var(--ink-2); margin-bottom:2px;
-  transition: background var(--dur-fast), color var(--dur-fast);
-}
-.history-item:hover{ background: var(--sidebar-hover); color: var(--ink-1); }
-.history-item.active{
-  background: var(--sidebar-active);
-  color: var(--ink-1);
-  font-weight: 500;
-}
-[data-theme="dark"] .history-item.active{ color: #8ab4f8; }
-.history-item .pin-ico{ color: var(--accent); flex-shrink:0; }
-.history-item span.title{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.history-item .more-btn{ opacity:0; border:none; background:transparent; color: var(--ink-3); cursor:pointer; padding:4px 6px; border-radius:4px; transition: opacity var(--dur-fast); }
-.history-item:hover .more-btn{ opacity:1; }
-
-.sidebar-footer{ border-top: 1px solid rgba(0,0,0,0.08); padding-top:10px; margin-top:6px; padding-bottom: var(--safe-b); }
-[data-theme="dark"] .sidebar-footer{ border-color: rgba(255,255,255,0.08); }
-.profile-row{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius: var(--radius-pill); cursor:pointer; transition: background var(--dur-fast); }
-.profile-row:hover{ background: var(--sidebar-hover); }
-.avatar{ width:32px; height:32px; border-radius:50%; flex-shrink:0; background: linear-gradient(135deg, #1a73e8, #9b72cb); color: #fff; display:flex; align-items:center; justify-content:center; font-weight: 500; }
-.profile-meta{ flex:1; overflow:hidden; }
-.profile-name{ font-size:13px; font-weight:500; color: var(--ink-1); }
-.profile-plan{ font-size:11px; color: var(--ink-3); }
-
-/* ---------- SIDEBAR BACKDROP ---------- */
-.sidebar-backdrop{
-  display:none; 
-  position:fixed; 
-  inset:0; 
-  background: transparent; 
-  z-index: 90; 
-  opacity: 0; 
-  pointer-events: none; 
-  transition: opacity var(--dur-med) var(--ease);
-}
-.sidebar-backdrop.show{ opacity: 1; pointer-events: auto; }
-
-/* ---------- MAIN ---------- */
-.main{ flex:1; display:flex; flex-direction:column; min-width:0; position:relative; background: transparent; }
-
-.topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 12px 24px; flex-shrink:0; }
-.topbar-left{ display:flex; align-items:center; gap:12px; }
-.menu-btn{ display:flex; border:none; background: transparent; border-radius: 50%; width: 40px; height: 40px; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-2); }
-.menu-btn:hover{ background: rgba(0,0,0,0.05); }
-[data-theme="dark"] .menu-btn:hover{ background: rgba(255,255,255,0.08); }
-
-.model-selector{
-  display:flex; align-items:center; gap:8px; padding:6px 14px;
-  border-radius: var(--radius-pill); border: 1px solid rgba(0,0,0,0.1);
-  background: #fff; font-size:15px; font-weight:500; cursor:pointer; position:relative;
-  color: var(--ink-1);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-.model-selector:hover{ background: #f8f9fa; border-color: rgba(0,0,0,0.2); }
-[data-theme="dark"] .model-selector:hover{ background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
-.model-dot{ width:8px; height:8px; border-radius:50%; background: linear-gradient(135deg, #4285f4, #9b72cb); }
-.topbar-right{ display:flex; align-items:center; gap:8px; }
-.icon-btn{
-  width:40px; height:40px; border-radius: 50%; border: none;
-  background: transparent; color: var(--ink-2); display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition: background var(--dur-fast);
-}
-.icon-btn:hover{ background: rgba(0,0,0,0.05); color: var(--ink-1); }
-[data-theme="dark"] .icon-btn:hover{ background: rgba(255,255,255,0.08); color: var(--ink-1); }
-
-.model-dropdown{
-  position:absolute; top:calc(100% + 8px); left:0; width:280px; z-index:40;
-  border-radius: var(--radius-lg); padding:8px; background: #fff;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.08);
-  opacity:0; transform: translateY(-8px); pointer-events:none;
-  transition: opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
-}
-.model-selector.open .model-dropdown{ opacity:1; transform: translateY(0); pointer-events:auto; }
-.model-option{ display:flex; align-items:flex-start; gap:12px; padding:10px 12px; border-radius: var(--radius-md); cursor:pointer; transition: background var(--dur-fast); }
-.model-option:hover{ background: #f0f4f9; }
-.model-option.selected{ background: #e9eeef; }
-[data-theme="dark"] .model-option.selected{ background: rgba(138,180,248,0.2); }
-.model-option .mo-icon{ width:24px; height:24px; border-radius:6px; flex-shrink:0; margin-top:2px; background: linear-gradient(135deg, #4285f4, #9b72cb); }
-.mo-title{ font-size:14px; font-weight:500; color: var(--ink-1); }
-.mo-desc{ font-size:12px; color: var(--ink-3); margin-top:2px; }
-
-/* ---------- HOME ---------- */
-.home{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; transition: opacity var(--dur-slow) var(--ease); margin-top: 40px; }
-.home.leaving{ opacity:0; pointer-events:none; }
-
-.greeting{
-  font-size:38px; font-weight:400; letter-spacing:-0.02em; margin-bottom:6px;
-  background: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.home h1{ font-size:38px; font-weight:400; letter-spacing:-0.02em; margin:0 0 32px; color: var(--ink-4); }
-
-.examples{ display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; width:100%; max-width:850px; margin-top:32px; }
-.example-card{
-  display:flex; flex-direction:column; justify-content:space-between; align-items:flex-start; text-align:left;
-  padding:16px; border-radius: var(--radius-lg); cursor:pointer;
-  background: rgba(240,244,249,0.8); border: 1px solid rgba(255,255,255,0.6);
-  min-height: 140px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: background var(--dur-fast), box-shadow var(--dur-fast);
-}
-.example-card:hover{ background: rgba(226,232,240,0.9); }
-[data-theme="dark"] .example-card:hover{ background: rgba(255,255,255,0.08); }
-.example-card .ex-icon{
-  width:36px; height:36px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
-  background: #ffffff; color: var(--ink-2);
-}
-.example-card span.ex-text{ font-size:14px; color: var(--ink-1); line-height:1.4; font-weight: 400; }
-
-/* ---------- AI CORE / SPARKLE ICON ---------- */
-.core-wrap{ position:relative; width:36px; height:36px; margin-bottom:16px; display:flex; align-items:center; justify-content:center; }
-.core-dot{
-  width:24px; height:24px; position:relative; z-index:1;
-  background: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12 6.627 17.373 12 24 12C17.373 12 12 17.373 12 24C12 17.373 6.627 12 0 12C6.627 12 12 6.627 12 0Z'/%3E%3C/svg%3E");
-}
-.core-wrap.thinking .core-dot{ animation: pulse 1.5s infinite ease-in-out; }
-@keyframes pulse{ 0%, 100%{ opacity: 1; transform: scale(1); } 50%{ opacity: 0.4; transform: scale(0.9); } }
-.core-tiny{ width:24px; height:24px; margin-bottom:0; }
-.core-tiny .core-dot{ width:18px; height:18px; }
-
-.home-input-wrap{ width:100%; max-width:var(--content-max); }
-
-/* ---------- CHAT ---------- */
-.chat-scroll{ flex:1; overflow-y:auto; display:flex; flex-direction:column; align-items:center; padding: 12px 24px; }
-.chat-inner{ width:100%; max-width: var(--content-max); display:flex; flex-direction:column; gap:24px; padding-bottom:24px; }
-.chat-hidden{ display:none; }
-
-.msg{ display:flex; gap:16px; }
-.msg.user{ justify-content:flex-end; }
-.msg.user .bubble{
-  background: rgba(240,244,249,0.9);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: var(--radius-xl);
-  padding:12px 20px; max-width: 80%;
-  font-size:15px; color: var(--ink-1);
-}
-.msg.assistant{ align-items:flex-start; width: 100%; }
-.assistant-avatar{ flex-shrink:0; margin-top:4px; }
-.assistant-body{ flex:1; min-width:0; }
-.assistant-content{ font-size:15px; color: var(--ink-1); line-height:1.7; }
-.assistant-content p{ margin: 0 0 12px; }
-.assistant-content p:last-child{ margin-bottom:0; }
-.assistant-content strong{ font-weight:600; color: var(--ink-1); }
-.assistant-content code.inline{
-  background: rgba(0,0,0,0.06); border-radius:4px;
-  padding:2px 6px; font-size:13px; font-family: "Google Sans Mono", monospace;
-}
-[data-theme="dark"] .assistant-content code.inline{ background: rgba(255,255,255,0.1); }
-
-/* Message Actions Toolbar */
-.msg-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  opacity: 0;
-  transition: opacity var(--dur-fast);
-}
-.msg.assistant:hover .msg-actions { opacity: 1; }
-.msg-action-btn {
-  background: transparent;
-  border: none;
-  color: var(--ink-3);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: background var(--dur-fast), color var(--dur-fast);
-}
-.msg-action-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-1); }
-[data-theme="dark"] .msg-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--ink-1); }
-
-/* jump to latest */
-.jump-btn{
-  position:absolute; bottom:90px; left:50%; transform: translateX(-50%);
-  display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius: var(--radius-pill);
-  background: #fff; border: 1px solid rgba(0,0,0,0.15); box-shadow: var(--shadow-float);
-  font-size:13px; color: var(--ink-2); cursor:pointer; opacity:0; pointer-events:none;
-  transition: opacity var(--dur-fast);
-}
-.jump-btn.show{ opacity:1; pointer-events:auto; }
-
-/* ---------- INPUT ---------- */
-.input-region{ padding: 12px 24px 24px; display:flex; justify-content:center; flex-shrink:0; background: transparent; }
-.input-shell{ width:100%; max-width: var(--content-max); position:relative; }
-.input-card{
-  position:relative;
-  background: rgba(240,244,249,0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(255,255,255,0.6);
-  padding: 12px 16px;
-  transition: background var(--dur-fast), box-shadow var(--dur-fast);
-}
-.input-card.focused{ background: rgba(240,244,249,0.95); box-shadow: 0 1px 6px rgba(0,0,0,0.1); border-color: rgba(26,115,232,0.3); }
-
-.attach-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-.attach-chip{
-  display:flex; align-items:center; gap:8px; padding:6px 10px; background: #fff;
-  border: 1px solid rgba(0,0,0,0.1); border-radius: var(--radius-md); font-size:12px; color: var(--ink-2);
-}
-.attach-chip .file-ico{ width:20px; height:20px; border-radius:4px; background: #e8f0fe; display:flex; align-items:center; justify-content:center; color: var(--accent); font-size:9px; font-weight:700; }
-.attach-chip .rm{ cursor:pointer; color: var(--ink-3); }
-
-.input-row{ display:flex; align-items:flex-end; gap:12px; }
-textarea#composer{
-  flex:1; resize:none; border:none; outline:none; background:transparent;
-  font-family:inherit; font-size:15px; line-height:1.5; color: var(--ink-1);
-  max-height:180px; padding:6px 0; min-height:24px;
-}
-textarea#composer::placeholder{ color: var(--ink-3); }
-.input-tools{ display:flex; align-items:center; gap:4px; }
-.send-btn{
-  width:36px; height:36px; border-radius: 50%; border: none; cursor:pointer;
-  background: rgba(0,0,0,0.08); color: var(--ink-4);
-  display:flex; align-items:center; justify-content:center;
-  transition: background var(--dur-fast), color var(--dur-fast);
-}
-[data-theme="dark"] .send-btn{ background: rgba(255,255,255,0.1); color: var(--ink-3); }
-.send-btn.ready{ background: #0b57d0; color: #fff; }
-.mic-btn.recording{ background: #fce8e6; color: #c5221f; }
-[data-theme="dark"] .mic-btn.recording{ background: rgba(179,38,30,0.3); color: #f28b82; }
-
-.hint-row{ display:flex; justify-content:center; margin-top:8px; }
-.hint-row span{ font-size:12px; color: var(--ink-3); }
-.hint-row .kbd{ margin:0 2px; }
-
-/* ============================================================
-   MODALS / PALETTE / TOASTS / SETTINGS
-============================================================ */
-.overlay{
-  position:fixed; inset:0; z-index:200; background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display:flex; align-items:flex-start; justify-content:center;
-  padding-top:12vh; opacity:0; pointer-events:none; transition: opacity var(--dur-med) var(--ease);
-}
-.overlay.show{ opacity:1; pointer-events:auto; }
-.overlay.center{ align-items:center; padding-top:0; padding: 16px; }
-
-.palette{
-  width:min(560px, 92vw); border-radius: var(--radius-lg); overflow:hidden;
-  background: rgba(255,255,255,0.85); backdrop-filter: blur(var(--glass-blur-lg)); -webkit-backdrop-filter: blur(var(--glass-blur-lg));
-  box-shadow: var(--shadow-glass-lg); border: 1px solid var(--glass-border);
-  transform: translateY(-12px); transition: transform var(--dur-med) var(--ease);
-}
-.overlay.show .palette{ transform: translateY(0); }
-.palette-search{ display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); }
-.palette-search input{ flex:1; border:none; outline:none; font-size:16px; background:transparent; color: var(--ink-1); }
-.palette-list{ max-height:340px; overflow-y:auto; padding:8px; }
-.palette-item{ display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius: var(--radius-md); cursor:pointer; font-size:14px; color: var(--ink-1); transition: background var(--dur-fast); }
-.palette-item.hi{ background: #f0f4f9; }
-.palette-item .p-ico{ color: var(--ink-3); }
-.palette-item .p-sub{ margin-left:auto; font-size:12px; color: var(--ink-4); }
-
-.settings-modal-panel{
-  width: min(480px, 94vw);
-  max-height: calc(100dvh - 32px);
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(36px);
-  -webkit-backdrop-filter: blur(36px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  border-radius: 28px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: scale(0.96) translateY(10px);
-  opacity: 0;
-  transition: transform var(--dur-med) var(--ease), opacity var(--dur-med) var(--ease);
-  position: relative;
-  margin-bottom: var(--safe-b);
-}
-.overlay.show .settings-modal-panel{
-  transform: scale(1) translateY(0);
-  opacity: 1;
-}
-
-.settings-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px 14px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.settings-header h3{
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.settings-scroll-container{
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 20px calc(24px + var(--safe-b));
-}
-
-.settings-section-title{
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-3);
-  margin: 20px 0 8px 4px;
-}
-.settings-section-title:first-child{ margin-top: 4px; }
-
-.ios-glass-card{
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-}
-[data-theme="dark"] .ios-glass-card{
-  background: rgba(40, 40, 40, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.setting-row{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  gap: 16px;
-  transition: background var(--dur-fast);
-}
-[data-theme="dark"] .setting-row{ border-color: rgba(255, 255, 255, 0.04); }
-.setting-row:last-child{ border-bottom: none; }
-.setting-row:active{ background: rgba(0,0,0,0.03); }
-
-.setting-label{ font-size: 14px; font-weight: 500; color: var(--ink-1); }
-.setting-desc{ font-size: 12px; color: var(--ink-3); margin-top: 2px; }
-
-.seg{ display:flex; background: rgba(0,0,0,0.05); border-radius: var(--radius-pill); padding: 2px; }
-[data-theme="dark"] .seg{ background: rgba(255,255,255,0.08); }
-.seg button{ border:none; background:transparent; padding: 6px 12px; font-size: 12px; border-radius: var(--radius-pill); cursor:pointer; color: var(--ink-2); transition: all var(--dur-fast); }
-.seg button.active{ background: #fff; color: var(--ink-1); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-[data-theme="dark"] .seg button.active{ background: rgba(255,255,255,0.2); color: var(--ink-1); }
-
-.gswitch{ width: 44px; height: 26px; border-radius: 13px; background: rgba(0,0,0,0.15); position: relative; cursor: pointer; transition: background var(--dur-fast); flex-shrink: 0; }
-[data-theme="dark"] .gswitch{ background: rgba(255,255,255,0.2); }
-.gswitch::after{ content: ""; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform var(--dur-fast) var(--ease); }
-.gswitch.on{ background: #34c759; }
-.gswitch.on::after{ transform: translateX(18px); }
-
-.account-modal-panel {
-  width: min(400px, 90vw);
-  background: var(--glass-fill-solid);
-  backdrop-filter: blur(24px);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--glass-border);
-  padding: 24px;
-  box-shadow: var(--shadow-glass-lg);
-  text-align: center;
-}
-.account-avatar-large {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1a73e8, #9b72cb);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  font-weight: 600;
-  margin: 0 auto 16px;
-}
-.account-info-group {
-  text-align: left;
-  background: rgba(0,0,0,0.03);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  margin: 16px 0;
-}
-[data-theme="dark"] .account-info-group { background: rgba(255,255,255,0.04); }
-.account-info-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-}
-[data-theme="dark"] .account-info-item { border-color: rgba(255,255,255,0.04); }
-.account-info-item:last-child { border-bottom: none; }
-.account-info-label { color: var(--ink-3); }
-.account-info-val { font-weight: 500; color: var(--ink-1); }
-
-.confirm-modal{ width:min(380px,90vw); padding:24px; }
-.confirm-modal h4{ margin:0 0 8px; font-size:16px; }
-.confirm-modal p{ margin:0 0 20px; font-size:14px; color: var(--ink-3); }
-.confirm-actions{ display:flex; justify-content:flex-end; gap:8px; }
-.btn{ padding:8px 16px; border-radius: var(--radius-pill); font-size:14px; font-weight:500; cursor:pointer; border: 1px solid rgba(0,0,0,0.15); background: #fff; }
-.btn.danger{ background: #b3261e; border-color: transparent; color:#fff; }
-.btn.ghost:hover{ background: #f8f9fa; }
-
-.toast-stack{ position:fixed; bottom: 24px; right:24px; z-index:300; display:flex; flex-direction:column; gap:8px; }
-.toast{
-  display:flex; align-items:center; gap:10px; padding:12px 20px; border-radius: var(--radius-md);
-  background: #323232; color: #fff; font-size:14px; box-shadow: var(--shadow-glass-lg);
-  transform: translateY(20px); opacity:0; animation: toastIn var(--dur-med) var(--ease) forwards;
-}
-.toast.out{ opacity:0; transition: opacity var(--dur-fast); }
-@keyframes toastIn{ to{ transform: translateY(0); opacity:1; } }
-
-/* ============================================================
-   RESPONSIVE & MOBILE BEHAVIOR
-============================================================ */
-@media (max-width: 820px){
-  .sidebar{
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    width: 300px;
-    transform: translateX(-100%);
-    box-shadow: 0 0 40px rgba(0,0,0,0.25);
-    transition: transform var(--dur-med) var(--ease);
-  }
-  .sidebar.open{
-    transform: translateX(0);
-  }
-  .sidebar-backdrop{
-    display: block;
-  }
-  .examples{ grid-template-columns: 1fr 1fr; }
-  .greeting, .home h1{ font-size:28px; }
-}
+  --bg:#0e1013; --panel:#161a1f; --panel2:#1d2229; --border:#262c33;
+  --text:#e8ecf1; --text-dim:#8b95a3; --accent:#5b9dff; --accent2:#3f7fe0;
+  --ok:#3ecf8e; --warn:#f5a623; --err:#ef5350;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  font-size:16px;line-height:1.4;overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased}
+body{min-height:100vh;min-height:100dvh;padding:var(--safe-top) 0 var(--safe-bottom)}
+#app{max-width:640px;margin:0 auto;padding:16px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;flex:1;gap:16px;animation:fade .25s ease}
+.screen.active{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.01em}
+h1{font-size:26px}
+h2{font-size:20px}
+h3{font-size:15px;color:var(--text-dim);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+p{margin:0;color:var(--text-dim);font-size:15px}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.logo{width:44px;height:44px;flex:0 0 44px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.card.pad0{padding:0;overflow:hidden}
+.btn{appearance:none;border:1px solid var(--border);background:var(--panel2);color:var(--text);
+  border-radius:14px;padding:15px 18px;font-size:16px;font-weight:600;cursor:pointer;
+  transition:transform .08s,background .15s,border-color .15s;
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.btn:active{transform:scale(.98);background:#242a32}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#06121f}
+.btn.primary:active{background:var(--accent2)}
+.btn.ghost{background:transparent}
+.btn.big{padding:20px;font-size:17px;border-radius:22px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+.btn-icon{width:52px;height:52px;flex:0 0 52px;padding:0;border-radius:14px}
+.hidden{display:none!important}
+.chip{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--panel2);
+  border:1px solid var(--border);font-size:13px;color:var(--text-dim)}
+.progress{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.progress > i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.stage{position:relative;width:100%;aspect-ratio:1;background:#0a0c0f;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.stage video{width:100%;height:100%;object-fit:cover;display:block}
+.stage canvas.overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.stage .hint{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(8px);padding:10px 12px;border-radius:12px;font-size:14px;color:#fff}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cell{aspect-ratio:1;border-radius:8px;background:#2a2f36;border:2px solid transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:transform .08s}
+.cell:active{transform:scale(.94)}
+.cell.low{border-color:var(--warn);box-shadow:0 0 0 2px rgba(245,166,35,.3)}
+.faces{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.face{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px}
+.face .label{font-size:12px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.palette{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.sw{width:36px;height:36px;border-radius:10px;border:2px solid #000;cursor:pointer}
+.sw:active{transform:scale(.9)}
+.move-huge{font-size:64px;font-weight:700;text-align:center;letter-spacing:-.03em;
+  background:linear-gradient(180deg,#fff,#aab6c6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.move-desc{text-align:center;color:var(--text-dim);font-size:15px}
+.step-bar{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--text-dim)}
+#three{width:100%;aspect-ratio:1;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);background:#0a0c0f;touch-action:none}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.switch{position:relative;width:50px;height:30px;flex:0 0 50px}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;position:relative;z-index:2}
+.switch i{position:absolute;inset:0;background:#2a3038;border-radius:15px;transition:.2s;pointer-events:none}
+.switch i:after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+.switch input:checked + i{background:var(--accent)}
+.switch input:checked + i:after{transform:translateX(20px)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(16px + var(--safe-bottom));
+  background:#232a33;border:1px solid #333c47;color:#fff;padding:12px 14px;border-radius:14px;
+  font-size:14px;z-index:100;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;transform:translateY(20px);
+  transition:.25s;pointer-events:none;max-width:600px;margin:0 auto}
+.toast.show{opacity:1;transform:none}
+.toast.err{background:#3a1e1e;border-color:#5a2a2a}
+.toast.ok{background:#14301f;border-color:#1e4a30}
+.seg{display:flex;background:var(--panel2);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;padding:10px;background:transparent;border:none;color:var(--text-dim);
+  border-radius:9px;font-size:14px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--text)}
+.kv{display:flex;justify-content:space-between;font-size:15px}
+.kv span:first-child{color:var(--text-dim)}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.legend b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
 </style>
 </head>
-<body data-motion="normal">
+<body>
+<div id="app">
 
-<div class="ambient" id="ambient">
-  <div class="lightsrc l1"></div>
-  <div class="lightsrc l2"></div>
-  <div class="lightsrc l3"></div>
+  <!-- ===== HOME ===== -->
+  <section id="scr-home" class="screen active">
+    <div class="logo-row">
+      <svg class="logo" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="40" height="40" rx="10" fill="#161a1f" stroke="#2b323a"/>
+        <g transform="translate(11,11)">
+          <rect x="0" y="0" width="7" height="7" rx="1.5" fill="#e8ecf1"/>
+          <rect x="8" y="0" width="7" height="7" rx="1.5" fill="#e5484d"/>
+          <rect x="16" y="0" width="7" height="7" rx="1.5" fill="#3ecf8e"/>
+          <rect x="0" y="8" width="7" height="7" rx="1.5" fill="#5b9dff"/>
+          <rect x="8" y="8" width="7" height="7" rx="1.5" fill="#f5a623"/>
+          <rect x="16" y="8" width="7" height="7" rx="1.5" fill="#e8ecf1"/>
+          <rect x="0" y="16" width="7" height="7" rx="1.5" fill="#e5484d"/>
+          <rect x="8" y="16" width="7" height="7" rx="1.5" fill="#5b9dff"/>
+          <rect x="16" y="16" width="7" height="7" rx="1.5" fill="#3ecf8e"/>
+        </g>
+      </svg>
+      <div>
+        <h1>Rubik's Cube Solver</h1>
+        <p style="font-size:14px">Отсканируй свой кубик и получи пошаговое решение</p>
+      </div>
+    </div>
+
+    <div id="three" aria-label="3D кубик"></div>
+
+    <button class="btn primary big" id="btn-scan">📷 Сканировать кубик</button>
+    <button class="btn big" id="btn-manual">✎ Ввести цвета вручную</button>
+    <div class="btn-row">
+      <button class="btn ghost" id="btn-help">Как пользоваться</button>
+      <button class="btn ghost" id="btn-settings">⚙︎ Настройки</button>
+    </div>
+    <div class="card" id="stats-card">
+      <h3>Статистика</h3>
+      <div class="row"><span>Собрано кубиков</span><b id="st-count">0</b></div>
+      <div class="row"><span>Лучшее время</span><b id="st-best">—</b></div>
+      <div class="row"><span>Последнее решение</span><b id="st-last">—</b></div>
+    </div>
+  </section>
+
+  <!-- ===== CAMERA SCAN ===== -->
+  <section id="scr-scan" class="screen">
+    <div class="row" style="border:none;padding:0">
+      <button class="btn btn-icon ghost" id="scan-back">←</button>
+      <div style="flex:1;text-align:center">
+        <h2 id="scan-title">Грань: Верхняя (U)</h2>
+        <p id="scan-sub" style="font-size:13px">Наведи кубик в рамку</p>
+      </div>
+      <button class="btn btn-icon ghost" id="scan-switch">⇄</button>
+    </div>
+    <div class="progress"><i id="scan-prog"></i></div>
+    <div class="stage" id="scan-stage">
+      <video id="scan-video" playsinline autoplay muted></video>
+      <canvas class="overlay" id="scan-overlay"></canvas>
+      <div class="hint" id="scan-hint">Помести грань целиком в квадрат</div>
+    </div>
+    <div class="grid3" id="scan-preview" style="max-width:280px;margin:0 auto"></div>
+    <div class="btn-row">
+      <button class="btn" id="scan-rescan">↻ Пересканировать</button>
+      <button class="btn primary" id="scan-next">Далее →</button>
+    </div>
+    <p style="font-size:12px;text-align:center">Тап по ячейке — исправить цвет</p>
+  </section>
+
+  <!-- ===== MANUAL INPUT ===== -->
+  <section id="scr-manual" class="screen">
+    <div class="row" style="border:none;padding:0">
+      <button class="btn btn-icon ghost" id="manual-back">←</button>
+      <h2 style="flex:1;text-align:center">Ручной ввод</h2>
+      <button class="btn btn-icon ghost" id="manual-reset">↺</button>
+    </div>
+    <p style="font-size:13px">Заполни все 54 клетки. Центры фиксированы по стандартной схеме (белый сверху, зелёный спереди).</p>
+    <div class="faces" id="manual-faces"></div>
+    <div class="palette" id="manual-palette"></div>
+    <div id="manual-status" class="card" style="padding:10px 14px;font-size:14px"></div>
+    <div class="btn-row">
+      <button class="btn" id="manual-shuffle">⇄ Перемешать</button>
+      <button class="btn primary" id="manual-solve" disabled>Решить →</button>
+    </div>
+  </section>
+
+  <!-- ===== SOLVE / STEP-BY-STEP ===== -->
+  <section id="scr-solve" class="screen">
+    <div class="row" style="border:none;padding:0">
+      <button class="btn btn-icon ghost" id="solve-back">←</button>
+      <h2 style="flex:1;text-align:center">Пошаговое решение</h2>
+      <button class="btn btn-icon ghost" id="solve-reset">↺</button>
+    </div>
+    <div id="three-solve" style="width:100%;aspect-ratio:1;border-radius:var(--r);border:1px solid var(--border);background:#0a0c0f;touch-action:none"></div>
+    <div class="card" style="padding:14px">
+      <div class="step-bar"><span id="step-pos">Шаг 1 из 0</span><span id="step-phase">—</span></div>
+      <div class="move-huge" id="step-move">—</div>
+      <div class="move-desc" id="step-desc">—</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="step-prev">← Назад</button>
+      <button class="btn primary" id="step-next">Далее →</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="step-replay">↻ Повторить</button>
+      <button class="btn" id="step-auto">▶ Авто</button>
+      <button class="btn" id="step-list">📋 Решение</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" id="step-mistake">Я ошибся</button>
+      <button class="btn ghost" id="step-undo">Отменить ход</button>
+    </div>
+  </section>
+
+  <!-- ===== HELP ===== -->
+  <section id="scr-help" class="screen">
+    <div class="row" style="border:none;padding:0">
+      <button class="btn btn-icon ghost" id="help-back">←</button>
+      <h2 style="flex:1;text-align:center">Как пользоваться</h2>
+      <div style="width:52px"></div>
+    </div>
+    <div class="card">
+      <h3>Обозначения граней</h3>
+      <div class="legend">
+        <b>U</b><span>Верхняя (Up)</span>
+        <b>R</b><span>Правая (Right)</span>
+        <b>F</b><span>Передняя (Front)</span>
+        <b>D</b><span>Нижняя (Down)</span>
+        <b>L</b><span>Левая (Left)</span>
+        <b>B</b><span>Задняя (Back)</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Обозначения ходов</h3>
+      <div class="legend">
+        <b>R</b><span>поворот грани на 90° по часовой (глядя на грань)</span>
+        <b>R'</b><span>поворот на 90° против часовой</span>
+        <b>R2</b><span>поворот на 180°</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Сканирование</h3>
+      <p>1. Запусти камеру. Держи кубик так, чтобы в рамку попадала одна грань.</p>
+      <p>2. Сканируй в порядке: U → R → F → D → L → B. Между сканами поворачивай кубик целиком, не меняя относительную ориентацию сторон.</p>
+      <p>3. Камера запрашивает HTTPS. При работе по file:// доступ к камере недоступен — используй ручной ввод.</p>
+    </div>
+    <div class="card">
+      <h3>О точности распознавания</h3>
+      <p>Цвета классифицируются в пространстве HSV с калибровкой по центральным элементам. Если уверенность низкая — ячейка подсвечивается, тапни её и выбери цвет вручную.</p>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS ===== -->
+  <section id="scr-settings" class="screen">
+    <div class="row" style="border:none;padding:0">
+      <button class="btn btn-icon ghost" id="set-back">←</button>
+      <h2 style="flex:1;text-align:center">Настройки</h2>
+      <div style="width:52px"></div>
+    </div>
+    <div class="card">
+      <div class="row"><span>Скорость анимации</span>
+        <div class="seg" id="set-speed">
+          <button data-v="150">Медл.</button><button data-v="300" class="on">Сред.</button><button data-v="600">Быстр.</button>
+        </div>
+      </div>
+      <div class="row"><span>Звуки</span>
+        <label class="switch"><input type="checkbox" id="set-sound"><i></i></label>
+      </div>
+      <div class="row"><span>Тёмная тема</span>
+        <label class="switch"><input type="checkbox" id="set-dark" checked><i></i></label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Данные</h3>
+      <div class="row"><span>История решений</span><b id="set-hist">0</b></div>
+      <button class="btn" id="set-clear">Очистить статистику</button>
+    </div>
+    <p style="font-size:12px;text-align:center;color:var(--text-dim)">Версия 1.0 · все данные хранятся локально</p>
+  </section>
+
 </div>
+<div id="toast" class="toast"></div>
 
-<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-<div class="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <div class="brand-mark"></div>
-      <div class="brand-name">MOROF</div>
-    </div>
-
-    <div class="search-box" id="sidebarSearch">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5e6368" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" placeholder="Поиск чатов" id="historySearchInput">
-      <span class="kbd">⌘K</span>
-    </div>
-
-    <div class="sidebar-actions-row">
-      <button class="sidebar-action-btn" id="sidebarSettingsBtn" title="Настройкя Ара">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        <span>Настройки</span>
-      </button>
-      <button class="sidebar-action-btn" id="sidebarToggleBtn" title="Меню">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        <span>Меню</span>
-      </button>
-    </div>
-
-    <button class="btn-newchat" id="newChatBtn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Новый чат
-    </button>
-
-    <div class="history" id="historyList">
-      <div class="history-group-label">Недавние</div>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="profile-row" id="profileBtn">
-        <div class="avatar">М</div>
-        <div class="profile-meta">
-          <div class="profile-name">Малой</div>
-          <div class="profile-plan">Advanced</div>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="main">
-    <div class="topbar">
-      <div class="topbar-left">
-        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Открыть меню">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        </button>
-        <div class="model-selector" id="modelSelector">
-          <span class="model-dot"></span>
-          <span id="modelName">MOROF Pro</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-          <div class="model-dropdown">
-            <div class="model-option selected" data-name="MOROF Pro">
-              <div class="mo-icon"></div>
-              <div><div class="mo-title">MOROF Pro</div><div class="mo-desc">Для сложных задач и анализа кода</div></div>
-            </div>
-            <div class="model-option" data-name="MOROF Ultra">
-              <div class="mo-icon" style="background:#34a853"></div>
-              <div><div class="mo-title">MOROF Ultra</div><div class="mo-desc">Максимальная производительность и глубина</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <button class="icon-btn" id="settingsBtn" aria-label="Настройки">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- HOME -->
-    <div class="home" id="homeScreen">
-      <div class="greeting" id="greetingText">Привет, Мария</div>
-      <h1>Чем я могу помочь?</h1>
-
-      <div class="examples" id="examplesGrid">
-        <div class="example-card" data-prompt="Объясни квантовые вычисления простыми словами">
-          <span class="ex-text">Объясни сложную тему простыми словами</span>
-          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg></div>
-        </div>
-        <div class="example-card" data-prompt="Напиши Python-скрипт, который сортирует список файлов по размеру">
-          <span class="ex-text">Напиши Python-скрипт</span>
-          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div>
-        </div>
-        <div class="example-card" data-prompt="Помоги спланировать запуск нового продукта по неделям">
-          <span class="ex-text">Помоги спланировать проект</span>
-          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-        </div>
-        <div class="example-card" data-prompt="Придумай идеи для подарка другу-программисту">
-          <span class="ex-text">Придумай идеи для подарка</span>
-          <div class="ex-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/></svg></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CHAT -->
-    <div class="chat-scroll chat-hidden" id="chatScroll">
-      <div class="chat-inner" id="chatInner"></div>
-    </div>
-    <button class="jump-btn" id="jumpBtn">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0-6-6m6 6 6-6"/></svg>
-      Новый ответ
-    </button>
-
-    <!-- INPUT -->
-    <div class="input-region">
-      <div class="input-shell">
-        <div class="input-card" id="inputCard">
-          <div class="attach-row" id="attachRow" style="display:none;"></div>
-          <div class="input-row">
-            <textarea id="composer" rows="1" placeholder="Введите запрос для MOROF…"></textarea>
-          </div>
-          <div class="input-row" style="justify-content:space-between; margin-top:8px;">
-            <div class="input-tools">
-              <button class="icon-btn" id="attachBtn" aria-label="Добавить файл" title="Добавить файл">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              </button>
-              <button class="icon-btn mic-btn" id="micBtn" aria-label="Голосовой ввод" title="Голосовой ввод">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4"/></svg>
-              </button>
-            </div>
-            <button class="send-btn" id="sendBtn" aria-label="Отправить">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="hint-row">
-          <span>MOROF может допускать неточности. Проверяйте важную информацию.</span>
-        </div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<!-- COMMAND PALETTE -->
-<div class="overlay" id="paletteOverlay">
-  <div class="palette">
-    <div class="palette-search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5e6368" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" id="paletteInput" placeholder="Введите команду или поиск…">
-      <span class="kbd">Esc</span>
-    </div>
-    <div class="palette-list" id="paletteList"></div>
-  </div>
-</div>
-
-<!-- SETTINGS MODAL -->
-<div class="overlay center" id="settingsOverlay">
-  <div class="settings-modal-panel">
-    <div class="settings-header">
-      <h3>Настройки</h3>
-      <button class="icon-btn" id="closeSettings" aria-label="Закрыть">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    
-    <div class="settings-scroll-container">
-      <div class="settings-section-title">Внешний вид</div>
-      <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Тема интерфейса</div>
-            <div class="setting-desc">Выберите светлую или тёмную тему</div>
-          </div>
-          <div class="seg" id="themeSeg">
-            <button class="active" data-v="light">Светлая</button>
-            <button data-v="dark">Тёмная</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-section-title">AI и Модели</div>
-      <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Температура генерации</div>
-            <div class="setting-desc">Креативность ответов (0.7)</div>
-          </div>
-          <input type="range" min="0" max="1" step="0.1" value="0.7" id="tempRange" style="accent-color: var(--accent);">
-        </div>
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Потоковый вывод</div>
-            <div class="setting-desc">Анимация набора текста</div>
-          </div>
-          <div class="gswitch on" id="streamSwitch"></div>
-        </div>
-      </div>
-
-      <div class="settings-section-title">Уведомления и Звук</div>
-      <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Звуковые эффекты</div>
-            <div class="setting-desc">Звук при отправке сообщений</div>
-          </div>
-          <div class="gswitch on" id="soundSwitch"></div>
-        </div>
-      </div>
-
-      <div class="settings-section-title">Данные и История</div>
-      <div class="ios-glass-card">
-        <div class="setting-row">
-          <div>
-            <div class="setting-label">Очистить всю историю</div>
-            <div class="setting-desc">Удалить сохраненные разговоры</div>
-          </div>
-          <button class="btn ghost" id="clearAllHistoryBtn" style="padding:6px 12px; font-size:12px;">Удалить все</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ACCOUNT MODAL -->
-<div class="overlay center" id="accountOverlay">
-  <div class="account-modal-panel">
-    <div class="account-avatar-large">М</div>
-    <h3 style="margin:0 0 4px; font-size:18px;">Мария</h3>
-    <p style="margin:0 0 12px; font-size:13px; color:var(--ink-3);">Advanced Plan</p>
-    
-    <div class="account-info-group">
-      <div class="account-info-item">
-        <span class="account-info-label">Почта</span>
-        <span class="account-info-val">maria@morof.ai</span>
-      </div>
-      <div class="account-info-item">
-        <span class="account-info-label">Статус</span>
-        <span class="account-info-val" style="color:#34c759;">Активен</span>
-      </div>
-      <div class="account-info-item">
-        <span class="account-info-label">Устройство</span>
-        <span class="account-info-val">Web Client</span>
-      </div>
-    </div>
-
-    <div style="display:flex; gap:8px; margin-top:16px;">
-      <button class="btn ghost" id="closeAccountModal" style="flex:1;">Закрыть</button>
-      <button class="btn danger" id="logoutBtn" style="flex:1;">Выйти</button>
-    </div>
-  </div>
-</div>
-
-<!-- DELETE CONFIRM -->
-<div class="overlay center" id="deleteOverlay">
-  <div class="modal confirm-modal" style="background:var(--glass-fill-solid); backdrop-filter:blur(24px); border-radius:var(--radius-lg); border:1px solid var(--glass-border);">
-    <h4>Удалить разговор?</h4>
-    <p>Это действие нельзя отменить.</p>
-    <div class="confirm-actions">
-      <button class="btn ghost" id="cancelDelete">Отмена</button>
-      <button class="btn danger" id="confirmDelete">Удалить</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-stack" id="toastStack"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-(function(){
-  "use strict";
-  const $ = (s, ctx) => (ctx||document).querySelector(s);
-  const $$ = (s, ctx) => Array.from((ctx||document).querySelectorAll(s));
+"use strict";
+/* =====================================================================
+   RUBIK'S CUBE SOLVER — single-file application
+   Модули:
+     • CubeState — модель 3x3 с граневыми стикерами и корректными ходами
+     • CubeValidator — проверка допустимости
+     • CubeSolver — послойный решатель (cross → F2L → OLL → PLL)
+     • ColorDetector — HSV-классификатор с калибровкой
+     • CameraScanner — getUserMedia + сэмплирование кадров
+     • Cube3D — Three.js визуализация
+     • Storage — localStorage
+     • App — маршрутизация экранов и состояние
+   ===================================================================== */
 
-  function toast(msg){
-    const stack = $("#toastStack");
-    const el = document.createElement("div");
-    el.className = "toast";
-    el.innerHTML = `<span>${msg}</span>`;
-    stack.appendChild(el);
-    setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(), 200); }, 2500);
-  }
+/* ============================ 1. CONSTANTS ============================ */
+const COLORS = ['U','R','F','D','L','B'];                 // U=белый,R=красн,F=зел,D=жёлт,L=оранж,B=син
+const COLOR_HEX = { U:'#e8ecf1', R:'#e5484d', F:'#3ecf8e', D:'#f5d23e', L:'#f58a20', B:'#3b82f6' };
+const FACE_RU = { U:'Верхняя', R:'Правая', F:'Передняя', D:'Нижняя', L:'Левая', B:'Задняя' };
+const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB'.split('');
+const FACE_CENTER = { U:4, R:13, F:22, D:31, L:40, B:49 };
 
-  function escapeHtml(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
-
-  (function greet(){
-    const h = new Date().getHours();
-    const g = h < 5 ? "Доброй ночи, Мария" : h < 12 ? "Доброе утро, Мария" : h < 18 ? "Добрый день, Мария" : "Добрый вечер, Мария";
-    $("#greetingText").textContent = g;
-  })();
-
-  const sidebar = $("#sidebar"), backdrop = $("#sidebarBackdrop");
-  function openSidebar(){ 
-    sidebar.classList.add("open"); 
-    backdrop.classList.add("show"); 
-  }
-  function closeSidebar(){ 
-    sidebar.classList.remove("open"); 
-    backdrop.classList.remove("show"); 
-  }
-  $("#menuBtn").addEventListener("click", (e)=>{
-    e.stopPropagation();
-    if(sidebar.classList.contains("open")) closeSidebar();
-    else openSidebar();
+/* ---- Геометрия граней: индекс → (позиция, нормаль) ------------------ */
+/* Кубик в координатах x=вправо, y=вверх, z=вперёд (спереди). */
+function buildGeometry(){
+  const geo = [];
+  const normals = { U:[0,1,0], R:[1,0,0], F:[0,0,1], D:[0,-1,0], L:[-1,0,0], B:[0,0,-1] };
+  // U face: y=+1. U0=(-1,1,-1) back-left → U8=(1,1,1) front-right
+  const U=[[-1,1,-1],[0,1,-1],[1,1,-1],[-1,1,0],[0,1,0],[1,1,0],[-1,1,1],[0,1,1],[1,1,1]];
+  const R=[[1,1,1],[1,1,0],[1,1,-1],[1,0,1],[1,0,0],[1,0,-1],[1,-1,1],[1,-1,0],[1,-1,-1]];
+  const F=[[-1,1,1],[0,1,1],[1,1,1],[-1,0,1],[0,0,1],[1,0,1],[-1,-1,1],[0,-1,1],[1,-1,1]];
+  const D=[[-1,-1,1],[0,-1,1],[1,-1,1],[-1,-1,0],[0,-1,0],[1,-1,0],[-1,-1,-1],[0,-1,-1],[1,-1,-1]];
+  const L=[[-1,1,-1],[-1,1,0],[-1,1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,-1,-1],[-1,-1,0],[-1,-1,1]];
+  const B=[[1,1,-1],[0,1,-1],[-1,1,-1],[1,0,-1],[0,0,-1],[-1,0,-1],[1,-1,-1],[0,-1,-1],[-1,-1,-1]];
+  [['U',U],['R',R],['F',F],['D',D],['L',L],['B',B]].forEach(([f,arr])=>{
+    arr.forEach(p=>geo.push({face:f,pos:p,n:normals[f]}));
   });
-  $("#sidebarToggleBtn").addEventListener("click", (e)=>{
-    e.stopPropagation();
-    closeSidebar();
-  });
-  backdrop.addEventListener("click", closeSidebar);
+  return geo;
+}
+const GEO = buildGeometry();
+const GEO_KEY = (p,n)=>p.join(',')+'|'+n.join(',');
+const POS_INDEX = new Map(); GEO.forEach((g,i)=>{ POS_INDEX.set(GEO_KEY(g.pos,g.n), i); });
 
-  let chatHistoryData = JSON.parse(localStorage.getItem("morof_history") || "null") || [
-    {id: "1", title: "Объясни React хуки", messages: [
-      {role: "user", text: "Объясни React хуки"},
-      {role: "assistant", text: "React хуки — это функции, которые позволяют использовать состояние и другие возможности React без написания классов. Основные хуки: <strong>useState</strong>, <strong>useEffect</strong> и <strong>useContext</strong>."}
-    ]},
-    {id: "2", title: "Напиши письмо клиенту", messages: []},
-    {id: "3", title: "Отладка Python-скрипта", messages: []}
-  ];
+/* ---- Матрицы поворотов (3x3) --------------------------------------- */
+function rot(axis, dir){ // dir=+1: по часовой при взгляде с положительной оси? Нет: dir задаёт знак угла.
+  const c=0, s=dir; // 90°
+  if(axis==='x') return p=>[p[0], -p[2]*s,  p[1]*s];   // R_x(-90): (x,y,z)→(x,z,-y)
+  if(axis==='y') return p=>[-p[2]*s, p[1], p[0]*s];   // R_y(-90): (x,y,z)→(-z,y,x)
+  if(axis==='z') return p=>[p[1]*s, -p[0]*s, p[2]];   // R_z(-90): (x,y,z)→(y,-x,z)
+}
+/* Какие ходы "правильные" по часовой при взгляде на грань:
+   U: R_y(-90), R: R_x(-90), F: R_z(-90), D: R_y(+90), L: R_x(+90), B: R_z(+90) */
+const FACE_ROT = {
+  U:{axis:'y',dir:-1}, R:{axis:'x',dir:-1}, F:{axis:'z',dir:-1},
+  D:{axis:'y',dir:+1}, L:{axis:'x',dir:+1}, B:{axis:'z',dir:+1}
+};
 
-  function saveHistoryToStorage(){
-    localStorage.setItem("morof_history", JSON.stringify(chatHistoryData));
-  }
-
-  let currentChatId = "1";
-
-  function renderHistoryList(filter=""){
-    const listEl = $("#historyList");
-    const q = filter.toLowerCase();
-    const filtered = chatHistoryData.filter(item => item.title.toLowerCase().includes(q));
-    
-    listEl.innerHTML = `<div class="history-group-label">Недавние</div>` + 
-      filtered.map(item => `
-        <div class="history-item ${item.id === currentChatId ? 'active' : ''}" data-id="${item.id}" data-title="${escapeHtml(item.title)}">
-          <span class="title">${escapeHtml(item.title)}</span>
-          <button class="more-btn" title="Опции">⋯</button>
-        </div>
-      `).join("");
-
-    listEl.querySelectorAll(".history-item").forEach(it=>{
-      it.addEventListener("click", (e)=>{
-        if(e.target.closest(".more-btn")) return;
-        const id = it.dataset.id;
-        loadChatSession(id);
-        if(window.innerWidth <= 820) closeSidebar();
-      });
-    });
-
-    listEl.querySelectorAll(".more-btn").forEach(btn=>{
-      btn.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        pendingDeleteItem = btn.closest(".history-item").dataset.id;
-        openOverlay("#deleteOverlay");
-      });
-    });
-  }
-
-  const homeScreen = $("#homeScreen"), chatScroll = $("#chatScroll"), chatInner = $("#chatInner");
-  let started = false;
-
-  function resetToHome(){
-    started = false;
-    chatScroll.classList.add("chat-hidden");
-    homeScreen.style.display = "flex";
-    setTimeout(()=>homeScreen.classList.remove("leaving"), 10);
-    chatInner.innerHTML = "";
-    renderHistoryList();
-  }
-
-  function loadChatSession(id){
-    currentChatId = id;
-    $$(".history-item").forEach(x=>{
-      if(x.dataset.id === id) x.classList.add("active");
-      else x.classList.remove("active");
-    });
-    const session = chatHistoryData.find(s => s.id === id);
-    if(session && session.messages && session.messages.length > 0){
-      started = true;
-      homeScreen.classList.add("leaving");
-      setTimeout(()=>{ homeScreen.style.display = "none"; }, 300);
-      chatScroll.classList.remove("chat-hidden");
-      chatInner.innerHTML = "";
-      session.messages.forEach(m => {
-        if(m.role === 'user') appendUserMessageDOM(m.text, m.files);
-        else appendAssistantMessageDOM(m.text);
-      });
+/* Строим перестановки для всех ходов */
+function buildPerm(face){
+  const {axis,dir}=FACE_ROT[face];
+  const r=rot(axis,dir);
+  const layerCoord = {U:1,R:1,F:1,D:-1,L:-1,B:-1}[face];
+  const axisIdx = {U:1,R:0,F:2,D:1,L:0,B:2}[face];
+  const perm = new Array(54);
+  for(let i=0;i<54;i++){
+    const g=GEO[i];
+    if(g.pos[axisIdx] === layerCoord){
+      const np = r(g.pos);
+      const nn = r(g.n);
+      const j = POS_INDEX.get(GEO_KEY(np.map(Math.round), nn.map(Math.round)));
+      perm[j]=i;
     } else {
-      resetToHome();
+      perm[i]=i;
     }
   }
+  return perm;
+}
+function composePerm(a,b){ const r=new Array(54); for(let i=0;i<54;i++) r[i]=a[b[i]]; return r; }
 
-  renderHistoryList();
+/* MOVES: имя → перестановка. perm[dest]=src, применяем как new[perm[i]]=old[i]… 
+   Внимание: наш perm[j]=i означает "старый стикер i переехал в позицию j",
+   т.е. new[j] = old[i] = old[perm[j]]. Это соответствует распространённому определению. */
+const BASE_PERM = {};
+Object.keys(FACE_ROT).forEach(f => BASE_PERM[f] = buildPerm(f));
+const MOVES = {};
+Object.keys(BASE_PERM).forEach(f=>{
+  MOVES[f]   = BASE_PERM[f];
+  MOVES[f+"'"] = invertPerm(BASE_PERM[f]);
+  MOVES[f+"2"] = composePerm(BASE_PERM[f], BASE_PERM[f]);
+});
+function invertPerm(p){ const r=new Array(54); for(let i=0;i<54;i++) r[p[i]]=i; return r; }
+const MOVE_NAMES = Object.keys(MOVES);
 
-  let pendingDeleteItem = null;
-  $("#cancelDelete").addEventListener("click", ()=>closeOverlay("#deleteOverlay"));
-  $("#confirmDelete").addEventListener("click", ()=>{
-    if(pendingDeleteItem){
-      chatHistoryData = chatHistoryData.filter(s => s.id !== pendingDeleteItem);
-      saveHistoryToStorage();
-      renderHistoryList($("#historySearchInput").value);
-      toast("Разговор удалён");
-      if(currentChatId === pendingDeleteItem){
-        resetToHome();
-      }
-    }
-    closeOverlay("#deleteOverlay");
-  });
+/* Список ходов без одной и той же грани подряд (для поиска) */
+const MOVE_FACE = {}; MOVE_NAMES.forEach(m=>MOVE_FACE[m]=m[0]);
 
-  $("#historySearchInput").addEventListener("input", (e)=>{
-    renderHistoryList(e.target.value);
-  });
-
-  $("#newChatBtn").addEventListener("click", ()=>{
-    const newId = Date.now().toString();
-    const newSession = {id: newId, title: "Новый чат", messages: []};
-    chatHistoryData.unshift(newSession);
-    saveHistoryToStorage();
-    currentChatId = newId;
-    renderHistoryList();
-    resetToHome();
-    if(window.innerWidth <= 820) closeSidebar();
-  });
-
-  const modelSelector = $("#modelSelector");
-  modelSelector.addEventListener("click", (e)=>{
-    if(e.target.closest(".model-option")) return;
-    modelSelector.classList.toggle("open");
-  });
-  $$(".model-option").forEach(opt=>{
-    opt.addEventListener("click", ()=>{
-      $$(".model-option").forEach(o=>o.classList.remove("selected"));
-      opt.classList.add("selected");
-      $("#modelName").textContent = opt.dataset.name;
-      modelSelector.classList.remove("open");
-      toast("Модель изменена: " + opt.dataset.name);
-    });
-  });
-  document.addEventListener("click", (e)=>{
-    if(!e.target.closest("#modelSelector")) modelSelector.classList.remove("open");
-  });
-
-  function openOverlay(sel){ $(sel).classList.add("show"); }
-  function closeOverlay(sel){ $(sel).classList.remove("show"); }
-  $$(".overlay").forEach(ov=>{
-    ov.addEventListener("click", (e)=>{ if(e.target === ov) closeOverlay("#"+ov.id); });
-  });
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape"){ $$(".overlay.show").forEach(ov=>closeOverlay("#"+ov.id)); }
-  });
-
-  $("#settingsBtn").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
-  $("#sidebarSettingsBtn").addEventListener("click", ()=>openOverlay("#settingsOverlay"));
-  $("#closeSettings").addEventListener("click", ()=>closeOverlay("#settingsOverlay"));
-
-  $("#profileBtn").addEventListener("click", ()=>openOverlay("#accountOverlay"));
-  $("#closeAccountModal").addEventListener("click", ()=>closeOverlay("#accountOverlay"));
-  $("#logoutBtn").addEventListener("click", ()=>{
-    toast("Выход из аккаунта выполнен");
-    closeOverlay("#accountOverlay");
-  });
-
-  const savedTheme = localStorage.getItem("morof_theme") || "light";
-  if(savedTheme === "dark"){
-    document.documentElement.setAttribute("data-theme", "dark");
-    $$("#themeSeg button").forEach(b => b.classList.toggle("active", b.dataset.v === "dark"));
+/* ============================ 2. CUBE STATE ========================== */
+class CubeState{
+  constructor(f){ this.f = f ? f.slice() : SOLVED.slice(); }
+  clone(){ return new CubeState(this.f); }
+  apply(moveOrPerm){
+    const p = typeof moveOrPerm==='string' ? MOVES[moveOrPerm] : moveOrPerm;
+    const n = new Array(54);
+    for(let i=0;i<54;i++) n[p[i]] = this.f[i];
+    this.f = n; return this;
   }
+  applySeq(seq){ for(const m of seq) this.apply(m); return this; }
+  isSolved(){ for(let i=0;i<54;i++) if(this.f[i]!==SOLVED[i]) return false; return true; }
+  toString(){ return this.f.join(''); }
+  get(i){ return this.f[i]; }
+}
 
-  $$("#themeSeg button").forEach(btn => {
-    btn.addEventListener("click", () => {
-      $$("#themeSeg button").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const v = btn.dataset.v;
-      if(v === "dark"){
-        document.documentElement.setAttribute("data-theme", "dark");
-        localStorage.setItem("morof_theme", "dark");
-      } else {
-        document.documentElement.removeAttribute("data-theme");
-        localStorage.setItem("morof_theme", "light");
-      }
-      toast("Тема изменена");
-    });
-  });
+/* ============================ 3. VALIDATOR =========================== */
+class CubeValidator{
+  static validate(f){
+    const errs = [];
+    // 1) все 54 стикера заданы
+    if(f.length!==54) { errs.push('Нужно 54 стикера'); return {ok:false, errors:errs}; }
+    // 2) по 9 каждого цвета
+    const cnt = {};
+    for(const c of f) cnt[c]=(cnt[c]||0)+1;
+    for(const c of COLORS) if((cnt[c]||0)!==9) errs.push(`Цвет ${c}: ${cnt[c]||0} клеток (нужно 9)`);
+    if(errs.length) return {ok:false, errors:errs};
+    // 3) центры совпадают со «стандартной» схемой
+    for(const c of COLORS) if(f[FACE_CENTER[c]] !== c) errs.push(`Центр ${c} не совпадает (сейчас ${f[FACE_CENTER[c]]})`);
+    if(errs.length) return {ok:false, errors:errs};
 
-  $$(".gswitch").forEach(sw => {
-    sw.addEventListener("click", () => {
-      sw.classList.toggle("on");
-      toast("Настройка обновлена");
-    });
-  });
-
-  $("#clearAllHistoryBtn").addEventListener("click", () => {
-    chatHistoryData = [];
-    saveHistoryToStorage();
-    renderHistoryList();
-    resetToHome();
-    toast("Вся история очищена");
-    closeOverlay("#settingsOverlay");
-  });
-
-  const commands = [
-    {label:"Новый чат", icon:"＋", action:()=>{ $("#newChatBtn").click(); }},
-    {label:"Настройки", icon:"⚙", action:()=>openOverlay("#settingsOverlay")},
-    {label:"Сменить модель", icon:"◈", action:()=>modelSelector.classList.toggle("open")},
-  ];
-  function renderPalette(query){
-    const list = $("#paletteList");
-    const q = (query||"").toLowerCase();
-    const filtered = commands.filter(c=>c.label.toLowerCase().includes(q));
-    list.innerHTML = filtered.map((c,i)=>`
-      <div class="palette-item ${i===0?'hi':''}" data-idx="${i}">
-        <span class="p-ico">${c.icon}</span><span>${c.label}</span>
-      </div>`).join("") || `<div style="padding:20px;text-align:center;color:var(--ink-3);font-size:14px;">Ничего не найдено</div>`;
-    list.querySelectorAll(".palette-item").forEach(it=>{
-      it.addEventListener("click", ()=>{
-        filtered[+it.dataset.idx].action();
-        closeOverlay("#paletteOverlay");
-      });
-    });
+    // 4-9) разложим на кубики и проверим чётности/ориентации
+    try{
+      const c = faceletsToCubies(f);
+      if(!c) throw new Error('bad cubies');
+      const {cp,co,ep,eo} = c;
+      // повторяющиеся элементы
+      if(new Set(cp).size!==8) errs.push('Дубликат углового элемента');
+      if(new Set(ep).size!==12) errs.push('Дубликат рёберного элемента');
+      // сумма ориентаций углов кратна 3
+      const sumCo = co.reduce((a,b)=>a+b,0); if(sumCo%3!==0) errs.push('Недопустимая сумма ориентаций углов');
+      // сумма ориентаций рёбер чётна
+      const sumEo = eo.reduce((a,b)=>a+b,0); if(sumEo%2!==0) errs.push('Недопустимая сумма ориентаций рёбер');
+      // чётность перестановок совпадает
+      if(permParity(cp) !== permParity(ep)) errs.push('Нечётная перестановка (невозможное состояние)');
+    }catch(e){ errs.push('Не удалось разобрать состояние кубика'); }
+    return {ok:errs.length===0, errors:errs};
   }
-  function openPalette(){
-    openOverlay("#paletteOverlay");
-    $("#paletteInput").value = "";
-    renderPalette("");
-    setTimeout(()=>$("#paletteInput").focus(), 50);
-  }
-  $("#paletteInput").addEventListener("input", (e)=>renderPalette(e.target.value));
-  document.addEventListener("keydown", (e)=>{
-    if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){
-      e.preventDefault(); openPalette();
-    }
-  });
+}
+function permParity(p){ // чётность перестановки: возвращает 0 или 1
+  const seen=new Array(p.length).fill(false); let par=0;
+  for(let i=0;i<p.length;i++){ if(seen[i])continue; let j=i,len=0;
+    while(!seen[j]){ seen[j]=true; j=p[j]; len++; }
+    par ^= (len-1)&1; }
+  return par;
+}
 
-  // Attachments Handling
-  const attachRow = $("#attachRow");
-  let attachments = [];
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.multiple = true;
-  fileInput.style.display = "none";
-  document.body.appendChild(fileInput);
+/* ---------- Facelets ↔ cubies (8 углов + 12 рёбер) ------------------- */
+/* Стандартные позиции:
+   Corners (0..7): URF,UFL,ULB,UBR,DFR,DLF,DBL,DRB
+   Edges (0..11): UR,UF,UL,UB,DR,DF,DL,DB,FR,FL,BL,BR
+   Стикеры позиций (по 3 у углов, по 2 у рёбер) — индексы в facelet-модели. */
+const CORNER_FACELETS = [    // [U/R/F/D/L/B-стикер]
+  [8,9,20],   // URF: U8, R0, F2
+  [6,18,38],  // UFL: U6, F0, L2
+  [0,36,47],  // ULB: U0, L0, B2
+  [2,45,11],  // UBR: U2, B0, R2
+  [29,26,15], // DFR: D2, F8, R6
+  [27,44,24], // DLF: D0, L8, F6
+  [33,53,42], // DBL: D6, B8, L6
+  [35,17,51], // DRB: D8, R8, B6
+];
+const CORNER_COLORS = [      // цвета, ожидаемые на позиции
+  ['U','R','F'], ['U','F','L'], ['U','L','B'], ['U','B','R'],
+  ['D','F','R'], ['D','L','F'], ['D','B','L'], ['D','R','B'],
+];
+const EDGE_FACELETS = [
+  [5,10],   // UR: U5, R1
+  [7,19],   // UF: U7, F1
+  [3,37],   // UL: U3, L1
+  [1,46],   // UB: U1, B1
+  [32,16],  // DR: D5, R7
+  [28,25],  // DF: D1, F7
+  [30,43],  // DL: D3, L7
+  [34,52],  // DB: D7, B7
+  [23,14],  // FR: F5, R3
+  [21,41],  // FL: F3, L5
+  [50,39],  // BL: B5, L3
+  [48,12],  // BR: B3, R5
+];
+const EDGE_COLORS = [
+  ['U','R'],['U','F'],['U','L'],['U','B'],
+  ['D','R'],['D','F'],['D','L'],['D','B'],
+  ['F','R'],['F','L'],['B','L'],['B','R'],
+];
 
-  $("#attachBtn").addEventListener("click", ()=>fileInput.click());
-  fileInput.addEventListener("change", (e)=>{
-    const files = Array.from(e.target.files);
-    files.forEach(f=>{
-      attachments.push({name: f.name, size: (f.size/1024).toFixed(1) + " KB"});
-    });
-    renderAttachments();
-    fileInput.value = "";
-  });
+function faceletsToCubies(f){
+  const colorIndex = { U:0, R:1, F:2, D:3, L:4, B:5 };
+  const cp=new Array(8).fill(-1), co=new Array(8).fill(0);
+  const ep=new Array(12).fill(-1), eo=new Array(12).fill(0);
 
-  function renderAttachments(){
-    if(attachments.length === 0){
-      attachRow.style.display = "none";
-      attachRow.innerHTML = "";
-      return;
-    }
-    attachRow.style.display = "flex";
-    attachRow.innerHTML = attachments.map((att, idx)=>`
-      <div class="attach-chip">
-        <div class="file-ico">FILE</div>
-        <span>${escapeHtml(att.name)}</span>
-        <span class="rm" data-idx="${idx}">✕</span>
-      </div>
-    `).join("");
-    attachRow.querySelectorAll(".rm").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        attachments.splice(+btn.dataset.idx, 1);
-        renderAttachments();
-      });
-    });
-  }
-
-  // Voice recording simulation
-  let isRecording = false;
-  $("#micBtn").addEventListener("click", ()=>{
-    isRecording = !isRecording;
-    const btn = $("#micBtn");
-    if(isRecording){
-      btn.classList.add("recording");
-      toast("Голосовой ввод активен...");
-    } else {
-      btn.classList.remove("recording");
-      toast("Голос распознан");
-      $("#composer.value") = $("#composer.value") + " Привет, MOROF!";
-      checkComposerReady();
-    }
-  });
-
-  const composer = $("#composer");
-  const sendBtn = $("#sendBtn");
-  const inputCard = $("#inputCard");
-
-  composer.addEventListener("focus", ()=>inputCard.classList.add("focused"));
-  composer.addEventListener("blur", ()=>inputCard.classList.remove("focused"));
-  composer.addEventListener("input", ()=>{
-    composer.style.height = "auto";
-    composer.style.height = Math.min(composer.scrollHeight, 180) + "px";
-    checkComposerReady();
-  });
-
-  function checkComposerReady(){
-    if(composer.value.trim().length > 0 || attachments.length > 0){
-      sendBtn.classList.add("ready");
-    } else {
-      sendBtn.classList.remove("ready");
-    }
-  }
-
-  function addUserMessageDOM(text, files=[]){
-    const div = document.createElement("div");
-    div.className = "msg user";
-    let fileHtml = files.map(f => `<div style="font-size:12px;opacity:0.8;margin-bottom:4px;">📎 ${escapeHtml(f.name)}</div>`).join("");
-    div.innerHTML = `<div class="bubble">${fileHtml}${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
-    chatInner.appendChild(div);
-    scrollToBottom();
-  }
-
-  function appendAssistantMessageDOM(text){
-    const div = document.createElement("div");
-    div.className = "msg assistant";
-    div.innerHTML = `
-      <div class="assistant-avatar">
-        <div class="core-wrap core-tiny"><div class="core-dot"></div></div>
-      </div>
-      <div class="assistant-body">
-        <div class="assistant-content"><p>${text.replace(/\n/g, "<br>")}</p></div>
-        <div class="msg-actions">
-          <button class="msg-action-btn copy-btn" title="Копировать">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-            <span>Копировать</span>
-          </button>
-          <button class="msg-action-btn regen-btn" title="Повторить">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.63-5.5"/></svg>
-            <span>Повторить</span>
-          </button>
-          <button class="msg-action-btn share-btn" title="Поделиться">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          </button>
-        </div>
-      </div>
-    `;
-    chatInner.appendChild(div);
-    scrollToBottom();
-
-    div.querySelector(".copy-btn").addEventListener("click", ()=>{
-      navigator.clipboard.writeText(text).then(()=>{
-        toast("Скопировано в буфер обмена");
-      }).catch(()=>{
-        toast("Ошибка копирования");
-      });
-    });
-
-    div.querySelector(".regen-btn").addEventListener("click", ()=>{
-      toast("Генерация нового ответа...");
-      setTimeout(()=>{
-        div.querySelector(".assistant-content").innerHTML = `<p>Повторный ответ: ${text}</p>`;
-        toast("Ответ обновлен");
-      }, 800);
-    });
-
-    div.querySelector(".share-btn").addEventListener("click", ()=>{
-      if(navigator.share){
-        navigator.share({title: "MOROF AI", text: text}).catch(()=>{});
-      } else {
-        navigator.clipboard.writeText(text);
-        toast("Ссылка скопирована для шаринга");
-      }
-    });
-  }
-
-  function scrollToBottom(){
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-  }
-
-  async function handleSendMessage(){
-    const text = composer.value.trim();
-    if(!text && attachments.length === 0) return;
-
-    if(!started){
-      started = true;
-      homeScreen.classList.add("leaving");
-      setTimeout(()=>{ homeScreen.style.display = "none"; }, 300);
-      chatScroll.classList.remove("chat-hidden");
-    }
-
-    const currentFiles = [...attachments];
-    attachments = [];
-    renderAttachments();
-    composer.value = "";
-    composer.style.height = "auto";
-    checkComposerReady();
-
-    addUserMessageDOM(text, currentFiles);
-
-    const session = chatHistoryData.find(s => s.id === currentChatId);
-    if(session){
-      if(session.title === "Новый чат" || !session.title){
-        session.title = text.length > 30 ? text.substring(0, 30) + "..." : text;
-      }
-      session.messages.push({role: "user", text, files: currentFiles});
-      saveHistoryToStorage();
-      renderHistoryList($("#historySearchInput").value);
-    }
-
-    // Thinking indicator
-    const loadingDiv = document.createElement("div");
-    loadingDiv.className = "msg assistant";
-    loadingDiv.innerHTML = `
-      <div class="assistant-avatar">
-        <div class="core-wrap core-tiny thinking"><div class="core-dot"></div></div>
-      </div>
-      <div class="assistant-body">
-        <div class="assistant-content" style="color:var(--ink-3);">MOROF думает...</div>
-      </div>
-    `;
-    chatInner.appendChild(loadingDiv);
-    scrollToBottom();
-
-    // Simulating response generation
-    setTimeout(()=>{
-      loadingDiv.remove();
-      const replyText = `Отличный вопрос! Основываясь на вашем запросе «${text}», система MOROF обработала данные в соответствии с параметрами модели. Все модули функционируют в штатном режиме.`;
-      appendAssistantMessageDOM(replyText);
-
-      if(session){
-        session.messages.push({role: "assistant", text: replyText});
-        saveHistoryToStorage();
-      }
-    }, 1200);
-  }
-
-  sendBtn.addEventListener("click", handleSendMessage);
-  composer.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter" && !e.shiftKey){
-      e.preventDefault();
-      handleSendMessage();
-    }
-  });
-
-  $$(".example-card").forEach(card=>{
-    card.addEventListener("click", ()=>{
-      const p = card.dataset.prompt;
-      composer.value = p;
-      checkComposerReady();
-      handleSendMessage();
-    });
-  });
-
-  chatScroll.addEventListener("scroll", ()=>{
-    const distFromBottom = chatScroll.scrollHeight - chatScroll.scrollTop - chatScroll.clientHeight;
-    if(distFromBottom > 150){
-      $("#jumpBtn").classList.add("show");
-    } else {
-      $("#jumpBtn").classList.remove("show");
-    }
-  });
-
-  $("#jumpBtn").addEventListener("click", ()=>{
-    scrollToBottom();
-    $("#jumpBtn").classList.remove("show");
-  });
-
-})();
-</script>
-</body>
-</html>
+  // Углы
+  for(let pos=0; pos<8; pos++){
+    const idx = CORNER_FACELETS[pos];
+    const cols = idx.map(i=>f[i]);
+    // ищем среди 8 угловых наборов такой, что цвета совпадают (с учётом порядка)
+    let found=-
