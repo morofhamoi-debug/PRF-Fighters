@@ -1,1508 +1,2169 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0e1013">
-<title>Rubik's Cube Solver</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="VEXA — современный маркетплейс">
+<title>VEXA — маркетплейс</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%235b21b6'/%3E%3Cpath d='M6 7l6 11 6-11' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#0e1013;--panel:#161a1f;--panel2:#1d2229;--border:#262c33;--text:#e8ecf1;--dim:#8b95a3;--acc:#5b9dff;--ok:#3ecf8e;--warn:#f5a623;--err:#ef5350;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
-body{min-height:100vh;min-height:100dvh;padding:var(--safe-t) 0 var(--safe-b)}
-#app{max-width:640px;margin:0 auto;padding:14px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
-.screen{display:none;flex-direction:column;flex:1;gap:14px;animation:fade .25s}
-.screen.active{display:flex}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-h1{font-size:24px;margin:0;font-weight:600}
-h2{font-size:19px;margin:0;font-weight:600}
-h3{font-size:13px;margin:0;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
-p{margin:0;color:var(--dim);font-size:14px}
-.logo-row{display:flex;align-items:center;gap:12px}
-.logo{width:44px;height:44px;flex:0 0 44px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px}
-.btn{appearance:none;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:14px;padding:14px 16px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:transform .08s,background .15s}
-.btn:active{transform:scale(.98);background:#242a32}
-.btn.primary{background:var(--acc);border-color:var(--acc);color:#06121f}
-.btn.ghost{background:transparent}
-.btn.big{padding:18px;font-size:16px;border-radius:20px}
-.btn:disabled{opacity:.35;cursor:not-allowed}
-.btn-icon{width:48px;height:48px;flex:0 0 48px;padding:0;border-radius:12px}
-.btn-row{display:flex;gap:8px}
-.btn-row .btn{flex:1}
-.chip{display:inline-block;padding:3px 9px;border-radius:20px;background:var(--panel2);border:1px solid var(--border);font-size:12px;color:var(--dim)}
-.progress{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
-.progress>i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
-.stage{position:relative;width:100%;aspect-ratio:1;background:#0a0c0f;border-radius:16px;overflow:hidden;border:1px solid var(--border)}
-.stage video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.stage .hint{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);padding:8px 10px;border-radius:10px;font-size:13px;color:#fff}
-#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5;transition:opacity .35s}
-#flash.on{opacity:1;transition:opacity 0s}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.cell{aspect-ratio:1;border-radius:8px;background:#2a2f36;border:2px solid transparent;cursor:pointer;transition:transform .08s}
-.cell:active{transform:scale(.94)}
-.cell.low{border-color:var(--warn);box-shadow:0 0 0 2px rgba(245,166,35,.3) inset}
-.faces{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.face{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px}
-.face .label{font-size:11px;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
-.palette{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center}
-.sw{width:36px;height:36px;border-radius:10px;border:2px solid #000;cursor:pointer}
-.sw:active{transform:scale(.9)}
-.move-huge{font-size:64px;font-weight:700;text-align:center;letter-spacing:-.03em;color:#fff;margin:4px 0;min-height:1.1em}
-.move-desc{text-align:center;color:var(--dim);font-size:14px}
-.step-bar{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px}
-#three,#three-solve{width:100%;aspect-ratio:1;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:#0a0c0f;touch-action:none}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
-.row:last-child{border-bottom:none}
-.switch{position:relative;width:48px;height:28px;flex:0 0 48px}
-.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;position:relative;z-index:2}
-.switch i{position:absolute;inset:0;background:#2a3038;border-radius:14px;transition:.2s}
-.switch i:after{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
-.switch input:checked+i{background:var(--acc)}
-.switch input:checked+i:after{transform:translateX(20px)}
-.toast{position:fixed;left:14px;right:14px;bottom:calc(14px + var(--safe-b));background:#232a33;border:1px solid #333c47;color:#fff;padding:11px 13px;border-radius:12px;font-size:14px;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;transform:translateY(20px);transition:.25s;pointer-events:none;max-width:600px;margin:0 auto;text-align:center}
-.toast.show{opacity:1;transform:none}
-.toast.err{background:#3a1e1e;border-color:#5a2a2a}
-.toast.ok{background:#14301f;border-color:#1e4a30}
-.seg{display:flex;background:var(--panel2);border-radius:10px;padding:3px;gap:3px}
-.seg button{padding:7px 10px;background:transparent;border:none;color:var(--dim);border-radius:7px;font-size:13px;font-weight:600;cursor:pointer}
-.seg button.on{background:var(--panel);color:var(--text)}
-.legend{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:14px}
-.legend b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--acc)}
+:root{
+  --vx-bg:#f6f7f9;
+  --vx-surface:#ffffff;
+  --vx-text:#0e1116;
+  --vx-muted:#6b7280;
+  --vx-muted-2:#9ca3af;
+  --vx-border:#e6e8ec;
+  --vx-border-2:#eef0f3;
+  --vx-primary:#5b21b6;
+  --vx-primary-600:#6d28d9;
+  --vx-primary-500:#7c3aed;
+  --vx-primary-050:#f5f3ff;
+  --vx-danger:#dc2626;
+  --vx-success:#059669;
+  --vx-warn:#d97706;
+  --vx-radius:14px;
+  --vx-radius-sm:10px;
+  --vx-radius-xs:8px;
+  --vx-shadow-1:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+  --vx-shadow-2:0 4px 12px rgba(16,24,40,.08);
+  --vx-shadow-3:0 12px 32px rgba(16,24,40,.12);
+  --vx-h:56px;
+  --vx-nav-h:64px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--vx-bg);color:var(--vx-text);
+  font-size:15px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  padding-bottom:calc(var(--vx-nav-h) + env(safe-area-inset-bottom));
+  overflow-x:hidden;
+}
+@media (min-width:900px){body{padding-bottom:0}}
+img{max-width:100%;display:block}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;padding:0}
+input,select,textarea{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+ul{margin:0;padding:0;list-style:none}
+:focus-visible{outline:2px solid var(--vx-primary-500);outline-offset:2px;border-radius:8px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Layout */
+.container{max-width:1240px;margin:0 auto;padding:0 16px}
+@media (min-width:900px){.container{padding:0 24px}}
+
+/* ===== Header ===== */
+.header{
+  position:sticky;top:0;z-index:40;background:var(--vx-surface);
+  border-bottom:1px solid var(--vx-border);
+  padding-top:env(safe-area-inset-top);
+}
+.header-inner{
+  height:var(--vx-h);display:flex;align-items:center;gap:10px;
+  padding:0 12px;max-width:1240px;margin:0 auto;
+}
+@media (min-width:900px){.header-inner{padding:0 24px;gap:14px}}
+.logo{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo-mark{
+  width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+  background:var(--vx-primary);color:#fff;
+}
+.logo-text{font-weight:800;letter-spacing:.06em;font-size:18px;color:var(--vx-text)}
+.search{
+  flex:1;min-width:0;display:flex;align-items:center;gap:8px;
+  background:var(--vx-bg);border:1px solid var(--vx-border);
+  border-radius:999px;height:40px;padding:0 14px;
+  transition:border-color .15s, background .15s;
+}
+.search:focus-within{border-color:var(--vx-primary-500);background:#fff;box-shadow:0 0 0 3px var(--vx-primary-050)}
+.search input{
+  border:0;outline:0;background:transparent;flex:1;min-width:0;height:100%;
+  font-size:15px;
+}
+.search .search-clear{color:var(--vx-muted);display:none;padding:4px;border-radius:50%}
+.search .search-clear.on{display:inline-flex}
+.header-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.hbtn{
+  position:relative;width:40px;height:40px;border-radius:10px;display:inline-flex;
+  align-items:center;justify-content:center;color:var(--vx-text);
+  transition:background .15s;
+}
+.hbtn:hover{background:var(--vx-bg)}
+.hbtn .badge{
+  position:absolute;top:2px;right:2px;min-width:18px;height:18px;padding:0 5px;
+  background:var(--vx-primary);color:#fff;font-size:11px;font-weight:700;
+  border-radius:999px;display:grid;place-items:center;line-height:1;
+}
+.city-btn{
+  display:none;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;
+  color:var(--vx-text);font-size:14px;font-weight:500;
+}
+.city-btn:hover{background:var(--vx-bg)}
+@media (min-width:760px){.city-btn{display:inline-flex}}
+.header-mobile-search{display:block;padding:8px 12px 10px}
+@media (min-width:760px){.header-mobile-search{display:none}}
+.header-mobile-search .search{height:42px}
+@media (min-width:760px){.header-inner .search{display:flex}}
+.header-inner .search{display:none}
+@media (min-width:760px){.header-inner .search{display:flex}}
+@media (max-width:759px){.header-inner .city-btn{display:none}}
+
+/* ===== Buttons ===== */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:44px;padding:0 18px;border-radius:12px;font-weight:600;font-size:15px;
+  background:var(--vx-primary);color:#fff;transition:transform .1s, background .15s, box-shadow .15s;
+  border:1px solid transparent;white-space:nowrap;
+}
+.btn:hover{background:var(--vx-primary-600)}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:var(--vx-surface);color:var(--vx-text);border-color:var(--vx-border)}
+.btn.sec:hover{background:var(--vx-bg)}
+.btn.ghost{background:transparent;color:var(--vx-primary)}
+.btn.ghost:hover{background:var(--vx-primary-050)}
+.btn.sm{height:36px;padding:0 12px;font-size:14px;border-radius:10px}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.5;cursor:not-allowed;pointer-events:none}
+
+/* ===== Cards / surfaces ===== */
+.card{background:var(--vx-surface);border:1px solid var(--vx-border);border-radius:var(--vx-radius);box-shadow:var(--vx-shadow-1)}
+.section{padding:22px 0}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px}
+.section-title{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
+@media (min-width:900px){.section-title{font-size:24px}}
+.section-link{color:var(--vx-primary);font-weight:600;font-size:14px}
+
+/* ===== Empty state ===== */
+.empty{
+  text-align:center;padding:44px 20px;border:1px dashed var(--vx-border);
+  border-radius:var(--vx-radius);background:var(--vx-surface);color:var(--vx-muted);
+}
+.empty .ic{width:52px;height:52px;margin:0 auto 12px;border-radius:14px;background:var(--vx-primary-050);color:var(--vx-primary);display:grid;place-items:center}
+.empty h3{margin:0 0 6px;color:var(--vx-text);font-size:16px;font-weight:700}
+.empty p{margin:0 0 16px;font-size:14px;max-width:420px;margin-left:auto;margin-right:auto}
+
+/* ===== Hero banners ===== */
+.hero{margin-top:12px}
+.hero-track{
+  position:relative;border-radius:var(--vx-radius);overflow:hidden;background:var(--vx-surface);
+  border:1px solid var(--vx-border);
+}
+.hero-slides{display:flex;transition:transform .45s cubic-bezier(.22,.61,.36,1)}
+.hero-slide{flex:0 0 100%;position:relative;aspect-ratio:16/7;background:var(--vx-bg)}
+@media (max-width:600px){.hero-slide{aspect-ratio:16/9}}
+.hero-slide img{width:100%;height:100%;object-fit:cover}
+.hero-content{
+  position:absolute;inset:0;padding:24px;display:flex;flex-direction:column;justify-content:center;
+  background:linear-gradient(90deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.55) 55%,rgba(255,255,255,0) 100%);
+  max-width:60%;
+}
+@media (max-width:600px){
+  .hero-content{padding:16px;max-width:78%;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.65))}
+}
+.hero-title{font-size:22px;font-weight:800;margin:0 0 6px;letter-spacing:-.02em;line-height:1.15}
+.hero-sub{margin:0 0 12px;color:#374151;font-size:14px}
+@media (min-width:900px){.hero-title{font-size:30px}.hero-sub{font-size:16px}}
+.hero-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(17,24,39,.25);transition:all .2s}
+.hero-dot.on{width:20px;border-radius:999px;background:var(--vx-primary)}
+
+/* ===== Categories grid ===== */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (min-width:600px){.cat-grid{grid-template-columns:repeat(4,1fr)}}
+@media (min-width:900px){.cat-grid{grid-template-columns:repeat(6,1fr);gap:14px}}
+.cat-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;
+  padding:14px 8px;border-radius:var(--vx-radius);background:var(--vx-surface);border:1px solid var(--vx-border);
+  transition:transform .15s,border-color .15s,box-shadow .15s;text-align:center;
+}
+.cat-card:hover{transform:translateY(-2px);border-color:var(--vx-primary-500);box-shadow:var(--vx-shadow-2)}
+.cat-ic{width:48px;height:48px;border-radius:12px;background:var(--vx-primary-050);color:var(--vx-primary);display:grid;place-items:center}
+.cat-name{font-size:13px;font-weight:600;color:var(--vx-text);line-height:1.2}
+
+/* ===== Product grid ===== */
+.prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (min-width:600px){.prod-grid{grid-template-columns:repeat(3,1fr);gap:14px}}
+@media (min-width:900px){.prod-grid{grid-template-columns:repeat(4,1fr);gap:16px}}
+@media (min-width:1200px){.prod-grid{grid-template-columns:repeat(5,1fr)}}
+.prod-grid.horizontal{grid-template-columns:repeat(2,minmax(160px,1fr));overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;margin:0 -16px;padding-left:16px;padding-right:16px}
+@media (min-width:600px){.prod-grid.horizontal{grid-template-columns:repeat(6,minmax(180px,1fr));margin:0;padding:0}}
+.prod-grid.horizontal .prod-card{scroll-snap-align:start}
+
+.prod-card{
+  display:flex;flex-direction:column;background:var(--vx-surface);border:1px solid var(--vx-border);
+  border-radius:var(--vx-radius);overflow:hidden;position:relative;
+  transition:transform .18s,box-shadow .18s,border-color .18s;
+}
+.prod-card:hover{transform:translateY(-2px);box-shadow:var(--vx-shadow-2);border-color:var(--vx-border-2)}
+.prod-media{aspect-ratio:1/1;background:var(--vx-bg);position:relative;overflow:hidden}
+.prod-media img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.prod-card:hover .prod-media img{transform:scale(1.04)}
+.prod-media .ph{width:100%;height:100%;display:grid;place-items:center;color:var(--vx-muted-2)}
+.prod-badges{position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px}
+.badge{
+  display:inline-flex;align-items:center;gap:4px;padding:3px 8px;font-size:11px;font-weight:700;
+  border-radius:8px;background:var(--vx-danger);color:#fff;letter-spacing:.02em;
+}
+.badge.new{background:var(--vx-primary)}
+.badge.out{background:#4b5563}
+.fav-btn{
+  position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#374151;
+  display:grid;place-items:center;transition:transform .15s,color .15s;
+}
+.fav-btn:hover{transform:scale(1.06)}
+.fav-btn.on{color:var(--vx-danger)}
+.prod-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.prod-price-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.prod-price{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.prod-old{font-size:13px;color:var(--vx-muted);text-decoration:line-through}
+.prod-disc{font-size:12px;font-weight:700;color:var(--vx-danger)}
+.prod-name{font-size:13px;line-height:1.35;color:var(--vx-text);margin:0;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.prod-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--vx-muted);flex-wrap:wrap}
+.prod-meta .star{color:#f59e0b}
+.prod-seller{font-size:11px;color:var(--vx-muted-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prod-actions{margin-top:auto;display:flex;gap:6px}
+.add-btn{
+  flex:1;height:38px;border-radius:10px;background:var(--vx-primary);color:#fff;
+  font-weight:600;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .15s,transform .1s;
+}
+.add-btn:hover{background:var(--vx-primary-600)}
+.add-btn:active{transform:scale(.97)}
+.add-btn.added{background:var(--vx-success)}
+.add-btn[disabled]{background:#e5e7eb;color:#9ca3af;cursor:not-allowed}
+
+/* ===== Layout catalog ===== */
+.catalog-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:16px 0 40px}
+@media (min-width:900px){.catalog-layout{grid-template-columns:260px 1fr;gap:28px;padding:24px 0 60px}}
+.filters-toggle{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+@media (min-width:900px){.filters-toggle{display:none}}
+.filters{
+  background:var(--vx-surface);border:1px solid var(--vx-border);border-radius:var(--vx-radius);
+  padding:16px;position:sticky;top:calc(var(--vx-h) + 12px);max-height:calc(100vh - var(--vx-h) - 24px);overflow:auto;
+}
+@media (max-width:899px){
+  .filters{display:none}
+  .filters.open{display:block;position:static;max-height:none}
+}
+.filter-group{border-bottom:1px solid var(--vx-border);padding:12px 0}
+.filter-group:last-child{border-bottom:0}
+.filter-group h4{margin:0 0 10px;font-size:14px;font-weight:700}
+.range{display:flex;gap:8px;align-items:center}
+.range input{width:100%;height:38px;border:1px solid var(--vx-border);border-radius:10px;padding:0 10px;background:var(--vx-bg);outline:0}
+.range input:focus{border-color:var(--vx-primary-500);background:#fff}
+.check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--vx-primary)}
+.sort-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.sort-select{
+  height:40px;border:1px solid var(--vx-border);background:var(--vx-surface);
+  border-radius:10px;padding:0 34px 0 12px;font-size:14px;font-weight:500;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.result-count{color:var(--vx-muted);font-size:13px}
+
+/* ===== Product detail ===== */
+.pd{padding:16px 0 40px}
+@media (min-width:900px){.pd{padding:24px 0 60px}}
+.pd-grid{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:900px){.pd-grid{grid-template-columns:1.1fr 1fr;gap:40px}}
+.gallery{position:relative}
+.gallery-main{aspect-ratio:1/1;background:var(--vx-surface);border:1px solid var(--vx-border);border-radius:var(--vx-radius);overflow:hidden;position:relative;touch-action:pan-y}
+.gallery-main img{width:100%;height:100%;object-fit:contain;transition:opacity .2s}
+.gallery-main .ph{width:100%;height:100%;display:grid;place-items:center;color:var(--vx-muted-2)}
+.gallery-thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px}
+.gallery-thumb{flex:0 0 64px;width:64px;height:64px;border-radius:10px;border:1px solid var(--vx-border);overflow:hidden;background:var(--vx-bg)}
+.gallery-thumb.on{border-color:var(--vx-primary);box-shadow:0 0 0 2px var(--vx-primary-050)}
+.gallery-thumb img{width:100%;height:100%;object-fit:cover}
+
+.pd-info h1{font-size:22px;line-height:1.2;margin:0 0 10px;letter-spacing:-.02em}
+@media (min-width:900px){.pd-info h1{font-size:28px}}
+.pd-price{display:flex;align-items:baseline;gap:12px;margin:12px 0;flex-wrap:wrap}
+.pd-price .now{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.pd-price .old{color:var(--vx-muted);text-decoration:line-through;font-size:16px}
+.pd-price .disc{background:#fef2f2;color:var(--vx-danger);font-weight:700;font-size:13px;padding:3px 8px;border-radius:6px}
+.pd-rating{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--vx-muted);margin-bottom:10px}
+.pd-rating .star{color:#f59e0b}
+.pd-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+@media (min-width:600px){.pd-actions{flex-direction:row}}
+.pd-actions .btn{flex:1}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--vx-border);border-radius:12px;overflow:hidden;background:var(--vx-surface);height:44px}
+.qty button{width:40px;height:100%;display:grid;place-items:center;color:var(--vx-text)}
+.qty button:hover{background:var(--vx-bg)}
+.qty input{width:48px;text-align:center;border:0;outline:0;background:transparent;font-weight:600;font-size:15px;height:100%}
+.pd-specs{margin-top:20px;border-top:1px solid var(--vx-border);padding-top:16px}
+.pd-specs h3{margin:0 0 10px;font-size:16px}
+.spec-table{width:100%;border-collapse:collapse;font-size:14px}
+.spec-table tr{border-bottom:1px solid var(--vx-border-2)}
+.spec-table td{padding:8px 0}
+.spec-table td:first-child{color:var(--vx-muted);width:45%}
+
+/* ===== Cart ===== */
+.cart-page{padding:16px 0 40px}
+.cart-layout{display:grid;grid-template-columns:1fr;gap:20px}
+@media (min-width:900px){.cart-layout{grid-template-columns:1fr 340px;gap:28px}}
+.cart-list{display:flex;flex-direction:column;gap:10px}
+.cart-item{display:grid;grid-template-columns:80px 1fr;gap:12px;padding:12px;border:1px solid var(--vx-border);border-radius:var(--vx-radius);background:var(--vx-surface);align-items:flex-start}
+@media (min-width:600px){.cart-item{grid-template-columns:96px 1fr auto;align-items:center}}
+.cart-item img{width:80px;height:80px;object-fit:cover;border-radius:10px;background:var(--vx-bg)}
+@media (min-width:600px){.cart-item img{width:96px;height:96px}}
+.cart-item .ph{width:80px;height:80px;border-radius:10px;background:var(--vx-bg);display:grid;place-items:center;color:var(--vx-muted-2)}
+.cart-info{min-width:0}
+.cart-info h4{margin:0 0 4px;font-size:14px;font-weight:600;line-height:1.3}
+.cart-info .price{font-weight:800;font-size:16px}
+.cart-info .seller{font-size:12px;color:var(--vx-muted-2);margin-top:2px}
+.cart-side{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.cart-remove{color:var(--vx-muted);font-size:12px}
+.cart-remove:hover{color:var(--vx-danger)}
+.summary{position:sticky;top:calc(var(--vx-h) + 12px);padding:18px}
+.summary h3{margin:0 0 14px;font-size:16px}
+.sum-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--vx-muted)}
+.sum-row.total{font-size:18px;font-weight:800;color:var(--vx-text);border-top:1px solid var(--vx-border);margin-top:8px;padding-top:12px}
+.sum-row .v{color:var(--vx-text);font-weight:600}
+
+/* ===== Profile / Forms ===== */
+.form{display:flex;flex-direction:column;gap:14px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--vx-text)}
+.field input,.field select,.field textarea{
+  width:100%;height:46px;padding:0 14px;border:1px solid var(--vx-border);border-radius:12px;
+  background:var(--vx-surface);outline:0;transition:border-color .15s,box-shadow .15s;
+}
+.field textarea{height:auto;padding:12px 14px;min-height:96px;resize:vertical;line-height:1.5}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--vx-primary-500);box-shadow:0 0 0 3px var(--vx-primary-050)}
+.field .err{color:var(--vx-danger);font-size:12px;margin-top:4px;display:none}
+.field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--vx-danger)}
+.field.invalid .err{display:block}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:48px}
+.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--vx-muted)}
+.pw-toggle:hover{background:var(--vx-bg)}
+
+.auth-wrap{max-width:420px;margin:40px auto;padding:0 16px}
+.auth-card{padding:28px 22px}
+.auth-card h1{margin:0 0 6px;font-size:24px;letter-spacing:-.02em}
+.auth-card .sub{color:var(--vx-muted);font-size:14px;margin:0 0 20px}
+.auth-switch{margin-top:16px;text-align:center;font-size:14px;color:var(--vx-muted)}
+.auth-switch a{color:var(--vx-primary);font-weight:600}
+
+.profile-head{display:flex;align-items:center;gap:14px;padding:20px;margin-top:16px}
+.avatar{width:60px;height:60px;border-radius:50%;background:var(--vx-primary-050);color:var(--vx-primary);display:grid;place-items:center;font-weight:700;font-size:22px}
+.profile-tabs{display:flex;gap:4px;border-bottom:1px solid var(--vx-border);margin-top:20px;overflow-x:auto;scrollbar-width:none}
+.profile-tabs::-webkit-scrollbar{display:none}
+.ptab{padding:12px 14px;font-size:14px;font-weight:600;color:var(--vx-muted);white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ptab.on{color:var(--vx-primary);border-color:var(--vx-primary)}
+.panel{padding:20px 0 40px}
+
+/* ===== Admin ===== */
+.admin-grid{display:grid;grid-template-columns:1fr;gap:20px;padding:20px 0 60px}
+@media (min-width:900px){.admin-grid{grid-template-columns:220px 1fr;gap:28px}}
+.admin-nav{background:var(--vx-surface);border:1px solid var(--vx-border);border-radius:var(--vx-radius);padding:8px;position:sticky;top:calc(var(--vx-h) + 12px);align-self:start}
+.admin-nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--vx-muted)}
+.admin-nav a:hover{background:var(--vx-bg);color:var(--vx-text)}
+.admin-nav a.on{background:var(--vx-primary-050);color:var(--vx-primary);font-weight:600}
+.warn-banner{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start}
+.warn-banner svg{flex-shrink:0;margin-top:2px}
+.data-table{width:100%;border-collapse:collapse;font-size:14px}
+.data-table th,.data-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--vx-border)}
+.data-table th{font-size:12px;font-weight:700;color:var(--vx-muted);text-transform:uppercase;letter-spacing:.04em}
+.data-table tr:hover td{background:var(--vx-bg)}
+.data-table td:last-child{text-align:right;white-space:nowrap}
+.icon-btn{width:32px;height:32px;border-radius:8px;display:inline-grid;place-items:center;color:var(--vx-muted)}
+.icon-btn:hover{background:var(--vx-bg);color:var(--vx-text)}
+.icon-btn.danger:hover{background:#fef2f2;color:var(--vx-danger)}
+
+/* ===== Mobile bottom nav ===== */
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--vx-border);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@media (min-width:900px){.bottom-nav{display:none}}
+.bottom-nav .inner{display:grid;grid-template-columns:repeat(5,1fr);height:var(--vx-nav-h)}
+.bnav-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-size:11px;color:var(--vx-muted);position:relative;font-weight:500;
+}
+.bnav-btn.on{color:var(--vx-primary)}
+.bnav-btn .ic{position:relative;display:grid;place-items:center}
+.bnav-btn .badge{
+  position:absolute;top:-4px;right:-8px;min-width:16px;height:16px;padding:0 4px;
+  background:var(--vx-primary);color:#fff;font-size:10px;font-weight:700;border-radius:999px;
+  display:grid;place-items:center;line-height:1;
+}
+
+/* ===== Toast ===== */
+.toasts{position:fixed;left:50%;bottom:calc(var(--vx-nav-h) + 20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+@media (min-width:900px){.toasts{bottom:24px}}
+.toast{
+  background:#111827;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;
+  box-shadow:var(--vx-shadow-3);display:flex;align-items:center;gap:10px;max-width:360px;
+  animation:toastIn .25s ease-out;pointer-events:auto;
+}
+.toast.ok{background:#065f46}
+.toast.err{background:#991b1b}
+.toast.warn{background:#92400e}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== Utility ===== */
+.row{display:flex;align-items:center;gap:10px}
+.row.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:14px}
+.muted{color:var(--vx-muted)}
+.small{font-size:13px}
+.mt-16{margin-top:16px}
 .hidden{display:none!important}
-.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+.divider{height:1px;background:var(--vx-border);margin:14px 0}
+
+/* Checkout steps */
+.steps{display:flex;gap:8px;margin:16px 0 20px;overflow-x:auto}
+.step{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:var(--vx-surface);border:1px solid var(--vx-border);font-size:13px;font-weight:600;color:var(--vx-muted);white-space:nowrap}
+.step.on{background:var(--vx-primary);color:#fff;border-color:var(--vx-primary)}
+.step .num{width:22px;height:22px;border-radius:50%;background:var(--vx-bg);color:var(--vx-text);display:grid;place-items:center;font-size:12px;font-weight:700}
+.step.on .num{background:rgba(255,255,255,.25);color:#fff}
+
+.loader{display:inline-block;width:16px;height:16px;border:2px solid var(--vx-border);border-top-color:var(--vx-primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* Skeleton (only for loading states, NOT for demo products) */
+.skel{background:linear-gradient(90deg,#eef0f3 25%,#f6f7f9 37%,#eef0f3 63%);background-size:400% 100%;animation:skel 1.4s ease infinite;border-radius:8px}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="app"></div>
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-<!-- ========== HOME ========== -->
-<section id="scr-home" class="screen active">
-  <div class="logo-row">
-    <svg class="logo" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="1" width="42" height="42" rx="10" fill="#161a1f" stroke="#2b323a"/>
-      <g transform="translate(11,11)">
-        <rect x="0" y="0" width="7" height="7" rx="1.5" fill="#e8ecf1"/>
-        <rect x="8" y="0" width="7" height="7" rx="1.5" fill="#e5484d"/>
-        <rect x="16" y="0" width="7" height="7" rx="1.5" fill="#3ecf8e"/>
-        <rect x="0" y="8" width="7" height="7" rx="1.5" fill="#5b9dff"/>
-        <rect x="8" y="8" width="7" height="7" rx="1.5" fill="#f5a623"/>
-        <rect x="16" y="8" width="7" height="7" rx="1.5" fill="#e8ecf1"/>
-        <rect x="0" y="16" width="7" height="7" rx="1.5" fill="#e5484d"/>
-        <rect x="8" y="16" width="7" height="7" rx="1.5" fill="#5b9dff"/>
-        <rect x="16" y="16" width="7" height="7" rx="1.5" fill="#3ecf8e"/>
-      </g>
-    </svg>
-    <div>
-      <h1>Rubik's Cube Solver</h1>
-      <p style="font-size:13px">Отсканируй свой кубик и получи пошаговое решение</p>
-    </div>
-  </div>
-  <div id="three"></div>
-  <button class="btn primary big" id="btn-scan">📷 Сканировать кубик</button>
-  <button class="btn big" id="btn-manual">✎ Ввести цвета вручную</button>
-  <div class="btn-row">
-    <button class="btn ghost" id="btn-help">Как пользоваться</button>
-    <button class="btn ghost" id="btn-settings">⚙︎ Настройки</button>
-  </div>
-  <div class="card">
-    <h3>Статистика</h3>
-    <div class="row"><span>Собрано кубиков</span><b id="st-count">0</b></div>
-    <div class="row"><span>Лучшее время</span><b id="st-best">—</b></div>
-    <div class="row"><span>Последнее решение</span><b id="st-last">—</b></div>
-  </div>
-</section>
-
-<!-- ========== SCAN ========== -->
-<section id="scr-scan" class="screen">
-  <div class="row" style="border:none;padding:0">
-    <button class="btn btn-icon ghost" id="scan-back">←</button>
-    <div style="flex:1;text-align:center">
-      <h2 id="scan-title">Грань U</h2>
-      <p id="scan-sub" style="font-size:12px">Наведи кубик в рамку</p>
-    </div>
-    <button class="btn btn-icon ghost" id="scan-switch">⇄</button>
-  </div>
-  <div class="progress"><i id="scan-prog"></i></div>
-  <div class="stage" id="scan-stage">
-    <video id="scan-video" playsinline autoplay muted></video>
-    <canvas id="scan-canvas"></canvas>
-    <div id="flash"></div>
-    <div class="hint" id="scan-hint">Помести грань целиком в квадрат</div>
-  </div>
-  <div class="grid3" id="scan-preview" style="max-width:260px;margin:0 auto;width:100%"></div>
-  <div class="btn-row">
-    <button class="btn" id="scan-rescan">↻ Пересканировать</button>
-    <button class="btn primary" id="scan-next">Далее →</button>
-  </div>
-  <p style="font-size:12px;text-align:center">Тап по ячейке — исправить цвет</p>
-</section>
-
-<!-- ========== MANUAL ========== -->
-<section id="scr-manual" class="screen">
-  <div class="row" style="border:none;padding:0">
-    <button class="btn btn-icon ghost" id="manual-back">←</button>
-    <h2 style="flex:1;text-align:center">Ручной ввод</h2>
-    <button class="btn btn-icon ghost" id="manual-reset">↺</button>
-  </div>
-  <p style="font-size:12px">Заполни все 54 клетки. Центры фиксированы (U=белый, R=красный, F=зелёный, D=жёлтый, L=оранжевый, B=синий).</p>
-  <div class="faces" id="manual-faces"></div>
-  <div class="palette" id="manual-palette"></div>
-  <div id="manual-status" class="card" style="padding:10px 12px;font-size:13px">Готово: 0 / 54</div>
-  <div class="btn-row">
-    <button class="btn" id="manual-shuffle">⇄ Перемешать</button>
-    <button class="btn primary" id="manual-solve" disabled>Решить →</button>
-  </div>
-</section>
-
-<!-- ========== SOLVE ========== -->
-<section id="scr-solve" class="screen">
-  <div class="row" style="border:none;padding:0">
-    <button class="btn btn-icon ghost" id="solve-back">←</button>
-    <h2 style="flex:1;text-align:center">Пошаговое решение</h2>
-    <button class="btn btn-icon ghost" id="solve-reset">↺</button>
-  </div>
-  <div id="three-solve"></div>
-  <div class="card" style="padding:12px">
-    <div class="step-bar"><span id="step-pos">Шаг 0 из 0</span><span id="step-phase">—</span></div>
-    <div class="move-huge" id="step-move">—</div>
-    <div class="move-desc" id="step-desc">Решение не найдено</div>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="step-prev">← Назад</button>
-    <button class="btn primary" id="step-next">Далее →</button>
-  </div>
-  <div class="btn-row">
-    <button class="btn" id="step-replay">↻ Повторить</button>
-    <button class="btn" id="step-auto">▶ Авто</button>
-    <button class="btn" id="step-list">📋 Решение</button>
-  </div>
-</section>
-
-<!-- ========== HELP ========== -->
-<section id="scr-help" class="screen">
-  <div class="row" style="border:none;padding:0">
-    <button class="btn btn-icon ghost" id="help-back">←</button>
-    <h2 style="flex:1;text-align:center">Как пользоваться</h2>
-    <div style="width:48px"></div>
-  </div>
-  <div class="card">
-    <h3>Обозначения граней</h3>
-    <div class="legend">
-      <b>U</b><span>Верхняя (Up)</span>
-      <b>R</b><span>Правая (Right)</span>
-      <b>F</b><span>Передняя (Front)</span>
-      <b>D</b><span>Нижняя (Down)</span>
-      <b>L</b><span>Левая (Left)</span>
-      <b>B</b><span>Задняя (Back)</span>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Обозначения ходов</h3>
-    <div class="legend">
-      <b>R</b><span>90° по часовой (глядя на грань)</span>
-      <b>R'</b><span>90° против часовой</span>
-      <b>R2</b><span>180°</span>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Сканирование</h3>
-    <p>Порядок: <b>U</b> (белый) → <b>R</b> (красный) → <b>F</b> (зелёный) → <b>D</b> (жёлтый) → <b>L</b> (оранжевый) → <b>B</b> (синий).</p>
-    <p style="margin-top:6px">Держи кубик так, чтобы грань полностью попадала в квадрат. После скана поворачивай кубик целиком, не меняя относительную ориентацию сторон.</p>
-  </div>
-  <div class="card">
-    <h3>Точность распознавания</h3>
-    <p>Цвета классифицируются в HSV с калибровкой по центрам. Низкая уверенность — ячейка подсвечивается жёлтым, тапни её для ручной правки.</p>
-  </div>
-  <div class="card">
-    <h3>О камере</h3>
-    <p>Камера в Safari требует HTTPS. При открытии через <span class="mono">file://</span> доступ к камере недоступен — используй ручной ввод.</p>
-  </div>
-</section>
-
-<!-- ========== SETTINGS ========== -->
-<section id="scr-settings" class="screen">
-  <div class="row" style="border:none;padding:0">
-    <button class="btn btn-icon ghost" id="set-back">←</button>
-    <h2 style="flex:1;text-align:center">Настройки</h2>
-    <div style="width:48px"></div>
-  </div>
-  <div class="card">
-    <div class="row"><span>Скорость анимации</span>
-      <div class="seg" id="set-speed">
-        <button data-v="600">Медл.</button>
-        <button data-v="300" class="on">Сред.</button>
-        <button data-v="140">Быстр.</button>
-      </div>
-    </div>
-    <div class="row"><span>Звуки</span><label class="switch"><input type="checkbox" id="set-sound"><i></i></label></div>
-  </div>
-  <div class="card">
-    <h3>Данные</h3>
-    <div class="row"><span>История решений</span><b id="set-hist">0</b></div>
-    <button class="btn" id="set-clear">Очистить статистику</button>
-  </div>
-  <p style="font-size:12px;text-align:center">Версия 2.0 · данные хранятся локально</p>
-</section>
-
-</div>
-<div id="toast" class="toast"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 "use strict";
-/* =====================================================================
-   RUBIK'S CUBE SOLVER — single file
-   ===================================================================== */
+/* =========================================================================
+   VEXA — Marketplace SPA
+   Все данные о товарах/категориях/баннерах/ПВЗ хранятся ТОЛЬКО в подключённом
+   хранилище. Никаких демо-товаров в коде нет.
+   ========================================================================= */
 
-/* -------------------- 1. Cube model (54 facelets) -------------------- */
-const COLORS = ['U','R','F','D','L','B'];
-const HEX = {U:'#e8ecf1',R:'#e5484d',F:'#3ecf8e',D:'#f5d23e',L:'#f58a20',B:'#3b82f6'};
-const NAME = {U:'Верхняя',R:'Правая',F:'Передняя',D:'Нижняя',L:'Левая',B:'Задняя'};
-const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB'.split('');
-const CENTER_IDX = {U:4,R:13,F:22,D:31,L:40,B:49};
+/* ============ 1. Утилиты ============ */
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const uuid = () => (crypto && crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2,9));
+const fmtPrice = (kop) => {
+  const n = Number.isFinite(kop) ? Math.round(kop) : 0;
+  const rub = n / 100;
+  return rub.toLocaleString('ru-RU', { minimumFractionDigits: rub % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 }) + ' ₽';
+};
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-// 3D positions for each facelet. Layout (viewer perspective):
-//   U: U0..U8 (back-left → front-right, y=+1)
-//   R: R0..R8 (top-front → bottom-back, x=+1)
-//   F: F0..F8 (top-left → bottom-right, z=+1)
-//   D: D0..D8 (front-left → back-right, y=-1)
-//   L: L0..L8 (top-back → bottom-front, x=-1)
-//   B: B0..B8 (top-right → bottom-left, z=-1)
-function buildGeo(){
-  const g=[];
-  const U=[[-1,1,-1],[0,1,-1],[1,1,-1],[-1,1,0],[0,1,0],[1,1,0],[-1,1,1],[0,1,1],[1,1,1]];
-  const R=[[1,1,1],[1,1,0],[1,1,-1],[1,0,1],[1,0,0],[1,0,-1],[1,-1,1],[1,-1,0],[1,-1,-1]];
-  const F=[[-1,1,1],[0,1,1],[1,1,1],[-1,0,1],[0,0,1],[1,0,1],[-1,-1,1],[0,-1,1],[1,-1,1]];
-  const D=[[-1,-1,1],[0,-1,1],[1,-1,1],[-1,-1,0],[0,-1,0],[1,-1,0],[-1,-1,-1],[0,-1,-1],[1,-1,-1]];
-  const L=[[-1,1,-1],[-1,1,0],[-1,1,1],[-1,0,-1],[-1,0,0],[-1,0,1],[-1,-1,-1],[-1,-1,0],[-1,-1,1]];
-  const B=[[1,1,-1],[0,1,-1],[-1,1,-1],[1,0,-1],[0,0,-1],[-1,0,-1],[1,-1,-1],[0,-1,-1],[-1,-1,-1]];
-  const N={U:[0,1,0],R:[1,0,0],F:[0,0,1],D:[0,-1,0],L:[-1,0,0],B:[0,0,-1]};
-  [['U',U],['R',R],['F',F],['D',D],['L',L],['B',B]].forEach(([f,a])=>a.forEach(p=>g.push({f,p,n:N[f]})));
-  return g;
+function toast(msg, kind='') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .2s'; setTimeout(() => el.remove(), 220); }, 2600);
 }
-const GEO = buildGeo();
-const POS = new Map(); GEO.forEach((x,i)=>POS.set(x.p.join(',')+'|'+x.n.join(','),i));
 
-// Rotate vector by 90° around axis (matches face turn direction when axis/dir chosen below)
-function rotV(v, axis, dir){
-  const [x,y,z]=v;
-  if(axis==='x') return dir>0 ? [x,-z,y] : [x,z,-y];
-  if(axis==='y') return dir>0 ? [z,y,-x] : [-z,y,x];
-  if(axis==='z') return dir>0 ? [-y,x,z] : [y,-x,z];
-  return v;
-}
-// U: rotate around +y counterclockwise looking down → our formula: axis y dir=-1 gives (-z,y,x)
-const FACE_ROT = {U:['y',-1],R:['x',-1],F:['z',-1],D:['y',1],L:['x',1],B:['z',1]};
-const LAYER_AXIS = {U:[1,1],R:[0,1],F:[2,1],D:[1,-1],L:[0,-1],B:[2,-1]};
-
-function buildPerm(face){
-  const [axis,dir]=FACE_ROT[face];
-  const [axIdx,coord]=LAYER_AXIS[face];
-  const perm=new Array(54);
-  for(let i=0;i<54;i++){
-    const g=GEO[i];
-    if(g.p[axIdx]===coord){
-      const np = rotV(g.p,axis,dir);
-      const nn = rotV(g.n,axis,dir);
-      const j = POS.get(np.join(',')+'|'+nn.join(','));
-      perm[j]=i;
-    } else perm[i]=i;
+/* ============ 2. Хранилище (LocalStorage — только ID и настройки) ============ */
+const LS = {
+  K: 'vexa:',
+  get(key, fallback) {
+    try {
+      const raw = localStorage.getItem(this.K + key);
+      if (raw == null) return fallback;
+      return JSON.parse(raw);
+    } catch (e) { console.warn('[storage]', key, e); return fallback; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(this.K + key, JSON.stringify(val)); return true; }
+    catch (e) { console.warn('[storage]', key, e); return false; }
+  },
+  del(key) { try { localStorage.removeItem(this.K + key); } catch {} },
+  clearAll() {
+    try {
+      const ks = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(this.K)) ks.push(k);
+      }
+      ks.forEach(k => localStorage.removeItem(k));
+    } catch {}
   }
-  return perm;
-}
-function invert(p){const r=new Array(54);for(let i=0;i<54;i++)r[p[i]]=i;return r;}
-function compose(a,b){const r=new Array(54);for(let i=0;i<54;i++)r[i]=a[b[i]];return r;}
-
-const BASE={}; Object.keys(FACE_ROT).forEach(f=>BASE[f]=buildPerm(f));
-const MOVES={};
-Object.keys(BASE).forEach(f=>{
-  MOVES[f]=BASE[f];
-  MOVES[f+"'"]=invert(BASE[f]);
-  MOVES[f+"2"]=compose(BASE[f],BASE[f]);
-});
-const ALL_MOVES=Object.keys(MOVES);
-
-function applyMove(state,mv){
-  const p = MOVES[mv] || mv;
-  const n=new Array(54);
-  for(let i=0;i<54;i++) n[p[i]]=state[i];
-  return n;
-}
-function applySeq(state,seq){
-  let s=state;
-  for(const m of seq) s=applyMove(s,m);
-  return s;
-}
-function parseSeq(str){
-  // "R U R' U2" → ['R','U',"R'",'U2']
-  return str.trim().split(/\s+/).filter(Boolean);
-}
-function isSolved(state){
-  for(let i=0;i<54;i++) if(state[i]!==SOLVED[i]) return false;
-  return true;
-}
-
-/* -------------------- 2. Facelet helpers -------------------- */
-// Edge facelet pairs (position → [faceletA, faceletB])
-const EDGES = {
-  UF:[7,19], UR:[5,10], UB:[1,46], UL:[3,37],
-  DF:[28,25], DR:[32,16], DB:[34,52], DL:[30,43],
-  FR:[23,14], FL:[21,41], BL:[50,39], BR:[48,12]
-};
-// Corner facelet triples
-const CORNERS = {
-  URF:[8,9,20], UFL:[6,18,38], ULB:[0,36,47], UBR:[2,45,11],
-  DFR:[29,26,15], DLF:[27,44,24], DBL:[33,53,42], DRB:[35,17,51]
 };
 
-/* -------------------- 3. Beginner's-method solver -------------------- */
-/* Cross → F2L → OLL → PLL.
-   Cross: BFS over 8 facelets (fast, at module init).
-   F2L:  IDA* per slot (depth ≤ 8).
-   LL:   fixed algorithm set. */
+/* ============ 3. Адаптер данных (Backend / Supabase) ============
+   Реальная архитектура: замените ADAPTER.local.* на вызовы Supabase.
+   По умолчанию в demo-режиме используется локальный бэкенд-эмулятор,
+   который ХРАНИТ только реально добавленные через админку записи.
+   ========================================================================= */
+const DB_KEYS = {
+  products: 'db:products',
+  categories: 'db:categories',
+  banners: 'db:banners',
+  sellers: 'db:sellers',
+  pickupPoints: 'db:pickupPoints',
+  orders: 'db:orders',
+  reviews: 'db:reviews',
+  users: 'db:users',
+  adminSetup: 'db:adminSetup'
+};
 
-// --- 3.1 Cross BFS table ---
-const CROSS_FACE = [1,3,5,7,10,19,46,37]; // U1,U3,U5,U7,R1,F1,B1,L1
-const CROSS_GOAL = ['U','U','U','U','R','F','B','L'].join('');
-function crossKey(s){
-  let k='';
-  for(const i of CROSS_FACE) k+=s[i];
-  return k;
-}
-let crossTable=null;
-function buildCrossTable(){
-  crossTable=new Map();
-  const start=SOLVED.slice();
-  crossTable.set(crossKey(start),[]);
-  const queue=[start];
-  const moves=['U','U2',"U'",'R','R2',"R'",'F','F2',"F'",'D','D2',"D'",'L','L2',"L'",'B','B2',"B'"];
-  let head=0;
-  while(head<queue.length && crossTable.size<200000){
-    const cur=queue[head++];
-    const path=crossTable.get(crossKey(cur));
-    const lastFace=path.length?path[path.length-1][0]:null;
-    for(const m of moves){
-      if(m[0]===lastFace) continue;
-      const nxt=applyMove(cur,m);
-      const k=crossKey(nxt);
-      if(!crossTable.has(k)){
-        crossTable.set(k,path.concat([m]));
-        queue.push(nxt);
+/* Supabase-конфиг (заполните для production). Если url пуст — используется local. */
+const SUPABASE = {
+  url: '',   // например 'https://xxxx.supabase.co'
+  key: ''    // anon ключ
+};
+
+const API = {
+  mode: (SUPABASE.url && SUPABASE.key) ? 'supabase' : 'local',
+
+  async listProducts({ limit = 60, offset = 0, categoryId, search, minPrice, maxPrice, brands, minRating, inStock, sort = 'popular', sellerId, onlyPublished = true } = {}) {
+    if (this.mode === 'supabase') return this._sb('listProducts', { limit, offset, categoryId, search, minPrice, maxPrice, brands, minRating, inStock, sort, sellerId });
+    let list = (LS.get(DB_KEYS.products, []) || []).slice();
+    if (onlyPublished) list = list.filter(p => p.status !== 'draft' && p.status !== 'hidden');
+    if (sellerId) list = list.filter(p => p.sellerId === sellerId);
+    if (categoryId) list = list.filter(p => p.categoryId === categoryId || p.subcategoryId === categoryId);
+    if (search) {
+      const q = String(search).trim().toLowerCase();
+      if (q) {
+        const parts = q.split(/\s+/);
+        list = list.filter(p => {
+          const hay = [p.name, p.brand, p.sku, p.description, p.categoryName].filter(Boolean).join(' ').toLowerCase();
+          return parts.every(w => hay.includes(w));
+        });
       }
     }
-  }
-}
-buildCrossTable();
+    if (Number.isFinite(minPrice)) list = list.filter(p => p.price >= minPrice);
+    if (Number.isFinite(maxPrice)) list = list.filter(p => p.price <= maxPrice);
+    if (Array.isArray(brands) && brands.length) list = list.filter(p => brands.includes(p.brand));
+    if (Number.isFinite(minRating)) list = list.filter(p => (p.rating || 0) >= minRating);
+    if (inStock === true) list = list.filter(p => (p.stock || 0) > 0);
+    const cmp = {
+      popular:   (a,b) => (b.rating||0)*(b.reviewCount||0) - (a.rating||0)*(a.reviewCount||0),
+      price_asc: (a,b) => a.price - b.price,
+      price_desc:(a,b) => b.price - a.price,
+      rating:    (a,b) => (b.rating||0) - (a.rating||0),
+      discount:  (a,b) => this._disc(b) - this._disc(a),
+      new:       (a,b) => (b.createdAt||0) - (a.createdAt||0)
+    }[sort] || ((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    list.sort(cmp);
+    return { items: list.slice(offset, offset + limit), total: list.length };
+  },
+  _disc(p) { return (p.oldPrice && p.oldPrice > p.price) ? (1 - p.price/p.oldPrice) : 0; },
 
-// --- 3.2 IDA* solver for subgoals ---
-function dfs(state, path, remaining, lastFace, goalFn, moves, isCancelled){
-  if(isCancelled && isCancelled()) return null;
-  if(goalFn(state)) return path.slice();
-  if(remaining===0) return null;
-  for(const m of moves){
-    if(m[0]===lastFace) continue;
-    const nxt=applyMove(state,m);
-    path.push(m);
-    const r=dfs(nxt,path,remaining-1,m[0],goalFn,moves,isCancelled);
-    if(r) return r;
-    path.pop();
+  async getProduct(id) {
+    if (this.mode === 'supabase') return this._sb('getProduct', { id });
+    const p = (LS.get(DB_KEYS.products, []) || []).find(x => x.id === id);
+    return p && p.status !== 'hidden' ? p : null;
+  },
+
+  async saveProduct(p) {
+    if (this.mode === 'supabase') return this._sb('saveProduct', { p });
+    const list = LS.get(DB_KEYS.products, []) || [];
+    if (p.id) {
+      const i = list.findIndex(x => x.id === p.id);
+      if (i < 0) throw new Error('Товар не найден');
+      list[i] = { ...list[i], ...p, updatedAt: Date.now() };
+    } else {
+      p.id = uuid();
+      p.createdAt = Date.now();
+      p.status = p.status || 'published';
+      list.unshift(p);
+    }
+    LS.set(DB_KEYS.products, list);
+    return p;
+  },
+
+  async deleteProduct(id) {
+    if (this.mode === 'supabase') return this._sb('deleteProduct', { id });
+    LS.set(DB_KEYS.products, (LS.get(DB_KEYS.products, []) || []).filter(x => x.id !== id));
+  },
+
+  async listCategories() {
+    if (this.mode === 'supabase') return this._sb('listCategories');
+    return LS.get(DB_KEYS.categories, []) || [];
+  },
+  async saveCategory(c) {
+    if (this.mode === 'supabase') return this._sb('saveCategory', { c });
+    const list = LS.get(DB_KEYS.categories, []) || [];
+    if (c.id) {
+      const i = list.findIndex(x => x.id === c.id);
+      if (i >= 0) list[i] = { ...list[i], ...c }; else list.push(c);
+    } else {
+      c.id = uuid(); c.createdAt = Date.now(); list.push(c);
+    }
+    LS.set(DB_KEYS.categories, list);
+    return c;
+  },
+  async deleteCategory(id) {
+    if (this.mode === 'supabase') return this._sb('deleteCategory', { id });
+    LS.set(DB_KEYS.categories, (LS.get(DB_KEYS.categories, []) || []).filter(x => x.id !== id));
+  },
+
+  async listBanners() {
+    if (this.mode === 'supabase') return this._sb('listBanners');
+    return (LS.get(DB_KEYS.banners, []) || []).filter(b => b.active !== false);
+  },
+  async saveBanner(b) {
+    if (this.mode === 'supabase') return this._sb('saveBanner', { b });
+    const list = LS.get(DB_KEYS.banners, []) || [];
+    if (b.id) {
+      const i = list.findIndex(x => x.id === b.id);
+      if (i >= 0) list[i] = { ...list[i], ...b }; else list.push(b);
+    } else { b.id = uuid(); list.push(b); }
+    LS.set(DB_KEYS.banners, list);
+    return b;
+  },
+  async deleteBanner(id) {
+    if (this.mode === 'supabase') return this._sb('deleteBanner', { id });
+    LS.set(DB_KEYS.banners, (LS.get(DB_KEYS.banners, []) || []).filter(x => x.id !== id));
+  },
+
+  async listSellers() {
+    if (this.mode === 'supabase') return this._sb('listSellers');
+    return LS.get(DB_KEYS.sellers, []) || [];
+  },
+  async saveSeller(s) {
+    if (this.mode === 'supabase') return this._sb('saveSeller', { s });
+    const list = LS.get(DB_KEYS.sellers, []) || [];
+    if (s.id) {
+      const i = list.findIndex(x => x.id === s.id);
+      if (i >= 0) list[i] = { ...list[i], ...s }; else list.push(s);
+    } else { s.id = uuid(); list.push(s); }
+    LS.set(DB_KEYS.sellers, list);
+    return s;
+  },
+  async deleteSeller(id) {
+    if (this.mode === 'supabase') return this._sb('deleteSeller', { id });
+    LS.set(DB_KEYS.sellers, (LS.get(DB_KEYS.sellers, []) || []).filter(x => x.id !== id));
+  },
+
+  async listPickupPoints(city) {
+    if (this.mode === 'supabase') return this._sb('listPickupPoints', { city });
+    let list = LS.get(DB_KEYS.pickupPoints, []) || [];
+    if (city) list = list.filter(p => p.city === city);
+    return list;
+  },
+  async savePickupPoint(p) {
+    if (this.mode === 'supabase') return this._sb('savePickupPoint', { p });
+    const list = LS.get(DB_KEYS.pickupPoints, []) || [];
+    if (p.id) {
+      const i = list.findIndex(x => x.id === p.id);
+      if (i >= 0) list[i] = { ...list[i], ...p }; else list.push(p);
+    } else { p.id = uuid(); list.push(p); }
+    LS.set(DB_KEYS.pickupPoints, list);
+    return p;
+  },
+  async deletePickupPoint(id) {
+    if (this.mode === 'supabase') return this._sb('deletePickupPoint', { id });
+    LS.set(DB_KEYS.pickupPoints, (LS.get(DB_KEYS.pickupPoints, []) || []).filter(x => x.id !== id));
+  },
+
+  async createOrder(order) {
+    if (this.mode === 'supabase') return this._sb('createOrder', { order });
+    const list = LS.get(DB_KEYS.orders, []) || [];
+    order.id = order.id || ('VX-' + Date.now().toString(36).toUpperCase());
+    order.createdAt = Date.now();
+    order.status = 'created';
+    order.history = [{ status: 'created', at: Date.now() }];
+    list.unshift(order);
+    LS.set(DB_KEYS.orders, list);
+    return order;
+  },
+  async listOrders(userId) {
+    if (this.mode === 'supabase') return this._sb('listOrders', { userId });
+    const list = LS.get(DB_KEYS.orders, []) || [];
+    return userId ? list.filter(o => o.userId === userId) : list;
+  },
+  async getOrder(id) {
+    if (this.mode === 'supabase') return this._sb('getOrder', { id });
+    return (LS.get(DB_KEYS.orders, []) || []).find(o => o.id === id) || null;
+  },
+
+  async listReviews(productId) {
+    if (this.mode === 'supabase') return this._sb('listReviews', { productId });
+    return (LS.get(DB_KEYS.reviews, []) || []).filter(r => r.productId === productId);
+  },
+
+  /* Supabase placeholder — реализуется в production */
+  async _sb(action, params) {
+    console.warn('[API] Supabase adapter called:', action, params);
+    throw new Error('Supabase adapter не сконфигурирован. Укажите SUPABASE.url и SUPABASE.key.');
   }
-  return null;
-}
-function ida(state, goalFn, maxDepth, moves){
-  moves = moves || ['U','U2',"U'",'R','R2',"R'",'F','F2',"F'",'D','D2',"D'",'L','L2',"L'",'B','B2',"B'"];
-  for(let d=0; d<=maxDepth; d++){
-    const r=dfs(state.slice(),[],d,null,goalFn,moves);
-    if(r) return r;
+};
+
+/* ============ 4. Состояние ============ */
+const State = {
+  products: [],
+  categories: [],
+  banners: [],
+  sellers: [],
+  pickupPoints: [],
+  cart: LS.get('cart', []),           // [{ productId, qty }]
+  favorites: LS.get('favorites', []), // [productId]
+  user: LS.get('user', null),
+  city: LS.get('city', ''),
+  searchHistory: LS.get('searchHistory', []),
+  cartBadge: 0,
+  route: { path: '/', params: {} }
+};
+
+const Cart = {
+  add(productId, qty = 1) {
+    const it = State.cart.find(x => x.productId === productId);
+    if (it) it.qty = clamp(it.qty + qty, 1, 99);
+    else State.cart.push({ productId, qty: clamp(qty, 1, 99) });
+    LS.set('cart', State.cart);
+    Cart.refreshBadge();
+  },
+  remove(productId) {
+    State.cart = State.cart.filter(x => x.productId !== productId);
+    LS.set('cart', State.cart);
+    Cart.refreshBadge();
+  },
+  setQty(productId, qty) {
+    const it = State.cart.find(x => x.productId === productId);
+    if (!it) return;
+    it.qty = clamp(parseInt(qty, 10) || 1, 1, 99);
+    LS.set('cart', State.cart);
+    Cart.refreshBadge();
+  },
+  clear() { State.cart = []; LS.set('cart', State.cart); Cart.refreshBadge(); },
+  count() { return State.cart.reduce((s, x) => s + x.qty, 0); },
+  refreshBadge() {
+    State.cartBadge = Cart.count();
+    $$('.js-cart-badge').forEach(el => {
+      el.textContent = State.cartBadge || '';
+      el.style.display = State.cartBadge ? 'grid' : 'none';
+    });
   }
-  return null;
+};
+
+const Fav = {
+  toggle(id) {
+    const i = State.favorites.indexOf(id);
+    if (i >= 0) State.favorites.splice(i, 1); else State.favorites.push(id);
+    LS.set('favorites', State.favorites);
+    return State.favorites.includes(id);
+  },
+  has(id) { return State.favorites.includes(id); }
+};
+
+/* ============ 5. Иконки ============ */
+const IC = {
+  home:    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+  catalog: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  heart:   '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+  heartF:  '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+  cart:    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.4 12.1a2 2 0 0 0 2 1.6h8.6a2 2 0 0 0 2-1.6L22 7H6"/></svg>',
+  user:    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  search:  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  close:   '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  chev:    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  pin:     '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  star:    '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="m12 2 3 7 7 .6-5.3 4.6L18.5 21 12 17.3 5.5 21l1.8-6.8L2 9.6 9 9z"/></svg>',
+  plus:    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  minus:   '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+  trash:   '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+  edit:    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  box:     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+  eye:     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff:  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19c-6.5 0-10-7-10-7a18.4 18.4 0 0 1 4.22-5.29M9.9 4.24A10.9 10.9 0 0 1 12 4c6.5 0 10 7 10 7a18.6 18.6 0 0 1-3.17 3.98M1 1l22 22"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>',
+  warn:    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  check:   '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg>',
+  logout:  '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>'
+};
+
+/* ============ 6. Логотип ============ */
+function logoHTML() {
+  return `
+  <a class="logo" href="#/" aria-label="VEXA — на главную">
+    <span class="logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l7 14 7-14"/></svg>
+    </span>
+    <span class="logo-text">VEXA</span>
+  </a>`;
 }
 
-// --- 3.3 Cross stage ---
-function solveCross(state){
-  const k=crossKey(state);
-  const path=crossTable.get(k);
-  if(!path) return null;
-  return path.slice();
+/* ============ 7. Шапка ============ */
+function headerHTML() {
+  return `
+  <header class="header">
+    <div class="header-inner">
+      ${logoHTML()}
+      <button class="city-btn js-city" type="button" aria-label="Выбрать город">
+        ${IC.pin}<span id="cityLabel">${escapeHtml(State.city || 'Выберите город')}</span>${IC.chev}
+      </button>
+      <form class="search" role="search" onsubmit="return false;">
+        ${IC.search}
+        <input id="searchInput" type="search" autocomplete="off" placeholder="Поиск товаров, брендов, артикулов" aria-label="Поиск">
+        <button class="search-clear js-search-clear" type="button" aria-label="Очистить">${IC.close}</button>
+      </form>
+      <div class="header-actions">
+        <a class="hbtn" href="#/favorites" aria-label="Избранное">${IC.heart}</a>
+        <a class="hbtn js-cart-link" href="#/cart" aria-label="Корзина">
+          ${IC.cart}<span class="badge js-cart-badge" style="display:none"></span>
+        </a>
+        <a class="hbtn" href="#/profile" aria-label="Профиль">${IC.user}</a>
+      </div>
+    </div>
+    <div class="header-mobile-search">
+      <form class="search" role="search" onsubmit="return false;">
+        ${IC.search}
+        <input id="searchInputM" type="search" autocomplete="off" placeholder="Поиск товаров" aria-label="Поиск">
+        <button class="search-clear js-search-clear-m" type="button" aria-label="Очистить">${IC.close}</button>
+      </form>
+    </div>
+  </header>`;
 }
 
-// --- 3.4 First layer corners ---
-// Solve corners one at a time. Preserve cross.
-function cornerSolved(state, slot){
-  const idx=CORNERS[slot];
-  const want = {
-    URF:['U','R','F'], UFL:['U','F','L'], ULB:['U','L','B'], UBR:['U','B','R'],
-    DFR:['D','F','R'], DLF:['D','L','F'], DBL:['D','B','L'], DRB:['D','R','B']
-  }[slot];
-  const got = idx.map(i=>state[i]);
-  // exact match in any cyclic order? We need orientation-correct match.
-  return got[0]===want[0] && got[1]===want[1] && got[2]===want[2];
+/* ============ 8. Нижняя навигация (мобильная) ============ */
+function bottomNavHTML() {
+  const p = State.route.path;
+  const is = (v) => p === v ? 'on' : '';
+  return `
+  <nav class="bottom-nav" aria-label="Основная навигация">
+    <div class="inner">
+      <a class="bnav-btn ${is('/')}" href="#/"><span class="ic">${IC.home}</span>Главная</a>
+      <a class="bnav-btn ${is('/catalog')}" href="#/catalog"><span class="ic">${IC.catalog}</span>Каталог</a>
+      <a class="bnav-btn ${is('/favorites')}" href="#/favorites"><span class="ic">${IC.heart}</span>Избранное</a>
+      <a class="bnav-btn ${is('/cart')}" href="#/cart"><span class="ic">${IC.cart}<span class="badge js-cart-badge" style="display:none"></span></span>Корзина</a>
+      <a class="bnav-btn ${is('/profile')}" href="#/profile"><span class="ic">${IC.user}</span>Профиль</a>
+    </div>
+  </nav>`;
 }
-function findCornerPiece(state, colors){
-  // find which corner slot contains these three colors (as a set)
-  for(const slot in CORNERS){
-    const idx=CORNERS[slot];
-    const s = new Set(idx.map(i=>state[i]));
-    if(colors.every(c=>s.has(c)) && s.size===3) return slot;
-  }
-  return null;
+
+/* ============ 9. Пустые состояния ============ */
+function emptyState({ icon = IC.box, title, text, action }) {
+  return `
+  <div class="empty">
+    <div class="ic" aria-hidden="true">${icon}</div>
+    <h3>${escapeHtml(title)}</h3>
+    <p>${escapeHtml(text || '')}</p>
+    ${action ? `<a class="btn sec" href="${action.href}">${escapeHtml(action.label)}</a>` : ''}
+  </div>`;
 }
-function solveCorners(state, moves){
-  const slots=['URF','UFL','ULB','UBR'];
-  const want = {
-    URF:['U','R','F'], UFL:['U','F','L'], ULB:['U','L','B'], UBR:['U','B','R']
+
+/* ============ 10. Карточка товара ============ */
+function productCard(p) {
+  const hasDisc = p.oldPrice && p.oldPrice > p.price;
+  const disc = hasDisc ? Math.round((1 - p.price/p.oldPrice) * 100) : 0;
+  const img = (p.images && p.images[0]) ? escapeHtml(p.images[0]) : '';
+  const inStock = (p.stock == null) || (p.stock > 0);
+  const isNew = p.createdAt && (Date.now() - p.createdAt < 1000*60*60*24*14);
+  const liked = Fav.has(p.id);
+  const rating = Number.isFinite(p.rating) ? p.rating : 0;
+  const reviews = p.reviewCount || 0;
+  return `
+  <article class="prod-card" data-id="${escapeHtml(p.id)}">
+    <a class="prod-media" href="#/product/${encodeURIComponent(p.id)}" aria-label="${escapeHtml(p.name)}">
+      ${img
+        ? `<img src="${img}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',innerHTML:'${IC.box.replace(/'/g,'&#39;')}'}))">`
+        : `<div class="ph">${IC.box}</div>`}
+      <div class="prod-badges">
+        ${hasDisc ? `<span class="badge">−${disc}%</span>` : ''}
+        ${isNew ? `<span class="badge new">NEW</span>` : ''}
+        ${!inStock ? `<span class="badge out">Нет в наличии</span>` : ''}
+      </div>
+    </a>
+    <button class="fav-btn ${liked?'on':''} js-fav" data-id="${escapeHtml(p.id)}" type="button" aria-label="В избранное" aria-pressed="${liked}">
+      ${liked ? IC.heartF : IC.heart}
+    </button>
+    <div class="prod-body">
+      <div class="prod-price-row">
+        <span class="prod-price">${fmtPrice(p.price)}</span>
+        ${hasDisc ? `<span class="prod-old">${fmtPrice(p.oldPrice)}</span>` : ''}
+      </div>
+      <a class="prod-name" href="#/product/${encodeURIComponent(p.id)}">${escapeHtml(p.name)}</a>
+      <div class="prod-meta">
+        ${rating > 0 ? `<span><span class="star">★</span> ${rating.toFixed(1)}</span><span>· ${reviews}</span>` : '<span class="muted">Нет оценок</span>'}
+      </div>
+      <div class="prod-seller" title="${escapeHtml(p.sellerName || 'Продавец')}">${escapeHtml(p.sellerName || 'Продавец')}</div>
+      <div class="prod-actions">
+        <button class="add-btn js-add" data-id="${escapeHtml(p.id)}" type="button" ${!inStock?'disabled':''}>
+          ${inStock ? 'В корзину' : 'Нет в наличии'}
+        </button>
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ============ 11. Категории ============ */
+const DEFAULT_CAT_ICONS = ['📱','💻','👕','👟','👜','💄','🛋️','🍳','⚽','🧸','🚗','🐾','🥫','📚','✏️','🔧','🎮','🎧'];
+function catIcon(c) {
+  if (c.icon) return c.icon;
+  return '📦';
+}
+
+/* ============ 12. Вьюхи ============ */
+const Views = {};
+
+/* ---- 12.1 Home ---- */
+Views['/'] = async function() {
+  const [cats, banners, pop, news, disc] = await Promise.all([
+    API.listCategories(),
+    API.listBanners(),
+    API.listProducts({ sort: 'popular', limit: 10 }),
+    API.listProducts({ sort: 'new', limit: 10 }),
+    API.listProducts({ sort: 'discount', limit: 10 })
+  ]);
+  const bannersHTML = banners.length ? renderHero(banners) : '';
+  const catsHTML = cats.length ? renderCats(cats) : '';
+  const hasAnyProduct = (pop.total + news.total + disc.total) > 0;
+
+  return `
+  <main class="container" role="main">
+    ${bannersHTML}
+
+    ${catsHTML}
+
+    ${hasAnyProduct ? `
+      ${pop.total ? sectionProducts('Популярное', pop.items, '/catalog?sort=popular') : ''}
+      ${disc.total ? sectionProducts('Скидки', disc.items, '/catalog?sort=discount') : ''}
+      ${news.total ? sectionProducts('Новинки', news.items, '/catalog?sort=new') : ''}
+    ` : `
+      <section class="section">
+        <div class="empty" style="padding:60px 20px">
+          <div class="ic">${IC.box}</div>
+          <h3>Товары пока не добавлены</h3>
+          <p>Как только администратор или продавец добавит товары через панель управления, они появятся здесь.</p>
+          <a class="btn" href="#/admin">Перейти в панель управления</a>
+        </div>
+      </section>
+    `}
+  </main>`;
+};
+
+function renderHero(banners) {
+  return `
+  <section class="hero" aria-label="Акции">
+    <div class="hero-track">
+      <div class="hero-slides" id="heroSlides">
+        ${banners.map(b => `
+          <div class="hero-slide">
+            ${b.image ? `<img src="${escapeHtml(b.image)}" alt="${escapeHtml(b.title || '')}" loading="lazy">` : ''}
+            <div class="hero-content">
+              ${b.title ? `<h2 class="hero-title">${escapeHtml(b.title)}</h2>` : ''}
+              ${b.subtitle ? `<p class="hero-sub">${escapeHtml(b.subtitle)}</p>` : ''}
+              ${b.ctaText && b.ctaLink ? `<a class="btn" href="${escapeHtml(b.ctaLink)}">${escapeHtml(b.ctaText)}</a>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      ${banners.length > 1 ? `<div class="hero-dots" id="heroDots">${banners.map((_, i) => `<button class="hero-dot ${i===0?'on':''}" data-i="${i}" aria-label="Слайд ${i+1}"></button>`).join('')}</div>` : ''}
+    </div>
+  </section>`;
+}
+
+function renderCats(cats) {
+  return `
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Категории</h2>
+      <a class="section-link" href="#/catalog">Все</a>
+    </div>
+    <div class="cat-grid">
+      ${cats.slice(0, 12).map(c => `
+        <a class="cat-card" href="#/catalog?cat=${encodeURIComponent(c.id)}">
+          <div class="cat-ic" aria-hidden="true" style="font-size:22px">${catIcon(c)}</div>
+          <div class="cat-name">${escapeHtml(c.name)}</div>
+        </a>
+      `).join('')}
+    </div>
+  </section>`;
+}
+
+function sectionProducts(title, items, allLink) {
+  if (!items.length) return '';
+  return `
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">${escapeHtml(title)}</h2>
+      <a class="section-link" href="${escapeHtml(allLink)}">Показать все</a>
+    </div>
+    <div class="prod-grid">
+      ${items.map(productCard).join('')}
+    </div>
+  </section>`;
+}
+
+/* ---- 12.2 Catalog ---- */
+Views['/catalog'] = async function(params) {
+  const cats = await API.listCategories();
+  const filters = {
+    categoryId: params.cat || '',
+    search: params.q || '',
+    minPrice: null, maxPrice: null, brands: [], minRating: 0, inStock: false,
+    sort: params.sort || 'popular'
   };
-  let cur=state.slice();
-  const seq=[];
-  for(const slot of slots){
-    if(cornerSolved(cur,slot)) continue;
-    // IDA* with goal: cross preserved AND this corner in place
-    const crossStart=crossKey(cur);
-    const goalFn = s => crossKey(s)===crossStart && cornerSolved(s,slot);
-    const path = ida(cur, goalFn, 8);
-    if(!path){ return null; }
-    cur=applySeq(cur,path);
-    seq.push(...path);
-  }
-  return {state:cur, moves:seq};
-}
+  return `
+  <main class="container catalog-layout" role="main">
+    <aside class="filters" id="filtersPanel" aria-label="Фильтры">
+      <div class="row between" style="margin-bottom:8px">
+        <strong style="font-size:15px">Фильтры</strong>
+        <button class="btn ghost sm js-reset-filters" type="button">Сбросить</button>
+      </div>
+      <div class="filter-group">
+        <h4>Категория</h4>
+        <select class="sort-select" id="fCat" style="width:100%">
+          <option value="">Все категории</option>
+          ${cats.map(c => `<option value="${escapeHtml(c.id)}" ${filters.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="filter-group">
+        <h4>Цена, ₽</h4>
+        <div class="range">
+          <input type="number" id="fMin" placeholder="от" min="0" inputmode="numeric">
+          <input type="number" id="fMax" placeholder="до" min="0" inputmode="numeric">
+        </div>
+      </div>
+      <div class="filter-group" id="brandsBox" style="display:none">
+        <h4>Бренд</h4>
+        <div id="brandsList"></div>
+      </div>
+      <div class="filter-group">
+        <h4>Рейтинг</h4>
+        <label class="check"><input type="radio" name="rating" value="0" checked> Любой</label>
+        <label class="check"><input type="radio" name="rating" value="3"> от 3 ★</label>
+        <label class="check"><input type="radio" name="rating" value="4"> от 4 ★</label>
+        <label class="check"><input type="radio" name="rating" value="4.5"> от 4.5 ★</label>
+      </div>
+      <div class="filter-group">
+        <label class="check"><input type="checkbox" id="fStock"> Только в наличии</label>
+      </div>
+    </aside>
+    <section>
+      <div class="filters-toggle">
+        <button class="btn sec sm js-open-filters" type="button">${IC.catalog} Фильтры</button>
+        <span class="result-count" id="resultCount">Загрузка…</span>
+      </div>
+      <div class="sort-bar">
+        <h1 style="font-size:20px;margin:0;flex:1">${params.cat ? escapeHtml((cats.find(c=>c.id===params.cat)||{}).name || 'Каталог') : (params.q ? 'Поиск: ' + escapeHtml(params.q) : 'Все товары')}</h1>
+        <select class="sort-select" id="fSort" aria-label="Сортировка">
+          <option value="popular">По популярности</option>
+          <option value="new">Сначала новые</option>
+          <option value="price_asc">Сначала дешёвые</option>
+          <option value="price_desc">Сначала дорогие</option>
+          <option value="rating">По рейтингу</option>
+          <option value="discount">По размеру скидки</option>
+        </select>
+      </div>
+      <div id="prodList"><div class="empty">Загрузка…</div></div>
+    </section>
+  </main>`;
+};
 
-// --- 3.5 Middle layer edges ---
-const MID_SLOTS={FR:['F','R'],FL:['F','L'],BL:['B','L'],BR:['B','R']};
-const MID_EDGE_IDX={FR:EDGES.FR,FL:EDGES.FL,BL:EDGES.BL,BR:EDGES.BR};
-function midSolved(state,slot){
-  const [a,b]=MID_SLOTS[slot];
-  const [i,j]=MID_EDGE_IDX[slot];
-  return state[i]===a && state[j]===b;
-}
-function solveMiddles(state, moves){
-  const slots=['FR','FL','BL','BR'];
-  let cur=state.slice();
-  const seq=[];
-  // first-layer preserved: check cross + 4 first-layer corners
-  const solvedF1 = s => {
-    // cross
-    for(let i=0;i<4;i++) if(s[CROSS_FACE[i]]!=='U') return false;
-    if(s[10]!=='R'||s[19]!=='F'||s[46]!=='B'||s[37]!=='L') return false;
-    for(const slot of ['URF','UFL','ULB','UBR']){
-      if(!cornerSolved(s,slot)) return false;
-    }
-    return true;
+/* ---- 12.3 Product detail ---- */
+Views['/product'] = async function(params) {
+  const p = await API.getProduct(params.id);
+  if (!p) {
+    return `<main class="container" role="main" style="padding:40px 16px">
+      ${emptyState({ icon: IC.box, title: 'Товар не найден', text: 'Возможно, он был удалён или недоступен.', action: { href: '#/catalog', label: 'В каталог' } })}
+    </main>`;
+  }
+  const hasDisc = p.oldPrice && p.oldPrice > p.price;
+  const disc = hasDisc ? Math.round((1 - p.price/p.oldPrice) * 100) : 0;
+  const images = (p.images && p.images.length) ? p.images : [];
+  const specs = p.specs && typeof p.specs === 'object' ? p.specs : null;
+  const inStock = (p.stock == null) || (p.stock > 0);
+  const liked = Fav.has(p.id);
+  return `
+  <main class="container pd" role="main">
+    <nav class="small muted" style="margin-bottom:12px" aria-label="Хлебные крошки">
+      <a href="#/">Главная</a> · <a href="#/catalog">Каталог</a>${p.categoryName ? ` · <a href="#/catalog?cat=${encodeURIComponent(p.categoryId)}">${escapeHtml(p.categoryName)}</a>` : ''}
+    </nav>
+    <div class="pd-grid">
+      <div class="gallery">
+        <div class="gallery-main" id="galleryMain">
+          ${images.length
+            ? `<img id="galleryImg" src="${escapeHtml(images[0])}" alt="${escapeHtml(p.name)}">`
+            : `<div class="ph">${IC.box}</div>`}
+        </div>
+        ${images.length > 1 ? `<div class="gallery-thumbs">${images.map((src, i) => `
+          <button class="gallery-thumb ${i===0?'on':''}" data-src="${escapeHtml(src)}" data-i="${i}" type="button" aria-label="Фото ${i+1}">
+            <img src="${escapeHtml(src)}" alt="">
+          </button>`).join('')}</div>` : ''}
+      </div>
+      <div class="pd-info">
+        <h1>${escapeHtml(p.name)}</h1>
+        <div class="pd-rating">
+          ${p.rating ? `<span class="star">★</span> ${Number(p.rating).toFixed(1)} · ${p.reviewCount||0} отзывов` : '<span class="muted">Отзывов пока нет</span>'}
+        </div>
+        <div class="pd-price">
+          <span class="now">${fmtPrice(p.price)}</span>
+          ${hasDisc ? `<span class="old">${fmtPrice(p.oldPrice)}</span><span class="disc">−${disc}%</span>` : ''}
+        </div>
+        <div class="small muted">Артикул: ${escapeHtml(p.sku || '—')} · Продавец: ${escapeHtml(p.sellerName || '—')}</div>
+        ${inStock
+          ? `<div class="small" style="color:var(--vx-success);font-weight:600;margin-top:8px">${IC.check} В наличии</div>`
+          : `<div class="small" style="color:var(--vx-danger);font-weight:600;margin-top:8px">Нет в наличии</div>`}
+        <div class="pd-actions">
+          <button class="btn" id="pdAdd" ${!inStock?'disabled':''}>${inStock ? 'В корзину' : 'Нет в наличии'}</button>
+          <button class="btn sec" id="pdBuy" ${!inStock?'disabled':''}>Купить сейчас</button>
+          <button class="btn sec" id="pdFav" aria-pressed="${liked}" style="max-width:56px">${liked ? IC.heartF : IC.heart}</button>
+        </div>
+        ${inStock ? `
+          <div class="mt-16 row">
+            <span class="small muted">Количество:</span>
+            <div class="qty">
+              <button type="button" id="qMinus" aria-label="Меньше">${IC.minus}</button>
+              <input id="qInput" type="text" inputmode="numeric" value="1" aria-label="Количество">
+              <button type="button" id="qPlus" aria-label="Больше">${IC.plus}</button>
+            </div>
+          </div>` : ''}
+        ${p.description ? `<div class="pd-specs"><h3>Описание</h3><p style="font-size:14px;line-height:1.6;color:#374151;margin:0">${escapeHtml(p.description)}</p></div>` : ''}
+        ${specs ? `
+          <div class="pd-specs">
+            <h3>Характеристики</h3>
+            <table class="spec-table">${Object.entries(specs).map(([k,v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`).join('')}</table>
+          </div>` : ''}
+      </div>
+    </div>
+  </main>`;
+};
+
+/* ---- 12.4 Cart ---- */
+Views['/cart'] = async function() {
+  if (!State.cart.length) {
+    return `<main class="container cart-page" role="main">
+      <h1 style="font-size:24px;margin:0 0 16px">Корзина</h1>
+      ${emptyState({ icon: IC.cart, title: 'Корзина пуста', text: 'Добавьте товары, чтобы оформить заказ.', action: { href: '#/catalog', label: 'В каталог' } })}
+    </main>`;
+  }
+  // Загружаем реальные товары
+  const items = (await Promise.all(State.cart.map(async ci => {
+    const p = await API.getProduct(ci.productId);
+    return p ? { p, qty: ci.qty } : { missing: true, productId: ci.productId, qty: ci.qty };
+  })));
+  const valid = items.filter(x => !x.missing);
+  const subtotal = valid.reduce((s, x) => s + x.p.price * x.qty, 0);
+  const oldTotal = valid.reduce((s, x) => s + ((x.p.oldPrice && x.p.oldPrice > x.p.price ? x.p.oldPrice : x.p.price) * x.qty), 0);
+  const discount = oldTotal - subtotal;
+  const total = subtotal;
+
+  return `
+  <main class="container cart-page" role="main">
+    <h1 style="font-size:24px;margin:0 0 16px">Корзина</h1>
+    <div class="cart-layout">
+      <div class="cart-list">
+        ${items.map(it => it.missing ? `
+          <div class="cart-item" style="border-color:#fecaca;background:#fef2f2">
+            <div class="ph">${IC.warn}</div>
+            <div class="cart-info"><h4>Товар больше недоступен</h4><p class="small muted">Он был удалён продавцом или администратором.</p></div>
+            <div class="cart-side"><button class="cart-remove js-remove-missing" data-id="${escapeHtml(it.productId)}">Удалить</button></div>
+          </div>
+        ` : `
+          <div class="cart-item" data-id="${escapeHtml(it.p.id)}">
+            <a href="#/product/${encodeURIComponent(it.p.id)}">${it.p.images && it.p.images[0]
+              ? `<img src="${escapeHtml(it.p.images[0])}" alt="">`
+              : `<div class="ph">${IC.box}</div>`}</a>
+            <div class="cart-info">
+              <h4><a href="#/product/${encodeURIComponent(it.p.id)}">${escapeHtml(it.p.name)}</a></h4>
+              <div class="seller">${escapeHtml(it.p.sellerName || 'Продавец')}</div>
+              <div class="row" style="margin-top:8px;gap:12px;flex-wrap:wrap">
+                <span class="price">${fmtPrice(it.p.price)}</span>
+                <div class="qty" style="height:36px">
+                  <button type="button" class="js-cart-minus" data-id="${escapeHtml(it.p.id)}" aria-label="Меньше">${IC.minus}</button>
+                  <input type="text" value="${it.qty}" readonly aria-label="Количество">
+                  <button type="button" class="js-cart-plus" data-id="${escapeHtml(it.p.id)}" aria-label="Больше">${IC.plus}</button>
+                </div>
+              </div>
+            </div>
+            <div class="cart-side">
+              <div style="font-weight:800">${fmtPrice(it.p.price * it.qty)}</div>
+              <button class="cart-remove js-cart-remove" data-id="${escapeHtml(it.p.id)}">Удалить</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <aside class="card summary">
+        <h3>Итого</h3>
+        <div class="sum-row"><span>Товары (${valid.reduce((s,x)=>s+x.qty,0)})</span><span class="v">${fmtPrice(oldTotal)}</span></div>
+        ${discount > 0 ? `<div class="sum-row"><span>Скидка</span><span class="v" style="color:var(--vx-danger)">−${fmtPrice(discount)}</span></div>` : ''}
+        <div class="sum-row"><span>Доставка</span><span class="v">При получении</span></div>
+        <div class="sum-row total"><span>К оплате</span><span>${fmtPrice(total)}</span></div>
+        <button class="btn block" id="goCheckout" ${valid.length ? '' : 'disabled'} style="margin-top:14px">Оформить заказ</button>
+      </aside>
+    </div>
+  </main>`;
+};
+
+/* ---- 12.5 Favorites ---- */
+Views['/favorites'] = async function() {
+  const ids = State.favorites.slice();
+  const items = (await Promise.all(ids.map(id => API.getProduct(id)))).filter(Boolean);
+  if (!items.length) {
+    return `<main class="container" role="main" style="padding:24px 16px 40px">
+      <h1 style="font-size:24px;margin:0 0 16px">Избранное</h1>
+      ${emptyState({ icon: IC.heart, title: 'В избранном пока пусто', text: 'Нажимайте ♥ на товарах, чтобы сохранить их здесь.', action: { href: '#/catalog', label: 'В каталог' } })}
+    </main>`;
+  }
+  return `<main class="container" role="main" style="padding:24px 16px 40px">
+    <h1 style="font-size:24px;margin:0 0 16px">Избранное</h1>
+    <div class="prod-grid">${items.map(productCard).join('')}</div>
+  </main>`;
+};
+
+/* ---- 12.6 Profile ---- */
+Views['/profile'] = async function(params) {
+  if (!State.user) {
+    location.hash = '#/login';
+    return '';
+  }
+  const tab = params.tab || 'data';
+  const orders = await API.listOrders(State.user.id);
+  const favItems = (await Promise.all(State.favorites.map(id => API.getProduct(id)))).filter(Boolean);
+  return `
+  <main class="container" role="main">
+    <section class="card profile-head">
+      <div class="avatar" aria-hidden="true">${escapeHtml((State.user.name || 'U').slice(0,1).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:18px">${escapeHtml(State.user.name || 'Пользователь')}</div>
+        <div class="small muted">${escapeHtml(State.user.email || '')}</div>
+      </div>
+      <button class="btn sec sm" id="logoutBtn">${IC.logout} Выйти</button>
+    </section>
+
+    <nav class="profile-tabs" role="tablist">
+      <a class="ptab ${tab==='data'?'on':''}" href="#/profile?tab=data">Мои данные</a>
+      <a class="ptab ${tab==='orders'?'on':''}" href="#/profile?tab=orders">Заказы</a>
+      <a class="ptab ${tab==='fav'?'on':''}" href="#/profile?tab=fav">Избранное</a>
+      <a class="ptab ${tab==='addresses'?'on':''}" href="#/profile?tab=addresses">Адреса</a>
+      <a class="ptab ${tab==='settings'?'on':''}" href="#/profile?tab=settings">Настройки</a>
+    </nav>
+
+    <section class="panel">
+      ${tab === 'data' ? `
+        <form class="form card" style="max-width:520px;padding:22px" id="profileForm">
+          <div class="field"><label for="pName">Имя</label><input id="pName" type="text" value="${escapeHtml(State.user.name || '')}" required></div>
+          <div class="field"><label for="pEmail">Email</label><input id="pEmail" type="email" value="${escapeHtml(State.user.email || '')}" readonly></div>
+          <div class="field"><label for="pPhone">Телефон</label><input id="pPhone" type="tel" value="${escapeHtml(State.user.phone || '')}" placeholder="+7 (___) ___-__-__"></div>
+          <button class="btn" type="submit">Сохранить</button>
+        </form>
+      ` : ''}
+
+      ${tab === 'orders' ? (
+        orders.length
+          ? orders.map(o => orderCard(o)).join('')
+          : emptyState({ icon: IC.box, title: 'Заказов пока нет', text: 'Оформите первый заказ — он появится здесь.', action: { href: '#/catalog', label: 'В каталог' } })
+      ) : ''}
+
+      ${tab === 'fav' ? (
+        favItems.length
+          ? `<div class="prod-grid">${favItems.map(productCard).join('')}</div>`
+          : emptyState({ icon: IC.heart, title: 'В избранном пока пусто', text: '', action: { href: '#/catalog', label: 'В каталог' } })
+      ) : ''}
+
+      ${tab === 'addresses' ? emptyState({ icon: IC.pin, title: 'Адреса не добавлены', text: 'Добавьте адрес при оформлении заказа.' }) : ''}
+      ${tab === 'settings' ? `
+        <div class="card" style="padding:22px;max-width:520px">
+          <h3 style="margin:0 0 12px">Настройки</h3>
+          <button class="btn sec" id="clearLocalBtn">Очистить локальные данные браузера</button>
+          <p class="small muted" style="margin-top:10px">Будут удалены только ваши локальные настройки: город, история поиска, избранное и корзина. Данные на сервере не затрагиваются.</p>
+        </div>
+      ` : ''}
+    </section>
+  </main>`;
+};
+
+function orderCard(o) {
+  const statusMap = {
+    created:'Создан', pending_payment:'Ожидает оплаты', paid:'Оплачен',
+    confirmed:'Подтверждён', packing:'Собирается', shipped:'Передан в доставку',
+    in_transit:'В пути', arrived:'Прибыл в ПВЗ', ready:'Готов к выдаче',
+    delivered:'Выдан покупателю', cancelled:'Отменён', returned:'Возвращён'
   };
-  for(const slot of slots){
-    if(midSolved(cur,slot)) continue;
-    const goalFn = s => solvedF1(s) && midSolved(s,slot);
-    const path = ida(cur, goalFn, 10);
-    if(!path) return null;
-    cur=applySeq(cur,path);
-    seq.push(...path);
-  }
-  return {state:cur, moves:seq};
+  return `
+  <article class="card" style="padding:16px;margin-bottom:12px">
+    <div class="row between" style="margin-bottom:8px;flex-wrap:wrap">
+      <div><strong>Заказ №${escapeHtml(o.id)}</strong></div>
+      <div class="small muted">${new Date(o.createdAt).toLocaleString('ru-RU')}</div>
+    </div>
+    <div class="small" style="margin-bottom:6px">Статус: <span style="color:var(--vx-primary);font-weight:600">${escapeHtml(statusMap[o.status] || o.status)}</span></div>
+    <div class="small muted">Позиций: ${(o.items||[]).length} · Сумма: ${fmtPrice(o.total || 0)}</div>
+    <div style="margin-top:10px"><a class="btn ghost sm" href="#/order/${encodeURIComponent(o.id)}">Отследить</a></div>
+  </article>`;
 }
 
-// --- 3.6 Last layer ---
-function lastLayerSolved(s){
-  // U face all U, plus top rows of sides match
-  for(let i=0;i<9;i++) if(s[i]!=='U') return false;
-  if(s[10]!=='R'||s[19]!=='F'||s[37]!=='L'||s[46]!=='B') return false;
-  // Also check all corners of U face are in their correct faces
-  const cornerSlots=['URF','UFL','ULB','UBR'];
-  for(const slot of cornerSlots) if(!cornerSolved(s,slot)) return false;
-  return true;
-}
-function solveLastLayer(state, moves){
-  let cur=state.slice();
-  const seq=[];
-  // Helper: after each step, verify first two layers intact
-  const f2lIntact = s => {
-    // D face solid? Not exactly; just check that first two layers are untouched relative to start
-    // Actually check that D-layer + middle-layer edges + first-layer corners still solved
-    const cornerSlots=['DFR','DLF','DBL','DRB'];
-    for(const slot of cornerSlots) if(!cornerSolved(s,slot)) return false;
-    const edges = ['DF','DR','DB','DL','FR','FL','BL','BR'];
-    for(const e of edges){
-      const [i,j]=EDGES[e];
-      const want = {
-        DF:['D','F'],DR:['D','R'],DB:['D','B'],DL:['D','L'],
-        FR:['F','R'],FL:['F','L'],BL:['B','L'],BR:['B','R']
-      }[e];
-      if(s[i]!==want[0]||s[j]!==want[1]) return false;
-    }
-    return true;
-  };
+/* ---- 12.7 Login / Register ---- */
+Views['/login'] = async function() { return authHTML('login'); };
+Views['/register'] = async function() { return authHTML('register'); };
 
-  const applyChecked = (s, alg) => {
-    const mv = parseSeq(alg);
-    const nxt = applySeq(s, mv);
-    seq.push(...mv);
-    return nxt;
-  };
-
-  // --- Yellow cross on U ---
-  let iter=0;
-  while(iter++ < 6){
-    const uUp = ['U1','U3','U5','U7'].map(n=>cur[CROSS_FACE[0]]); // wrong approach
-    const upTop = [1,3,5,7].map(i=>cur[i]==='U');
-    const cnt = upTop.filter(Boolean).length;
-    if(cnt===4) break;
-    // Orient so algorithm applies. F R U R' U' F' builds cross from dot / L / line.
-    // Standard: hold L-shape with corner at front-right-top or line horizontally.
-    if(cnt===2){
-      // Check if it's a line or an L
-      const idx=[1,3,5,7]; // U1=back, U3=left, U5=right, U7=front
-      const isLine = (cur[1]==='U' && cur[7]==='U') || (cur[3]==='U' && cur[5]==='U');
-      if(!isLine){
-        // L-shape: rotate U so corner points back-right (i.e., U1 and U5 are U)
-        // Try each U rotation
-        for(let k=0;k<4;k++){
-          const a=cur[1]==='U', b=cur[5]==='U';
-          if(a && b) break;
-          cur = applyChecked(cur,'U');
-        }
-      } else {
-        // Line: hold horizontally → U1 and U7 (back-front) or U3/U5? 
-        // Standard: line horizontal in front = left-right (U3 U5). We need U1 U7 to be the "line"
-        // Rotate so that U3 and U5 are U (line along left-right) — algorithm makes it work
-        for(let k=0;k<4;k++){
-          if(cur[3]==='U' && cur[5]==='U') break;
-          cur = applyChecked(cur,'U');
-        }
-        if(!(cur[3]==='U' && cur[5]==='U')){
-          // fallback: any orientation
-        }
-      }
-    }
-    cur = applyChecked(cur, "F R U R' U' F'");
-  }
-
-  // --- Permute U edges (get them all in correct position) ---
-  iter=0;
-  while(iter++ < 8){
-    // Count how many edges are correctly placed (color matches center)
-    let good=0;
-    for(const [e,ij] of [['UF',[7,19]],['UR',[5,10]],['UB',[1,46]],['UL',[3,37]]]){
-      const [i,j]=ij;
-      const w = {UF:['U','F'],UR:['U','R'],UB:['U','B'],UL:['U','L']}[e];
-      if(cur[i]===w[0] && cur[j]===w[1]) good++;
-    }
-    if(good===4) break;
-    // Algorithm: R U R' U R U2 R' U  (Sune → cycles U edges)
-    // Simpler common edge permutation: R U R' U R U2 R'
-    // Hold so that we cycle correctly.
-    cur = applyChecked(cur, "R U R' U R U2 R'");
-    // If stuck, do U
-    if(iter>6) cur = applyChecked(cur,'U');
-  }
-
-  // --- Permute U corners ---
-  iter=0;
-  while(iter++ < 8){
-    // Check how many corners are in correct position (color set matches)
-    let good=0;
-    for(const slot of ['URF','UFL','ULB','UBR']) if(cornerInPosition(cur,slot)) good++;
-    if(good===4) break;
-    // Find a corner already in position, hold at URF
-    // Algorithm: U R U' L' U R' U' L
-    // Try each U rotation to place a "good" corner at URF
-    let rotated=false;
-    for(let k=0;k<4;k++){
-      if(cornerInPosition(cur,'URF')) { rotated=true; break; }
-      cur = applyChecked(cur,'U');
-    }
-    cur = applyChecked(cur, "U R U' L' U R' U' L");
-    if(!rotated){
-      // no corner in position → algorithm above still moves things
-    }
-    if(iter>6) break;
-  }
-
-  // --- Orient U corners ---
-  // Repeat: bring an unoriented corner to URF, apply R' D' R D (x2 or x4)
-  iter=0;
-  while(iter++ < 40){
-    if(lastLayerSolved(cur)) break;
-    // Find first unoriented corner
-    const order=['URF','UBR','ULB','UFL'];
-    // hold each corner at URF in turn
-    // rotate U so an unoriented corner is at URF
-    let unorient=null;
-    for(const slot of order){
-      if(!cornerSolved(cur,slot)) { unorient=slot; break; }
-    }
-    if(!unorient) break;
-    // Rotate U to bring unorient to URF
-    while(!cornerSolved(cur,'URF')){
-      // Determine rotation needed
-      if(cornerSolved(cur,'URF')) break;
-      // Just try: if URF is solved → done with this corner; else apply algorithm
-      // Actually rotate U until URF is our target corner position (any orientation)
-      let done=false;
-      for(let k=0;k<4;k++){
-        // Check if URF currently holds our target colors (in any orientation)
-        const s=new Set(CORNERS.URF.map(i=>cur[i]));
-        const want = {URF:['U','R','F'],UFL:['U','F','L'],ULB:['U','L','B'],UBR:['U','B','R']}[unorient];
-        if(want.every(c=>s.has(c))){ done=true; break; }
-        cur=applyChecked(cur,'U');
-      }
-      if(done) break;
-      // Give up
-      return null;
-    }
-    // Apply R' D' R D up to 4 times until corner solved
-    let it=0;
-    while(!cornerSolved(cur,'URF') && it++<6){
-      cur=applyChecked(cur, "R' D' R D");
-    }
-    if(it>=6) return null;
-  }
-
-  if(!lastLayerSolved(cur)) return null;
-  return {state:cur, moves:seq};
-}
-function cornerInPosition(s,slot){
-  const cols = new Set(CORNERS[slot].map(i=>s[i]));
-  const want = {
-    URF:['U','R','F'],UFL:['U','F','L'],ULB:['U','L','B'],UBR:['U','B','R'],
-    DFR:['D','F','R'],DLF:['D','L','F'],DBL:['D','B','L'],DRB:['D','R','B']
-  }[slot];
-  return want.every(c=>cols.has(c));
+function authHTML(mode) {
+  const isLogin = mode === 'login';
+  return `
+  <main class="auth-wrap" role="main">
+    <div style="text-align:center;margin-bottom:22px">${logoHTML()}</div>
+    <div class="card auth-card">
+      <h1>${isLogin ? 'Вход' : 'Регистрация'}</h1>
+      <p class="sub">${isLogin ? 'Войдите в аккаунт VEXA' : 'Создайте аккаунт VEXA'}</p>
+      <div class="warn-banner">
+        ${IC.warn}
+        <div>Авторизация подключается к серверу (Supabase Auth или собственный backend). Сейчас интерфейс работает в демонстрационном режиме, реальные данные пользователей не создаются.</div>
+      </div>
+      <form class="form" id="authForm" novalidate>
+        ${!isLogin ? `
+          <div class="field"><label for="aName">Имя</label><input id="aName" type="text" autocomplete="name" required><div class="err">Укажите имя</div></div>
+        ` : ''}
+        <div class="field"><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required><div class="err">Введите корректный email</div></div>
+        <div class="field">
+          <label for="aPass">Пароль</label>
+          <div class="pw-wrap">
+            <input id="aPass" type="password" autocomplete="${isLogin?'current-password':'new-password'}" required minlength="6">
+            <button class="pw-toggle" type="button" aria-label="Показать пароль">${IC.eye}</button>
+          </div>
+          <div class="err">Минимум 6 символов</div>
+        </div>
+        ${!isLogin ? `
+          <div class="field"><label for="aPass2">Повтор пароля</label><input id="aPass2" type="password" required><div class="err">Пароли не совпадают</div></div>
+        ` : ''}
+        <button class="btn block" type="submit">${isLogin ? 'Войти' : 'Зарегистрироваться'}</button>
+      </form>
+      <div class="auth-switch">
+        ${isLogin
+          ? `Нет аккаунта? <a href="#/register">Зарегистрироваться</a>`
+          : `Уже есть аккаунт? <a href="#/login">Войти</a>`}
+      </div>
+    </div>
+  </main>`;
 }
 
-// --- 3.7 Top-level solve ---
-function solveCube(state){
-  try{
-    // 1) Cross
-    let moves=[];
-    let cur=state.slice();
-    const crossMoves=solveCross(cur);
-    if(!crossMoves) return {ok:false,error:'Не удалось собрать крест'};
-    cur=applySeq(cur,crossMoves); moves.push(...crossMoves);
-
-    // 2) Corners of first layer
-    const cRes=solveCorners(cur, moves);
-    if(!cRes) return {ok:false,error:'Не удалось собрать углы первого слоя'};
-    cur=cRes.state; moves.push(...cRes.moves.slice(moves.length)); 
-    // note: cRes.moves includes dupes? No, cRes.moves is only new moves.
-    // Actually solveCorners returns moves starting from its input; let's not double count.
-    // Fix: recompute
-    // Reset path tracking — we'll rely on final verification anyway.
-    // (Simplify: rebuild moves list from scratch)
-    moves=[...crossMoves, ...cRes.moves];
-
-    // 3) Middle layer
-    const mRes=solveMiddles(cur, moves);
-    if(!mRes) return {ok:false,error:'Не удалось собрать средний слой'};
-    cur=mRes.state; moves.push(...mRes.moves.slice(cRes.moves.length));
-
-    // 4) Last layer
-    const lRes=solveLastLayer(cur, moves);
-    if(!lRes) return {ok:false,error:'Не удалось собрать последний слой'};
-    cur=lRes.state; moves.push(...lRes.moves);
-
-    // Verify
-    const finalState=applySeq(state,moves);
-    if(!isSolved(finalState)){
-      return {ok:false, error:'Проверка не пройдена: решение не собирает кубик'};
-    }
-    return {ok:true, moves};
-  }catch(e){
-    return {ok:false, error:'Ошибка алгоритма: '+e.message};
-  }
-}
-
-/* -------------------- 4. Validator -------------------- */
-function validate(state){
-  const errs=[];
-  if(state.length!==54) return {ok:false,errors:['Нужно 54 стикера']};
-  const cnt={};
-  for(const c of state) cnt[c]=(cnt[c]||0)+1;
-  for(const c of COLORS) if((cnt[c]||0)!==9) errs.push(`Цвет ${c}: ${cnt[c]||0} из 9`);
-  if(errs.length) return {ok:false,errors:errs};
-  for(const c of COLORS) if(state[CENTER_IDX[c]]!==c) errs.push(`Центр ${c} не совпадает`);
-  if(errs.length) return {ok:false,errors:errs};
-  // Basic parity check via facelet permutation — skip for brevity (advanced validator)
-  return {ok:true,errors:[]};
-}
-
-/* -------------------- 5. Storage -------------------- */
-const Storage={
-  get(k,d){try{return JSON.parse(localStorage.getItem('rcs_'+k))??d;}catch{return d;}},
-  set(k,v){try{localStorage.setItem('rcs_'+k,JSON.stringify(v));}catch{}},
-  stats(){return this.get('stats',{solves:0,best:null,last:null});},
-  pushSolve(len,timeMs){
-    const s=this.stats();
-    s.solves++;
-    s.last=len;
-    if(timeMs && (s.best==null || timeMs<s.best)) s.best=timeMs;
-    this.set('stats',s);
-  },
-  clear(){localStorage.removeItem('rcs_stats');}
+/* ---- 12.8 Checkout ---- */
+Views['/checkout'] = async function() {
+  if (!State.cart.length) { location.hash = '#/cart'; return ''; }
+  const city = State.city || '';
+  const points = city ? await API.listPickupPoints(city) : [];
+  const items = (await Promise.all(State.cart.map(async ci => {
+    const p = await API.getProduct(ci.productId);
+    return p ? { p, qty: ci.qty } : null;
+  }))).filter(Boolean);
+  const total = items.reduce((s, x) => s + x.p.price * x.qty, 0);
+  const u = State.user || {};
+  return `
+  <main class="container" role="main" style="padding:16px 16px 40px;max-width:760px">
+    <h1 style="font-size:24px;margin:0 0 8px">Оформление заказа</h1>
+    <div class="steps" id="steps">
+      <div class="step on" data-step="1"><span class="num">1</span> Контакты</div>
+      <div class="step" data-step="2"><span class="num">2</span> Доставка</div>
+      <div class="step" data-step="3"><span class="num">3</span> Оплата</div>
+      <div class="step" data-step="4"><span class="num">4</span> Подтверждение</div>
+    </div>
+    <form class="card form" style="padding:22px" id="checkoutForm">
+      <div class="field"><label for="cName">Имя*</label><input id="cName" required value="${escapeHtml(u.name || '')}"><div class="err">Укажите имя</div></div>
+      <div class="field"><label for="cPhone">Телефон*</label><input id="cPhone" type="tel" required placeholder="+7 (999) 000-00-00" value="${escapeHtml(u.phone || '')}"><div class="err">Укажите телефон</div></div>
+      <div class="field"><label for="cEmail">Email</label><input id="cEmail" type="email" value="${escapeHtml(u.email || '')}"></div>
+      <div class="divider"></div>
+      <div class="field"><label for="cCity">Город*</label>
+        <input id="cCity" required value="${escapeHtml(city)}" placeholder="Введите город">
+      </div>
+      <div class="field">
+        <label>Пункт выдачи*</label>
+        <div id="pointsBox">
+          ${city
+            ? (points.length
+                ? points.map(p => `<label class="check"><input type="radio" name="pp" value="${escapeHtml(p.id)}" required> ${escapeHtml(p.address)} <span class="muted small">${escapeHtml(p.hours || '')}</span></label>`).join('')
+                : `<div class="small muted">Пункты выдачи пока не добавлены в этом городе.</div>`)
+            : `<div class="small muted">Сначала укажите город.</div>`}
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label>Способ оплаты*</label>
+        <label class="check"><input type="radio" name="pay" value="cod" required> При получении</label>
+        <label class="check"><input type="radio" name="pay" value="online" required> Онлайн через платёжного провайдера</label>
+        <p class="small muted" style="margin:6px 0 0">VEXA не собирает и не хранит данные банковских карт. Онлайн-оплата проходит через защищённого провайдера.</p>
+      </div>
+      <div class="divider"></div>
+      <div class="sum-row total"><span>К оплате</span><span>${fmtPrice(total)}</span></div>
+      <button class="btn block" type="submit" id="placeOrder">Оформить заказ</button>
+    </form>
+  </main>`;
 };
 
-/* -------------------- 6. Toast -------------------- */
-let toastTid=null;
-function toast(msg,type){
-  const el=document.getElementById('toast');
-  el.textContent=msg;
-  el.className='toast show'+(type?' '+type:'');
-  clearTimeout(toastTid);
-  toastTid=setTimeout(()=>el.className='toast'+(type?' '+type:''),2600);
-}
-
-/* -------------------- 7. Color detector (HSV) -------------------- */
-/* Reference HSV centers of standard cube colors. Hue in degrees. */
-const HSV_REF = {
-  U:{h:0,   s:0.0,  v:0.95},  // white
-  D:{h:52,  s:0.85, v:0.95},  // yellow
-  R:{h:0,   s:0.85, v:0.85},  // red
-  L:{h:28,  s:0.85, v:0.95},  // orange
-  F:{h:130, s:0.70, v:0.75},  // green
-  B:{h:215, s:0.80, v:0.90},  // blue
-};
-function rgbToHsv(r,g,b){
-  r/=255;g/=255;b/=255;
-  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
-  let h=0;
-  if(d!==0){
-    if(max===r) h=((g-b)/d)%6;
-    else if(max===g) h=(b-r)/d+2;
-    else h=(r-g)/d+4;
-    h*=60; if(h<0) h+=360;
-  }
-  const s = max===0?0:d/max;
-  return {h,s,v:max};
-}
-function hueDist(a,b){let d=Math.abs(a-b);if(d>180)d=360-d;return d;}
-function classifyHsv(hsv){
-  // Score each reference color (weighted)
-  const scores={};
-  for(const c in HSV_REF){
-    const r=HSV_REF[c];
-    let dH = r.s<0.15 ? 0 : hueDist(hsv.h,r.h)/180; // white-ish: ignore hue
-    let dS = Math.abs(hsv.s-r.s);
-    let dV = Math.abs(hsv.v-r.v);
-    // For low-saturation colors (white), weight s/v more
-    const weight = r.s<0.15 ? {h:0,s:2,v:1} : {h:1.6,s:1,v:1};
-    scores[c] = weight.h*dH + weight.s*dS + weight.v*dV;
-  }
-  let best=null,bestScore=Infinity;
-  for(const c in scores) if(scores[c]<bestScore){bestScore=scores[c];best=c;}
-  // Confidence: distance to second best
-  const sorted=Object.values(scores).sort((a,b)=>a-b);
-  const conf = sorted.length>1 ? Math.min(1,(sorted[1]-sorted[0])) : 1;
-  return {color:best, confidence:conf};
-}
-
-/* -------------------- 8. Camera scanner -------------------- */
-const Camera={
-  stream:null, video:null, overlay:null, devices:[], currentDevice:0,
-  async start(facingMode){
-    try{
-      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-        throw new Error('Браузер не поддерживает камеру (нужен HTTPS)');
-      }
-      const constraints = facingMode==='environment'
-        ? {video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false}
-        : {video:{width:{ideal:1280},height:{ideal:720}},audio:false};
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.video = document.getElementById('scan-video');
-      this.video.srcObject = this.stream;
-      await this.video.play().catch(()=>{});
-      return true;
-    }catch(e){
-      return {error:e.message || String(e)};
-    }
-  },
-  stop(){
-    if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null;}
-    const v=document.getElementById('scan-video');
-    if(v) v.srcObject=null;
-  },
-  flash(){
-    const f=document.getElementById('flash');
-    if(!f) return;
-    f.classList.add('on');
-    // trigger reflow so transition applies when we remove the class
-    void f.offsetWidth;
-    f.classList.remove('on');
-    if(navigator.vibrate) try{navigator.vibrate(15);}catch{}
-  },
-  async switchCamera(){
-    const cams = await navigator.mediaDevices.enumerateDevices().catch(()=>[]);
-    const vids = cams.filter(d=>d.kind==='videoinput');
-    if(vids.length<2) { toast('Только одна камера', 'err'); return; }
-    this.stop();
-    // Try next device id
-    const next = vids[(this.currentDevice+1)%vids.length];
-    try{
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video:{deviceId:{exact:next.deviceId}},audio:false
-      });
-      const v=document.getElementById('scan-video');
-      v.srcObject=this.stream;
-      await v.play().catch(()=>{});
-      this.currentDevice=(this.currentDevice+1)%vids.length;
-      this.flash();
-    }catch(e){toast('Не удалось переключить камеру','err');}
-  },
-  // Sample 9 cells from current video frame
-  sampleFace(){
-    const v=document.getElementById('scan-video');
-    if(!v||v.readyState<2) return null;
-    const w=v.videoWidth, h=v.videoHeight;
-    if(!w||!h) return null;
-    const cnv=document.createElement('canvas');
-    cnv.width=w;cnv.height=h;
-    const ctx=cnv.getContext('2d',{willReadFrequently:true});
-    ctx.drawImage(v,0,0,w,h);
-    // Central square: use 70% of min side, centered
-    const side=Math.min(w,h)*0.7;
-    const x0=(w-side)/2, y0=(h-side)/2;
-    const cell=side/3;
-    const res=[];
-    for(let r=0;r<3;r++) for(let c=0;c<3;c++){
-      const cx=x0+cell*(c+0.5), cy=y0+cell*(r+0.5);
-      // sample 5x5 grid
-      let R=0,G=0,B=0,n=0;
-      const s=Math.max(2,Math.floor(cell*0.25));
-      for(let dy=-s;dy<=s;dy++) for(let dx=-s;dx<=s;dx++){
-        const px=Math.round(cx+dx), py=Math.round(cy+dy);
-        if(px<0||py<0||px>=w||py>=h) continue;
-        const p=ctx.getImageData(px,py,1,1).data;
-        R+=p[0];G+=p[1];B+=p[2];n++;
-      }
-      if(n===0){res.push({color:'U',confidence:0,hsv:{h:0,s:0,v:0}});continue;}
-      const avg={r:R/n,g:G/n,b:B/n};
-      const hsv=rgbToHsv(avg.r,avg.g,avg.b);
-      const cl=classifyHsv(hsv);
-      res.push({color:cl.color,confidence:cl.confidence,hsv,rgb:avg});
-    }
-    return res;
-  }
+/* ---- 12.9 Order tracking ---- */
+Views['/order'] = async function(params) {
+  const o = await API.getOrder(params.id);
+  if (!o) return `<main class="container" role="main" style="padding:40px 16px">${emptyState({ icon: IC.box, title: 'Заказ не найден' })}</main>`;
+  const statuses = ['created','paid','confirmed','packing','shipped','in_transit','arrived','ready','delivered'];
+  const labels = { created:'Заказ оформлен', paid:'Оплачен', confirmed:'Подтверждён', packing:'Собирается', shipped:'Передан в доставку', in_transit:'В пути', arrived:'Прибыл в ПВЗ', ready:'Готов к выдаче', delivered:'Выдан' };
+  const cur = statuses.indexOf(o.status);
+  return `
+  <main class="container" role="main" style="padding:16px 16px 40px;max-width:760px">
+    <h1 style="font-size:24px;margin:0 0 8px">Заказ №${escapeHtml(o.id)}</h1>
+    <p class="small muted">Оформлен ${new Date(o.createdAt).toLocaleString('ru-RU')}</p>
+    <div class="card" style="padding:18px;margin-top:16px">
+      <h3 style="margin:0 0 12px">Статус заказа</h3>
+      <ul style="display:flex;flex-direction:column;gap:10px">
+        ${statuses.map((s, i) => `
+          <li class="row" style="gap:10px">
+            <span style="width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:${i<=cur?'var(--vx-primary)':'var(--vx-bg)'};color:${i<=cur?'#fff':'var(--vx-muted)'}">${i<=cur?'✓':i+1}</span>
+            <span style="font-weight:${i===cur?'700':'500'};color:${i<=cur?'var(--vx-text)':'var(--vx-muted)'}">${labels[s]}</span>
+          </li>`).join('')}
+      </ul>
+      <p class="small muted" style="margin:16px 0 0">Ожидаемая дата доставки: ${o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString('ru-RU') : 'Дата уточняется'}</p>
+    </div>
+    <div class="card" style="padding:18px;margin-top:12px">
+      <h3 style="margin:0 0 12px">Состав заказа</h3>
+      ${(o.items||[]).map(it => `<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--vx-border-2)"><span>${escapeHtml(it.name)} × ${it.qty}</span><span>${fmtPrice(it.price*it.qty)}</span></div>`).join('')}
+      <div class="sum-row total"><span>Итого</span><span>${fmtPrice(o.total||0)}</span></div>
+    </div>
+  </main>`;
 };
 
-/* -------------------- 9. 3D cube (Three.js) -------------------- */
-class Cube3D{
-  constructor(container){
-    this.container=container;
-    this.scene=null;this.camera=null;this.renderer=null;this.group=null;
-    this.cubies=[]; // {mesh, position}
-    this.rotating=false;
-    this.animSpeed=300;
-    this.animating=false;
-    this.init();
-  }
-  init(){
-    if(!window.THREE){this.fallback();return;}
-    try{
-      const w=this.container.clientWidth||320, h=this.container.clientHeight||320;
-      this.scene=new THREE.Scene();
-      this.camera=new THREE.PerspectiveCamera(40,w/h,0.1,100);
-      this.camera.position.set(4,4,6);
-      this.camera.lookAt(0,0,0);
-      this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
-      this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-      this.renderer.setSize(w,h,false);
-      this.renderer.setClearColor(0x000000,0);
-      this.container.appendChild(this.renderer.domElement);
-
-      // Lights
-      this.scene.add(new THREE.AmbientLight(0xffffff,0.7));
-      const d1=new THREE.DirectionalLight(0xffffff,0.9);d1.position.set(5,10,7);this.scene.add(d1);
-      const d2=new THREE.DirectionalLight(0xffffff,0.4);d2.position.set(-5,-5,-5);this.scene.add(d2);
-
-      this.group=new THREE.Group();
-      this.scene.add(this.group);
-
-      this.buildCube(SOLVED);
-
-      this.attachOrbit();
-      this.animate=this.animate.bind(this);
-      requestAnimationFrame(this.animate);
-    }catch(e){this.fallback();}
-  }
-  fallback(){
-    this.container.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8b95a3;font-size:14px;padding:20px;text-align:center">3D недоступно (нет WebGL)</div>';
-  }
-  buildCube(state){
-    // Clear old
-    while(this.group.children.length){
-      const c=this.group.children.pop();
-      if(c.geometry) c.geometry.dispose();
-      if(c.material) c.material.dispose();
-    }
-    this.cubies=[];
-    const geo=new THREE.BoxGeometry(0.95,0.95,0.95);
-    const gap=1.0;
-    // For each of 27 sub-cubes, decide which facelets to color
-    for(let x=-1;x<=1;x++) for(let y=-1;y<=1;y++) for(let z=-1;z<=1;z++){
-      if(x===0&&y===0&&z===0) continue; // skip center
-      // materials: [right,left,top,bottom,front,back]
-      const mats=[
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-        new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.7}),
-      ];
-      // Determine which facelets this cubie owns
-      const owns = [];
-      for(let i=0;i<54;i++){
-        const g=GEO[i];
-        if(Math.round(g.p[0])===x && Math.round(g.p[1])===y && Math.round(g.p[2])===z){
-          owns.push({idx:i,g});
-        }
-      }
-      // Set material colors from state
-      for(const {idx,g} of owns){
-        let mi=0;
-        if(g.n[0]===1) mi=0;      // +x right
-        else if(g.n[0]===-1) mi=1; // -x left
-        else if(g.n[1]===1) mi=2;  // +y top
-        else if(g.n[1]===-1) mi=3; // -y bottom
-        else if(g.n[2]===1) mi=4;  // +z front
-        else if(g.n[2]===-1) mi=5; // -z back
-        mats[mi].color.set(HEX[state[idx]]);
-        mats[mi].roughness=0.35;
-      }
-      const mesh=new THREE.Mesh(geo,mats);
-      mesh.position.set(x*gap,y*gap,z*gap);
-      mesh.userData={x,y,z};
-      this.group.add(mesh);
-      this.cubies.push({mesh,x,y,z});
-    }
-  }
-  updateFromState(state){
-    // Rebuild cube visually (simpler than moving individual stickers)
-    if(!this.group) return;
-    // Update each cubie's materials
-    for(const {mesh,x,y,z} of this.cubies){
-      const mats=mesh.material;
-      // Reset to dark
-      mats.forEach(m=>m.color.set(0x1a1a1a));
-      for(let i=0;i<54;i++){
-        const g=GEO[i];
-        if(Math.round(g.p[0])===x && Math.round(g.p[1])===y && Math.round(g.p[2])===z){
-          let mi=0;
-          if(g.n[0]===1) mi=0;
-          else if(g.n[0]===-1) mi=1;
-          else if(g.n[1]===1) mi=2;
-          else if(g.n[1]===-1) mi=3;
-          else if(g.n[2]===1) mi=4;
-          else if(g.n[2]===-1) mi=5;
-          mats[mi].color.set(HEX[state[i]]);
-        }
-      }
-    }
-  }
-  attachOrbit(){
-    const el=this.container;
-    let dragging=false,lastX=0,lastY=0,rotX=0,rotY=0;
-    let px=0,py=0;
-    // Set initial angles from camera
-    // We'll just orbit the group
-    const target={x:-0.6,y:0.8};
-    const cur={x:-0.6,y:0.8};
-    const self=this;
-
-    el.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;el.setPointerCapture(e.pointerId);});
-    el.addEventListener('pointermove',e=>{
-      if(!dragging)return;
-      const dx=e.clientX-lastX, dy=e.clientY-lastY;
-      target.y+=dx*0.01;
-      target.x+=dy*0.01;
-      target.x=Math.max(-1.4,Math.min(1.4,target.x));
-      lastX=e.clientX;lastY=e.clientY;
-    });
-    el.addEventListener('pointerup',e=>{dragging=false;try{el.releasePointerCapture(e.pointerId);}catch{}});
-    el.addEventListener('pointercancel',()=>{dragging=false;});
-
-    this._orbit={target,cur};
-  }
-  animate(){
-    requestAnimationFrame(this.animate);
-    if(this._orbit){
-      const {target,cur}=this._orbit;
-      cur.x += (target.x-cur.x)*0.15;
-      cur.y += (target.y-cur.y)*0.15;
-      if(this.group){
-        this.group.rotation.x=cur.x;
-        this.group.rotation.y=cur.y;
-      }
-    }
-    if(this.renderer && this.scene && this.camera){
-      try{this.renderer.render(this.scene,this.camera);}catch{}
-    }
-  }
-  resize(){
-    if(!this.renderer) return;
-    const w=this.container.clientWidth, h=this.container.clientHeight;
-    if(!w||!h) return;
-    this.camera.aspect=w/h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w,h,false);
-  }
-}
-
-/* -------------------- 10. App -------------------- */
-const App={
-  three3D:null,
-  threeSolve:null,
-  state:SOLVED.slice(),
-  scan:null, // scanning session
-  solution:[],
-  stepIdx:0,
-  timer:null,startTime:0,
-  autoTimer:null,
-  animSpeed:300,
-
-  show(screen){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    const el=document.getElementById('scr-'+screen);
-    if(el) el.classList.add('active');
-    // resize 3D renderers when screen changes
-    setTimeout(()=>{
-      if(screen==='home' && this.three3D) this.three3D.resize();
-      if(screen==='solve' && this.threeSolve) this.threeSolve.resize();
-    },50);
-  },
-
-  init(){
-    // Home 3D
-    this.three3D=new Cube3D(document.getElementById('three'));
-    this.three3D.updateFromState(this.state);
-
-    // Wire ALL buttons
-    const $=id=>document.getElementById(id);
-    $('btn-scan').addEventListener('click',()=>this.startScan());
-    $('btn-manual').addEventListener('click',()=>this.startManual());
-    $('btn-help').addEventListener('click',()=>this.show('help'));
-    $('btn-settings').addEventListener('click',()=>this.openSettings());
-
-    $('scan-back').addEventListener('click',()=>this.stopScan());
-    $('scan-switch').addEventListener('click',()=>Camera.switchCamera());
-    $('scan-rescan').addEventListener('click',()=>this.rescanFace());
-    $('scan-next').addEventListener('click',()=>this.nextFace());
-
-    $('manual-back').addEventListener('click',()=>this.show('home'));
-    $('manual-reset').addEventListener('click',()=>this.resetManual());
-    $('manual-shuffle').addEventListener('click',()=>this.shuffleManual());
-    $('manual-solve').addEventListener('click',()=>this.solveManual());
-
-    $('solve-back').addEventListener('click',()=>this.stopSolve());
-    $('solve-reset').addEventListener('click',()=>this.resetSolution());
-    $('step-prev').addEventListener('click',()=>this.step(-1));
-    $('step-next').addEventListener('click',()=>this.step(1));
-    $('step-replay').addEventListener('click',()=>this.replayStep());
-    $('step-auto').addEventListener('click',()=>this.toggleAuto());
-    $('step-list').addEventListener('click',()=>this.showSolutionList());
-
-    $('help-back').addEventListener('click',()=>this.show('home'));
-    $('set-back').addEventListener('click',()=>this.show('home'));
-
-    document.querySelectorAll('#set-speed button').forEach(b=>{
-      b.addEventListener('click',()=>{
-        document.querySelectorAll('#set-speed button').forEach(x=>x.classList.remove('on'));
-        b.classList.add('on');
-        this.animSpeed=parseInt(b.dataset.v,10);
-        if(this.three3D)this.three3D.animSpeed=this.animSpeed;
-        if(this.threeSolve)this.threeSolve.animSpeed=this.animSpeed;
-        Storage.set('speed',this.animSpeed);
-      });
-    });
-    $('set-sound').addEventListener('change',e=>Storage.set('sound',e.target.checked));
-    $('set-clear').addEventListener('click',()=>{Storage.clear();this.refreshStats();toast('Статистика очищена','ok');});
-
-    // Load prefs
-    this.animSpeed=Storage.get('speed',300);
-    document.querySelectorAll('#set-speed button').forEach(b=>{
-      b.classList.toggle('on',parseInt(b.dataset.v,10)===this.animSpeed);
-    });
-    $('set-sound').checked=Storage.get('sound',false);
-
-    this.refreshStats();
-
-    window.addEventListener('resize',()=>{
-      if(this.three3D)this.three3D.resize();
-      if(this.threeSolve)this.threeSolve.resize();
-    });
-    window.addEventListener('orientationchange',()=>{
-      setTimeout(()=>{
-        if(this.three3D)this.three3D.resize();
-        if(this.threeSolve)this.threeSolve.resize();
-      },300);
-    });
-  },
-
-  refreshStats(){
-    const s=Storage.stats();
-    document.getElementById('st-count').textContent=s.solves||0;
-    document.getElementById('st-best').textContent=s.best?(s.best/1000).toFixed(2)+' с':'—';
-    document.getElementById('st-last').textContent=s.last?s.last+' ходов':'—';
-    document.getElementById('set-hist').textContent=s.solves||0;
-  },
-
-  /* =========== SCAN =========== */
-  async startScan(){
-    const faceOrder=['U','R','F','D','L','B'];
-    this.scan={
-      order:faceOrder,
-      idx:0,
-      faces:{}, // face -> array of 9 colors
-      captured:{} // face -> array of {color, confidence}
-    };
-    this.show('scan');
-    this.updateScanUI();
-    const r=await Camera.start('environment');
-    if(r && r.error){
-      toast('Камера: '+r.error,'err');
-      return;
-    }
-    Camera.flash();
-  },
-  async stopScan(){
-    Camera.stop();
-    this.scan=null;
-    this.show('home');
-  },
-  updateScanUI(){
-    if(!this.scan) return;
-    const face=this.scan.order[this.scan.idx];
-    document.getElementById('scan-title').textContent=`Грань ${face} — ${NAME[face]}`;
-    document.getElementById('scan-sub').textContent=this.scanHint(face);
-    document.getElementById('scan-prog').style.width=((this.scan.idx/6)*100)+'%';
-    document.getElementById('scan-hint').textContent=this.scanHint(face);
-    // Preview grid
-    const prev=document.getElementById('scan-preview');
-    prev.innerHTML='';
-    const cap=this.scan.captured[face];
-    for(let i=0;i<9;i++){
-      const d=document.createElement('div');
-      d.className='cell';
-      if(cap){
-        d.style.background=HEX[cap[i].color];
-        if(cap[i].confidence<0.15) d.classList.add('low');
-      } else {
-        d.style.background='#2a2f36';
-      }
-      d.addEventListener('click',()=>this.editCell(face,i));
-      prev.appendChild(d);
-    }
-    document.getElementById('scan-next').textContent = this.scan.idx<5 ? 'Далее →' : 'Готово ✓';
-  },
-  scanHint(face){
-    const hints={
-      U:'Держи кубик БЕЛЫМ центром вверх',
-      R:'Поверни кубик так, чтобы КРАСНЫЙ центр смотрел в камеру',
-      F:'Поверни кубик ЗЕЛЁНЫМ центром к камере',
-      D:'Поверни кубик ЖЁЛТЫМ центром вверх',
-      L:'Поверни кубик ОРАНЖЕВЫМ центром к камере',
-      B:'Поверни кубик СИНИМ центром к камере'
-    };
-    return hints[face]||'';
-  },
-  rescanFace(){
-    if(!this.scan) return;
-    const face=this.scan.order[this.scan.idx];
-    const samples=Camera.sampleFace();
-    if(!samples){toast('Кадр ещё не готов','err');return;}
-    this.scan.captured[face]=samples;
-    Camera.flash();
-    this.updateScanUI();
-    toast('Грань сканирована','ok');
-  },
-  editCell(face,i){
-    const cap=this.scan.captured[face];
-    if(!cap){toast('Сначала отсканируй грань','err');return;}
-    this.showPalette(cap[i].color,(c)=>{
-      cap[i].color=c;
-      cap[i].confidence=1;
-      this.updateScanUI();
-    });
-  },
-  nextFace(){
-    if(!this.scan) return;
-    const face=this.scan.order[this.scan.idx];
-    // If not captured yet, capture now
-    if(!this.scan.captured[face]){
-      const samples=Camera.sampleFace();
-      if(!samples){toast('Кадр не готов','err');return;}
-      this.scan.captured[face]=samples;
-      Camera.flash();
-      this.updateScanUI();
-      return;
-    }
-    if(this.scan.idx<5){
-      this.scan.idx++;
-      this.updateScanUI();
-      return;
-    }
-    // Done — build state
-    this.finishScan();
-  },
-  finishScan(){
-    const f=new Array(54).fill(null);
-    // Map face to base index
-    const baseIdx={U:0,R:9,F:18,D:27,L:36,B:45};
-    for(const face of this.scan.order){
-      const cap=this.scan.captured[face];
-      if(!cap){toast('Не все грани сканированы','err');return;}
-      const base=baseIdx[face];
-      for(let i=0;i<9;i++) f[base+i]=cap[i].color;
-    }
-    // Force centers to match scheme (they identify the face)
-    for(const face of COLORS) f[CENTER_IDX[face]]=face;
-    const v=validate(f);
-    if(!v.ok){
-      toast('Ошибка: '+v.errors[0],'err');
-      return;
-    }
-    Camera.stop();
-    this.state=f;
-    this.solveAndShow();
-  },
-
-  /* =========== MANUAL =========== */
-  startManual(){
-    this.show('manual');
-    this.buildManualUI();
-  },
-  buildManualUI(){
-    const wrap=document.getElementById('manual-faces');
-    wrap.innerHTML='';
-    const layout=[['U','F','R','B','L','D']];
-    const faces=layout[0];
-    for(const face of faces){
-      const d=document.createElement('div');
-      d.className='face';
-      d.innerHTML=`<div class="label">${face} — ${NAME[face]}</div>`;
-      const g=document.createElement('div');
-      g.className='grid3';
-      const baseIdx={U:0,R:9,F:18,D:27,L:36,B:45}[face];
-      for(let i=0;i<9;i++){
-        const c=document.createElement('div');
-        c.className='cell';
-        c.dataset.face=face;
-        c.dataset.i=i;
-        const idx=baseIdx+i;
-        c.style.background=HEX[this.state[idx]];
-        if(i===4){c.style.border='2px solid #fff';}
-        c.addEventListener('click',()=>this.pickManualCell(face,i,idx));
-        g.appendChild(c);
-      }
-      d.appendChild(g);
-      wrap.appendChild(d);
-    }
-    // Palette
-    const pal=document.getElementById('manual-palette');
-    pal.innerHTML='';
-    for(const c of COLORS){
-      const s=document.createElement('div');
-      s.className='sw';
-      s.style.background=HEX[c];
-      s.title=c;
-      s.addEventListener('click',()=>{
-        if(!this.manualTarget) return;
-        const {idx, centerFixed}=this.manualTarget;
-        if(centerFixed){toast('Центр фиксирован','err');return;}
-        this.state[idx]=c;
-        // update UI
-        const cell=document.querySelector(`.cell[data-face="${this.manualTarget.face}"][data-i="${this.manualTarget.i}"]`);
-        if(cell) cell.style.background=HEX[c];
-        this.updateManualStatus();
-      });
-      pal.appendChild(s);
-    }
-    this.updateManualStatus();
-  },
-  pickManualCell(face,i,idx){
-    const isCenter=(i===4);
-    this.manualTarget={face,i,idx,centerFixed:isCenter};
-    toast(isCenter?`Центр ${face} = ${face}`:`Выбери цвет для ${face}${i+1}`);
-  },
-  updateManualStatus(){
-    const cnt={};
-    for(const c of this.state) cnt[c]=(cnt[c]||0)+1;
-    const filled=Object.values(cnt).reduce((a,b)=>a+b,0);
-    const st=document.getElementById('manual-status');
-    let txt=`Заполнено: ${filled} / 54`;
-    for(const c of COLORS) txt+=` · ${c}:${cnt[c]||0}`;
-    st.textContent=txt;
-    const ok=COLORS.every(c=>(cnt[c]||0)===9);
-    document.getElementById('manual-solve').disabled=!ok;
-  },
-  resetManual(){
-    this.state=SOLVED.slice();
-    this.buildManualUI();
-  },
-  shuffleManual(){
-    // Apply random moves to the current state
-    let s=SOLVED.slice();
-    const moves=[];
-    const faces=['U','D','L','R','F','B'];
-    for(let i=0;i<25;i++){
-      const f=faces[Math.floor(Math.random()*6)];
-      if(moves.length && moves[moves.length-1][0]===f){i--;continue;}
-      const suf=['',"'",'2'][Math.floor(Math.random()*3)];
-      moves.push(f+suf);
-    }
-    s=applySeq(s,moves);
-    this.state=s;
-    this.buildManualUI();
-    toast('Перемешано 25 ходов','ok');
-  },
-  solveManual(){
-    const v=validate(this.state);
-    if(!v.ok){toast('Ошибка: '+v.errors[0],'err');return;}
-    this.solveAndShow();
-  },
-
-  /* =========== SOLVE =========== */
-  solveAndShow(){
-    this.show('solve');
-    const desc=document.getElementById('step-desc');
-    desc.innerHTML='<span class="spinner"></span> Ищем решение…';
-    document.getElementById('step-move').textContent='…';
-    document.getElementById('step-pos').textContent='Шаг 0 из 0';
-
-    if(!this.threeSolve){
-      this.threeSolve=new Cube3D(document.getElementById('three-solve'));
-    }
-    this.threeSolve.updateFromState(this.state);
-    this.threeSolve.resize();
-
-    // Solve asynchronously
-    setTimeout(()=>{
-      const res=solveCube(this.state);
-      if(!res.ok){
-        desc.textContent='Ошибка: '+res.error;
-        document.getElementById('step-move').textContent='—';
-        toast(res.error,'err');
-        return;
-      }
-      this.solution=res.moves;
-      this.stepIdx=0;
-      this.startTime=Date.now();
-      this.updateStepUI();
-      toast(`Решение: ${this.solution.length} ходов`,'ok');
-    },60);
-  },
-  stopSolve(){
-    if(this.autoTimer){clearInterval(this.autoTimer);this.autoTimer=null;}
-    this.show('home');
-    if(this.three3D) this.three3D.updateFromState(this.state);
-  },
-  resetSolution(){
-    this.stepIdx=0;
-    this.threeSolve.updateFromState(this.state);
-    this.updateStepUI();
-  },
-  step(delta){
-    if(this.stepIdx+delta<0 || this.stepIdx+delta>this.solution.length) return;
-    this.stepIdx+=delta;
-    // Rebuild cube from initial state up to stepIdx
-    let s=this.state.slice();
-    for(let i=0;i<this.stepIdx;i++) s=applyMove(s,this.solution[i]);
-    this.threeSolve.updateFromState(s);
-    this.updateStepUI();
-    if(this.stepIdx===this.solution.length){
-      toast('Кубик собран! 🎉','ok');
-      const t=Date.now()-this.startTime;
-      Storage.pushSolve(this.solution.length,t);
-      this.refreshStats();
-    }
-  },
-  replayStep(){
-    if(this.stepIdx===0) {toast('Нет предыдущего хода','err');return;}
-    const mv=this.solution[this.stepIdx-1];
-    toast('Ход: '+mv,'ok');
-  },
-  updateStepUI(){
-    const total=this.solution.length;
-    document.getElementById('step-pos').textContent=`Шаг ${this.stepIdx} из ${total}`;
-    const next=this.solution[this.stepIdx];
-    document.getElementById('step-phase').textContent = this.stepIdx<total ? '' : 'Готово';
-    document.getElementById('step-move').textContent = next || '✓';
-    document.getElementById('step-desc').textContent = next ? describeMove(next) : 'Кубик собран!';
-    document.getElementById('step-prev').disabled = this.stepIdx===0;
-    document.getElementById('step-next').disabled = this.stepIdx===total;
-  },
-  toggleAuto(){
-    if(this.autoTimer){
-      clearInterval(this.autoTimer);this.autoTimer=null;
-      document.getElementById('step-auto').textContent='▶ Авто';
-      return;
-    }
-    document.getElementById('step-auto').textContent='⏸ Стоп';
-    this.autoTimer=setInterval(()=>{
-      if(this.stepIdx>=this.solution.length){this.toggleAuto();return;}
-      this.step(1);
-    }, Math.max(400, this.animSpeed*2));
-  },
-  showSolutionList(){
-    if(!this.solution.length){toast('Решение пустое','err');return;}
-    alert('Решение ('+this.solution.length+' ходов):\n\n'+this.solution.join(' '));
-  },
-
-  /* =========== Palette popup =========== */
-  showPalette(current, cb){
-    const wrap=document.createElement('div');
-    wrap.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px';
-    const box=document.createElement('div');
-    box.style.cssText='background:#161a1f;border:1px solid #262c33;border-radius:16px;padding:16px;max-width:340px;width:100%';
-    box.innerHTML='<h3 style="margin-bottom:12px">Выбери цвет</h3>';
-    const row=document.createElement('div');
-    row.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px';
-    for(const c of COLORS){
-      const b=document.createElement('button');
-      b.style.cssText=`height:60px;border-radius:12px;border:2px solid #000;background:${HEX[c]};cursor:pointer`;
-      b.addEventListener('click',()=>{document.body.removeChild(wrap);cb(c);});
-      row.appendChild(b);
-    }
-    box.appendChild(row);
-    const cancel=document.createElement('button');
-    cancel.className='btn';
-    cancel.style.marginTop='12px';
-    cancel.textContent='Отмена';
-    cancel.addEventListener('click',()=>document.body.removeChild(wrap));
-    box.appendChild(cancel);
-    wrap.addEventListener('click',e=>{if(e.target===wrap)document.body.removeChild(wrap);});
-    wrap.appendChild(box);
-    document.body.appendChild(wrap);
-  },
-
-  openSettings(){
-    this.show('settings');
-  }
+/* ---- 12.10 Admin ---- */
+Views['/admin'] = async function(params) {
+  const section = params.section || 'overview';
+  const [products, categories, banners, sellers, points] = await Promise.all([
+    API.listProducts({ limit: 200, onlyPublished: false }),
+    API.listCategories(),
+    API.listBanners(),
+    API.listSellers(),
+    API.listPickupPoints()
+  ]);
+  const orders = await API.listOrders();
+  return `
+  <main class="container" role="main">
+    <div class="admin-grid">
+      <nav class="admin-nav" aria-label="Разделы админки">
+        <a class="${section==='overview'?'on':''}" href="#/admin">Обзор</a>
+        <a class="${section==='products'?'on':''}" href="#/admin?section=products">Товары</a>
+        <a class="${section==='categories'?'on':''}" href="#/admin?section=categories">Категории</a>
+        <a class="${section==='banners'?'on':''}" href="#/admin?section=banners">Баннеры</a>
+        <a class="${section==='sellers'?'on':''}" href="#/admin?section=sellers">Продавцы</a>
+        <a class="${section==='pickup'?'on':''}" href="#/admin?section=pickup">Пункты выдачи</a>
+        <a class="${section==='orders'?'on':''}" href="#/admin?section=orders">Заказы</a>
+      </nav>
+      <section>
+        <div class="warn-banner">
+          ${IC.warn}
+          <div><strong>Важно.</strong> В production-режиме панель администратора должна быть защищена серверной авторизацией с проверкой роли. Сейчас интерфейс работает локально для наполнения каталога.</div>
+        </div>
+        <div id="adminContent">
+          ${renderAdminSection(section, { products, categories, banners, sellers, points, orders })}
+        </div>
+      </section>
+    </div>
+  </main>`;
 };
 
-/* -------------------- 11. Move description -------------------- */
-function describeMove(mv){
-  if(!mv) return '';
-  const face=mv[0];
-  const suf=mv.slice(1);
-  const ru=NAME[face]||face;
-  if(suf==="'") return `${face}' — поверни ${ru.toLowerCase()} грань на 90° против часовой`;
-  if(suf==='2') return `${face}2 — поверни ${ru.toLowerCase()} грань на 180°`;
-  return `${face} — поверни ${ru.toLowerCase()} грань на 90° по часовой`;
+function renderAdminSection(section, { products, categories, banners, sellers, points, orders }) {
+  if (section === 'overview') {
+    return `
+    <h1>Обзор</h1>
+    <div class="prod-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="card" style="padding:16px"><div class="muted small">Товаров</div><div style="font-size:28px;font-weight:800">${products.total}</div></div>
+      <div class="card" style="padding:16px"><div class="muted small">Категорий</div><div style="font-size:28px;font-weight:800">${categories.length}</div></div>
+      <div class="card" style="padding:16px"><div class="muted small">Продавцов</div><div style="font-size:28px;font-weight:800">${sellers.length}</div></div>
+      <div class="card" style="padding:16px"><div class="muted small">Заказов</div><div style="font-size:28px;font-weight:800">${orders.length}</div></div>
+    </div>`;
+  }
+  if (section === 'products') {
+    return `
+    <div class="row between"><h1 style="margin:0 0 14px">Товары</h1><button class="btn" id="addProductBtn">+ Добавить товар</button></div>
+    ${products.items.length ? `
+      <div class="card" style="overflow:auto">
+        <table class="data-table">
+          <thead><tr><th>Название</th><th>Цена</th><th>Остаток</th><th>Статус</th><th></th></tr></thead>
+          <tbody>
+            ${products.items.map(p => `
+              <tr>
+                <td>${escapeHtml(p.name)}<div class="small muted">${escapeHtml(p.sku||'')}</div></td>
+                <td>${fmtPrice(p.price)}</td>
+                <td>${p.stock ?? '—'}</td>
+                <td>${escapeHtml(p.status||'published')}</td>
+                <td>
+                  <button class="icon-btn js-edit-product" data-id="${escapeHtml(p.id)}" aria-label="Редактировать">${IC.edit}</button>
+                  <button class="icon-btn danger js-del-product" data-id="${escapeHtml(p.id)}" aria-label="Удалить">${IC.trash}</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : emptyState({ icon: IC.box, title: 'Товары пока не добавлены', text: 'Нажмите «Добавить товар», чтобы создать первую карточку.' })}
+    <div id="productForm"></div>`;
+  }
+  if (section === 'categories') {
+    return `
+    <div class="row between"><h1 style="margin:0 0 14px">Категории</h1><button class="btn" id="addCategoryBtn">+ Добавить</button></div>
+    ${categories.length ? `
+      <div class="card"><table class="data-table"><thead><tr><th>Название</th><th>Иконка</th><th></th></tr></thead>
+      <tbody>${categories.map(c => `<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.icon||'—')}</td>
+      <td><button class="icon-btn danger js-del-cat" data-id="${escapeHtml(c.id)}">${IC.trash}</button></td></tr>`).join('')}</tbody></table></div>
+    ` : emptyState({ icon: IC.catalog, title: 'Категории пока не добавлены', text: 'Создайте первую категорию.' })}
+    <div id="categoryForm"></div>`;
+  }
+  if (section === 'banners') {
+    return `
+    <div class="row between"><h1 style="margin:0 0 14px">Баннеры</h1><button class="btn" id="addBannerBtn">+ Добавить</button></div>
+    ${banners.length ? `
+      <div class="card"><table class="data-table"><thead><tr><th>Заголовок</th><th>CTA</th><th></th></tr></thead>
+      <tbody>${banners.map(b => `<tr><td>${escapeHtml(b.title||'—')}</td><td>${escapeHtml(b.ctaText||'—')}</td>
+      <td><button class="icon-btn danger js-del-banner" data-id="${escapeHtml(b.id)}">${IC.trash}</button></td></tr>`).join('')}</tbody></table></div>
+    ` : emptyState({ icon: IC.box, title: 'Баннеры не добавлены', text: 'Без баннеров секция акций скрывается.' })}
+    <div id="bannerForm"></div>`;
+  }
+  if (section === 'sellers') {
+    return `
+    <div class="row between"><h1 style="margin:0 0 14px">Продавцы</h1><button class="btn" id="addSellerBtn">+ Добавить</button></div>
+    ${sellers.length ? `
+      <div class="card"><table class="data-table"><thead><tr><th>Название</th><th></th></tr></thead>
+      <tbody>${sellers.map(s => `<tr><td>${escapeHtml(s.name)}</td>
+      <td><button class="icon-btn danger js-del-seller" data-id="${escapeHtml(s.id)}">${IC.trash}</button></td></tr>`).join('')}</tbody></table></div>
+    ` : emptyState({ icon: IC.user, title: 'Продавцы не добавлены' })}
+    <div id="sellerForm"></div>`;
+  }
+  if (section === 'pickup') {
+    return `
+    <div class="row between"><h1 style="margin:0 0 14px">Пункты выдачи</h1><button class="btn" id="addPickupBtn">+ Добавить</button></div>
+    ${points.length ? `
+      <div class="card"><table class="data-table"><thead><tr><th>Город</th><th>Адрес</th><th>Часы</th><th></th></tr></thead>
+      <tbody>${points.map(p => `<tr><td>${escapeHtml(p.city)}</td><td>${escapeHtml(p.address)}</td><td>${escapeHtml(p.hours||'—')}</td>
+      <td><button class="icon-btn danger js-del-pickup" data-id="${escapeHtml(p.id)}">${IC.trash}</button></td></tr>`).join('')}</tbody></table></div>
+    ` : emptyState({ icon: IC.pin, title: 'Пункты выдачи пока не добавлены', text: 'Без реальных ПВЗ оформить заказ с доставкой нельзя.' })}
+    <div id="pickupForm"></div>`;
+  }
+  if (section === 'orders') {
+    return `
+    <h1 style="margin:0 0 14px">Заказы</h1>
+    ${orders.length ? orders.map(o => orderCard(o)).join('') : emptyState({ icon: IC.box, title: 'Заказов пока нет' })}
+    `;
+  }
+  return '';
 }
 
-/* -------------------- 12. Boot -------------------- */
-window.addEventListener('DOMContentLoaded',()=>{
-  try{
-    App.init();
-  }catch(e){
+/* ============ 13. Роутер ============ */
+function parseHash() {
+  const h = location.hash.replace(/^#/, '') || '/';
+  const [path, qs] = h.split('?');
+  const params = {};
+  new URLSearchParams(qs || '').forEach((v, k) => params[k] = v);
+  const seg = path.split('/').filter(Boolean);
+  if (!seg.length) return { path: '/', params };
+  if (seg[0] === 'product' && seg[1]) return { path: '/product', params: { ...params, id: decodeURIComponent(seg[1]) } };
+  if (seg[0] === 'order' && seg[1]) return { path: '/order', params: { ...params, id: decodeURIComponent(seg[1]) } };
+  return { path: '/' + seg.join('/'), params };
+}
+
+async function render() {
+  const { path, params } = parseHash();
+  State.route = { path, params };
+  const view = Views[path] || Views['/'];
+  const app = $('#app');
+  app.innerHTML = `${headerHTML()}${bottomNavHTML()}<div id="pageRoot"></div>`;
+
+  const pageRoot = $('#pageRoot');
+  try {
+    pageRoot.innerHTML = '<div class="container" style="padding:40px 16px"><span class="loader"></span></div>';
+    const html = await view(params);
+    pageRoot.innerHTML = html;
+  } catch (e) {
     console.error(e);
-    document.body.innerHTML='<div style="padding:20px;color:#e8ecf1;font-family:sans-serif">Ошибка инициализации: '+e.message+'</div>';
+    pageRoot.innerHTML = `<div class="container" style="padding:40px 16px">${emptyState({ icon: IC.warn, title: 'Произошла ошибка', text: e.message || 'Попробуйте обновить страницу.' })}</div>`;
   }
+  bindGlobal();
+  bindPage(path, params);
+  Cart.refreshBadge();
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+/* ============ 14. Обработчики ============ */
+function bindGlobal() {
+  // Поиск
+  const inputs = [$('#searchInput'), $('#searchInputM')].filter(Boolean);
+  inputs.forEach(inp => {
+    inp.value = State.route.params.q || '';
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const q = inp.value.trim();
+        if (!q) return;
+        State.searchHistory.unshift(q);
+        State.searchHistory = State.searchHistory.slice(0, 20);
+        LS.set('searchHistory', State.searchHistory);
+        location.hash = '#/catalog?q=' + encodeURIComponent(q);
+      }
+    });
+    inp.addEventListener('input', () => {
+      const wrap = inp.closest('.search');
+      const clear = wrap?.querySelector('.js-search-clear, .js-search-clear-m');
+      if (clear) clear.classList.toggle('on', inp.value.length > 0);
+    });
+  });
+  $$('.js-search-clear, .js-search-clear-m').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const inp = btn.parentElement.querySelector('input');
+      inp.value = '';
+      btn.classList.remove('on');
+      inp.focus();
+      const search = inp.closest('.search');
+      if (search) search.querySelector('input').dispatchEvent(new Event('input'));
+    });
+  });
+  // Город
+  $$('.js-city').forEach(btn => btn.addEventListener('click', () => {
+    const city = prompt('Введите город', State.city || '');
+    if (city && city.trim()) {
+      State.city = city.trim();
+      LS.set('city', State.city);
+      const el = $('#cityLabel'); if (el) el.textContent = State.city;
+      toast('Город сохранён: ' + State.city, 'ok');
+    }
+  }));
+  // Избранное
+  document.addEventListener('click', async (e) => {
+    const fav = e.target.closest('.js-fav');
+    if (fav) {
+      e.preventDefault();
+      const id = fav.dataset.id;
+      const on = Fav.toggle(id);
+      fav.classList.toggle('on', on);
+      fav.innerHTML = on ? IC.heartF : IC.heart;
+      fav.setAttribute('aria-pressed', on);
+      toast(on ? 'Добавлено в избранное' : 'Удалено из избранного');
+    }
+    const add = e.target.closest('.js-add');
+    if (add) {
+      const id = add.dataset.id;
+      const p = await API.getProduct(id);
+      if (!p) { toast('Товар недоступен', 'err'); return; }
+      if (p.stock === 0) { toast('Нет в наличии', 'err'); return; }
+      Cart.add(id, 1);
+      add.classList.add('added');
+      const old = add.textContent;
+      add.textContent = '✓ В корзине';
+      setTimeout(() => { add.classList.remove('added'); add.textContent = old; }, 1200);
+      toast('Добавлено в корзину', 'ok');
+    }
+  });
+}
+
+function bindPage(path, params) {
+  // Home: hero carousel
+  const slides = $('#heroSlides');
+  const dots = $('#heroDots');
+  if (slides && dots) {
+    let i = 0;
+    const total = slides.children.length;
+    const go = (n) => {
+      i = (n + total) % total;
+      slides.style.transform = `translateX(-${i*100}%)`;
+      Array.from(dots.children).forEach((d, k) => d.classList.toggle('on', k === i));
+    };
+    dots.addEventListener('click', (e) => {
+      const b = e.target.closest('.hero-dot'); if (!b) return;
+      go(parseInt(b.dataset.i, 10));
+    });
+    let auto = setInterval(() => go(i + 1), 6000);
+    slides.addEventListener('pointerenter', () => clearInterval(auto));
+    slides.addEventListener('pointerleave', () => { auto = setInterval(() => go(i + 1), 6000); });
+  }
+
+  // Catalog: filters
+  if (path === '/catalog') {
+    bindCatalog(params);
+  }
+
+  // Product detail
+  if (path === '/product') {
+    bindProduct();
+  }
+
+  // Cart
+  if (path === '/cart') {
+    bindCart();
+  }
+
+  // Login / Register
+  if (path === '/login' || path === '/register') {
+    bindAuth();
+  }
+
+  // Profile
+  if (path === '/profile') {
+    bindProfile();
+  }
+
+  // Checkout
+  if (path === '/checkout') {
+    bindCheckout();
+  }
+
+  // Admin
+  if (path === '/admin') {
+    bindAdmin(params);
+  }
+}
+
+/* ---- Catalog bindings ---- */
+async function bindCatalog(params) {
+  const state = {
+    cat: params.cat || '',
+    q: params.q || '',
+    sort: params.sort || 'popular',
+    minPrice: null, maxPrice: null, brands: [], minRating: 0, inStock: false
+  };
+
+  async function load() {
+    const res = await API.listProducts(state);
+    const $list = $('#prodList');
+    const $cnt = $('#resultCount');
+    if (!$list) return;
+    if ($cnt) $cnt.textContent = `Найдено: ${res.total}`;
+    if (!res.items.length) {
+      $list.innerHTML = emptyState({
+        icon: IC.box,
+        title: 'Товары не найдены',
+        text: res.total === 0 && !state.q && !state.cat ? 'Товары пока не добавлены.' : 'Попробуйте изменить фильтры или поисковый запрос.'
+      });
+      return;
+    }
+    $list.innerHTML = `<div class="prod-grid">${res.items.map(productCard).join('')}</div>`;
+  }
+
+  async function updateBrands() {
+    // Собираем бренды по данным
+    const res = await API.listProducts({ ...state, limit: 1000 });
+    const brands = [...new Set(res.items.map(p => p.brand).filter(Boolean))].sort();
+    const box = $('#brandsBox');
+    const list = $('#brandsList');
+    if (!list || !box) return;
+    if (!brands.length) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    list.innerHTML = brands.map(b => `<label class="check"><input type="checkbox" value="${escapeHtml(b)}"> ${escapeHtml(b)}</label>`).join('');
+    list.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
+      state.brands = Array.from(list.querySelectorAll('input:checked')).map(x => x.value);
+      load();
+    }));
+  }
+
+  $('#fCat')?.addEventListener('change', (e) => { state.cat = e.target.value; load(); });
+  $('#fMin')?.addEventListener('input', debounce((e) => { state.minPrice = e.target.value ? Math.round(Number(e.target.value) * 100) : null; load(); }, 350));
+  $('#fMax')?.addEventListener('input', debounce((e) => { state.maxPrice = e.target.value ? Math.round(Number(e.target.value) * 100) : null; load(); }, 350));
+  $('#fSort')?.addEventListener('change', (e) => { state.sort = e.target.value; load(); });
+  $$('input[name="rating"]').forEach(r => r.addEventListener('change', () => { state.minRating = parseFloat(r.value) || 0; load(); }));
+  $('#fStock')?.addEventListener('change', (e) => { state.inStock = e.target.checked; load(); });
+  $('.js-reset-filters')?.addEventListener('click', () => {
+    location.hash = '#/catalog';
+  });
+  $('.js-open-filters')?.addEventListener('click', () => {
+    $('#filtersPanel')?.classList.toggle('open');
+  });
+
+  await updateBrands();
+  await load();
+}
+
+/* ---- Product detail bindings ---- */
+function bindProduct() {
+  const thumbs = $$('.gallery-thumb');
+  thumbs.forEach(t => t.addEventListener('click', () => {
+    const src = t.dataset.src;
+    $('#galleryImg').src = src;
+    thumbs.forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+  }));
+
+  const qIn = $('#qInput');
+  $('#qMinus')?.addEventListener('click', () => qIn.value = Math.max(1, (parseInt(qIn.value,10)||1) - 1));
+  $('#qPlus')?.addEventListener('click', () => qIn.value = Math.min(99, (parseInt(qIn.value,10)||1) + 1));
+
+  $('#pdAdd')?.addEventListener('click', async () => {
+    const id = State.route.params.id;
+    const p = await API.getProduct(id);
+    if (!p) return toast('Товар недоступен', 'err');
+    const qty = parseInt(qIn?.value, 10) || 1;
+    Cart.add(id, qty);
+    toast('Добавлено в корзину', 'ok');
+  });
+  $('#pdBuy')?.addEventListener('click', async () => {
+    const id = State.route.params.id;
+    const p = await API.getProduct(id);
+    if (!p) return toast('Товар недоступен', 'err');
+    const qty = parseInt(qIn?.value, 10) || 1;
+    Cart.add(id, qty);
+    location.hash = '#/checkout';
+  });
+  $('#pdFav')?.addEventListener('click', () => {
+    const id = State.route.params.id;
+    const on = Fav.toggle(id);
+    $('#pdFav').innerHTML = on ? IC.heartF : IC.heart;
+    $('#pdFav').setAttribute('aria-pressed', on);
+    toast(on ? 'В избранном' : 'Удалено');
+  });
+}
+
+/* ---- Cart bindings ---- */
+function bindCart() {
+  $$('.js-cart-plus').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.id;
+    const it = State.cart.find(x => x.productId === id);
+    if (it) { Cart.setQty(id, it.qty + 1); render(); }
+  }));
+  $$('.js-cart-minus').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.id;
+    const it = State.cart.find(x => x.productId === id);
+    if (it && it.qty > 1) { Cart.setQty(id, it.qty - 1); render(); }
+  }));
+  $$('.js-cart-remove').forEach(b => b.addEventListener('click', () => {
+    Cart.remove(b.dataset.id); render();
+  }));
+  $$('.js-remove-missing').forEach(b => b.addEventListener('click', () => {
+    Cart.remove(b.dataset.id); render();
+  }));
+  $('#goCheckout')?.addEventListener('click', () => { location.hash = '#/checkout'; });
+}
+
+/* ---- Auth bindings ---- */
+function bindAuth() {
+  const form = $('#authForm'); if (!form) return;
+  const isLogin = !$('#aName');
+  $$('.pw-toggle').forEach(btn => btn.addEventListener('click', () => {
+    const inp = btn.parentElement.querySelector('input');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.innerHTML = inp.type === 'password' ? IC.eye : IC.eyeOff;
+  }));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let ok = true;
+    const fields = form.querySelectorAll('.field');
+    fields.forEach(f => f.classList.remove('invalid'));
+    const email = $('#aEmail');
+    if (!email.value || !/^\S+@\S+\.\S+$/.test(email.value)) { email.closest('.field').classList.add('invalid'); ok = false; }
+    const pass = $('#aPass');
+    if (!pass.value || pass.value.length < 6) { pass.closest('.field').classList.add('invalid'); ok = false; }
+    if (!isLogin) {
+      const name = $('#aName');
+      if (!name.value.trim()) { name.closest('.field').classList.add('invalid'); ok = false; }
+      const p2 = $('#aPass2');
+      if (p2.value !== pass.value) { p2.closest('.field').classList.add('invalid'); ok = false; }
+    }
+    if (!ok) return;
+    toast('Авторизация требует подключения сервера (Supabase Auth / собственный backend).', 'warn');
+  });
+}
+
+/* ---- Profile bindings ---- */
+function bindProfile() {
+  $('#logoutBtn')?.addEventListener('click', () => {
+    if (!confirm('Выйти из аккаунта?')) return;
+    State.user = null;
+    LS.del('user');
+    location.hash = '#/';
+    toast('Вы вышли');
+  });
+  $('#profileForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('#pName').value.trim();
+    const phone = $('#pPhone').value.trim();
+    if (!name) return;
+    State.user = { ...State.user, name, phone };
+    LS.set('user', State.user);
+    toast('Сохранено', 'ok');
+  });
+  $('#clearLocalBtn')?.addEventListener('click', () => {
+    if (!confirm('Очистить локальные данные?')) return;
+    LS.clearAll();
+    State.cart = []; State.favorites = []; State.searchHistory = [];
+    Cart.refreshBadge();
+    toast('Локальные данные очищены', 'ok');
+    setTimeout(() => location.hash = '#/', 400);
+  });
+}
+
+/* ---- Checkout bindings ---- */
+function bindCheckout() {
+  const form = $('#checkoutForm');
+  if (!form) return;
+  $('#cCity')?.addEventListener('change', async (e) => {
+    State.city = e.target.value.trim();
+    LS.set('city', State.city);
+    const points = State.city ? await API.listPickupPoints(State.city) : [];
+    const box = $('#pointsBox');
+    if (!box) return;
+    if (!points.length) {
+      box.innerHTML = `<div class="small muted">Пункты выдачи пока не добавлены в этом городе.</div>`;
+    } else {
+      box.innerHTML = points.map(p => `<label class="check"><input type="radio" name="pp" value="${escapeHtml(p.id)}" required> ${escapeHtml(p.address)} <span class="muted small">${escapeHtml(p.hours || '')}</span></label>`).join('');
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    // Простая валидация
+    let ok = true;
+    form.querySelectorAll('.field').forEach(f => f.classList.remove('invalid'));
+    if (!$('#cName').value.trim()) { $('#cName').closest('.field').classList.add('invalid'); ok = false; }
+    if (!$('#cPhone').value.trim()) { $('#cPhone').closest('.field').classList.add('invalid'); ok = false; }
+    if (!$('#cCity').value.trim()) { ok = false; toast('Укажите город', 'err'); }
+    const pp = form.querySelector('input[name="pp"]:checked');
+    if (!pp) { toast('Выберите пункт выдачи', 'err'); ok = false; }
+    const pay = form.querySelector('input[name="pay"]:checked');
+    if (!pay) { toast('Выберите способ оплаты', 'err'); ok = false; }
+    if (!ok) return;
+
+    // Собираем заказ
+    const items = (await Promise.all(State.cart.map(async ci => {
+      const p = await API.getProduct(ci.productId);
+      return p ? { productId: p.id, name: p.name, price: p.price, qty: ci.qty, sellerId: p.sellerId } : null;
+    }))).filter(Boolean);
+    if (!items.length) return toast('Корзина пуста', 'err');
+    const total = items.reduce((s, x) => s + x.price * x.qty, 0);
+    const order = {
+      userId: State.user?.id || 'guest-' + (LS.get('guestId') || (() => { const g = uuid(); LS.set('guestId', g); return g; })()),
+      items, total, payment: pay.value,
+      contact: { name: $('#cName').value.trim(), phone: $('#cPhone').value.trim(), email: $('#cEmail').value.trim() },
+      city: $('#cCity').value.trim(),
+      pickupPointId: pp.value,
+      status: 'created'
+    };
+    const created = await API.createOrder(order);
+    Cart.clear();
+    toast('Заказ оформлен: №' + created.id, 'ok');
+    location.hash = '#/order/' + encodeURIComponent(created.id);
+  });
+}
+
+/* ---- Admin bindings ---- */
+function bindAdmin(params) {
+  const section = params.section || 'overview';
+
+  // Products
+  $('#addProductBtn')?.addEventListener('click', () => openProductForm(null));
+  $$('.js-edit-product').forEach(b => b.addEventListener('click', async () => {
+    const p = await API.getProduct(b.dataset.id);
+    if (p) openProductForm(p);
+  }));
+  $$('.js-del-product').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Удалить товар?')) return;
+    await API.deleteProduct(b.dataset.id);
+    toast('Удалено', 'ok');
+    render();
+  }));
+
+  // Categories
+  $('#addCategoryBtn')?.addEventListener('click', () => openCategoryForm());
+  $$('.js-del-cat').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Удалить категорию?')) return;
+    await API.deleteCategory(b.dataset.id);
+    toast('Удалено', 'ok'); render();
+  }));
+
+  // Banners
+  $('#addBannerBtn')?.addEventListener('click', () => openBannerForm());
+  $$('.js-del-banner').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Удалить баннер?')) return;
+    await API.deleteBanner(b.dataset.id);
+    toast('Удалено', 'ok'); render();
+  }));
+
+  // Sellers
+  $('#addSellerBtn')?.addEventListener('click', () => openSellerForm());
+  $$('.js-del-seller').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Удалить продавца?')) return;
+    await API.deleteSeller(b.dataset.id);
+    toast('Удалено', 'ok'); render();
+  }));
+
+  // Pickup points
+  $('#addPickupBtn')?.addEventListener('click', () => openPickupForm());
+  $$('.js-del-pickup').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('Удалить пункт выдачи?')) return;
+    await API.deletePickupPoint(b.dataset.id);
+    toast('Удалено', 'ok'); render();
+  }));
+}
+
+function openProductForm(p) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card';
+  wrap.style.cssText = 'padding:20px;margin-top:20px';
+  wrap.innerHTML = `
+    <h3 style="margin:0 0 16px">${p ? 'Редактировать' : 'Новый'} товар</h3>
+    <form class="form" id="pf">
+      <div class="field"><label>Название*</label><input name="name" required value="${escapeHtml(p?.name||'')}"></div>
+      <div class="row" style="gap:12px;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:160px"><label>Цена, ₽*</label><input name="price" type="number" step="0.01" required value="${p?((p.price||0)/100):''}"></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Старая цена, ₽</label><input name="oldPrice" type="number" step="0.01" value="${p?.oldPrice?((p.oldPrice)/100):''}"></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Остаток</label><input name="stock" type="number" min="0" value="${p?.stock ?? ''}"></div>
+      </div>
+      <div class="field"><label>Категория</label><select name="categoryId" id="pfCat"></select></div>
+      <div class="field"><label>Продавец</label><select name="sellerId" id="pfSeller"></select></div>
+      <div class="field"><label>Артикул (SKU)</label><input name="sku" value="${escapeHtml(p?.sku||'')}"></div>
+      <div class="field"><label>Бренд</label><input name="brand" value="${escapeHtml(p?.brand||'')}"></div>
+      <div class="field"><label>Описание</label><textarea name="description">${escapeHtml(p?.description||'')}</textarea></div>
+      <div class="field"><label>Ссылки на изображения (по одной в строке)</label><textarea name="images">${escapeHtml((p?.images||[]).join('\n'))}</textarea></div>
+      <div class="field"><label>Характеристики (JSON)</label><textarea name="specs">${escapeHtml(p?.specs?JSON.stringify(p.specs,null,2):'')}</textarea></div>
+      <div class="field"><label>Статус</label>
+        <select name="status">
+          <option value="published" ${p?.status==='published'?'selected':''}>Опубликован</option>
+          <option value="draft" ${p?.status==='draft'?'selected':''}>Черновик</option>
+        </select>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="btn" type="submit">Сохранить</button>
+        <button class="btn sec" type="button" id="pfCancel">Отмена</button>
+      </div>
+    </form>`;
+  $('#productForm').innerHTML = '';
+  $('#productForm').appendChild(wrap);
+
+  // Заполняем категории и продавцов
+  Promise.all([API.listCategories(), API.listSellers()]).then(([cats, sellers]) => {
+    const cs = $('#pfCat');
+    cs.innerHTML = '<option value="">— Без категории —</option>' + cats.map(c => `<option value="${escapeHtml(c.id)}" ${p?.categoryId===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+    const ss = $('#pfSeller');
+    ss.innerHTML = '<option value="">— Без продавца —</option>' + sellers.map(s => `<option value="${escapeHtml(s.id)}" ${p?.sellerId===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+  });
+
+  $('#pfCancel').addEventListener('click', () => { $('#productForm').innerHTML = ''; });
+
+  $('#pf').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const price = Math.round((parseFloat(fd.get('price')) || 0) * 100);
+    const oldPrice = fd.get('oldPrice') ? Math.round(parseFloat(fd.get('oldPrice')) * 100) : null;
+    if (price <= 0) { toast('Некорректная цена', 'err'); return; }
+    if (oldPrice != null && oldPrice < price) { toast('Старая цена должна быть больше текущей', 'err'); return; }
+    const images = String(fd.get('images')||'').split('\n').map(s => s.trim()).filter(Boolean);
+    let specs = null;
+    if (fd.get('specs') && String(fd.get('specs')).trim()) {
+      try { specs = JSON.parse(fd.get('specs')); } catch { toast('Характеристики: некорректный JSON', 'err'); return; }
+    }
+    const categoryId = fd.get('categoryId') || null;
+    const cat = categoryId ? (await API.listCategories()).find(c => c.id === categoryId) : null;
+    const sellerId = fd.get('sellerId') || null;
+    const seller = sellerId ? (await API.listSellers()).find(s => s.id === sellerId) : null;
+    const payload = {
+      id: p?.id,
+      name: String(fd.get('name')).trim(),
+      price, oldPrice,
+      stock: fd.get('stock') === '' ? null : (parseInt(fd.get('stock'), 10) || 0),
+      categoryId, categoryName: cat?.name || null,
+      sellerId, sellerName: seller?.name || null,
+      sku: String(fd.get('sku')||'').trim(),
+      brand: String(fd.get('brand')||'').trim(),
+      description: String(fd.get('description')||'').trim(),
+      images, specs,
+      status: fd.get('status'),
+      rating: p?.rating || 0,
+      reviewCount: p?.reviewCount || 0
+    };
+    await API.saveProduct(payload);
+    toast('Сохранено', 'ok');
+    render();
+  });
+}
+
+function openCategoryForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'card'; wrap.style.cssText = 'padding:20px;margin-top:20px';
+  wrap.innerHTML = `
+    <h3 style="margin:0 0 16px">Новая категория</h3>
+    <form class="form" id="cf">
+      <div class="field"><label>Название*</label><input name="name" required></div>
+      <div class="field"><label>Иконка (эмодзи или символ)</label><input name="icon" placeholder="📱"></div>
+      <div class="row" style="gap:8px"><button class="btn" type="submit">Сохранить</button><button class="btn sec" type="button" id="cfCancel">Отмена</button></div>
+    </form>`;
+  $('#categoryForm').innerHTML = ''; $('#categoryForm').appendChild(wrap);
+  $('#cfCancel').addEventListener('click', () => $('#categoryForm').innerHTML = '');
+  $('#cf').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await API.saveCategory({ name: String(fd.get('name')).trim(), icon: String(fd.get('icon')).trim() });
+    toast('Категория сохранена', 'ok'); render();
+  });
+}
+
+function openBannerForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'card'; wrap.style.cssText = 'padding:20px;margin-top:20px';
+  wrap.innerHTML = `
+    <h3 style="margin:0 0 16px">Новый баннер</h3>
+    <form class="form" id="bf">
+      <div class="field"><label>Заголовок</label><input name="title"></div>
+      <div class="field"><label>Подзаголовок</label><input name="subtitle"></div>
+      <div class="field"><label>URL изображения</label><input name="image" type="url" placeholder="https://"></div>
+      <div class="row" style="gap:12px;flex-wrap:wrap">
+        <div class="field" style="flex:1;min-width:160px"><label>Текст кнопки</label><input name="ctaText" placeholder="Смотреть"></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Ссылка кнопки</label><input name="ctaLink" placeholder="#/catalog"></div>
+      </div>
+      <div class="row" style="gap:8px"><button class="btn" type="submit">Сохранить</button><button class="btn sec" type="button" id="bfCancel">Отмена</button></div>
+    </form>`;
+  $('#bannerForm').innerHTML = ''; $('#bannerForm').appendChild(wrap);
+  $('#bfCancel').addEventListener('click', () => $('#bannerForm').innerHTML = '');
+  $('#bf').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await API.saveBanner({
+      title: String(fd.get('title')||'').trim(),
+      subtitle: String(fd.get('subtitle')||'').trim(),
+      image: String(fd.get('image')||'').trim(),
+      ctaText: String(fd.get('ctaText')||'').trim(),
+      ctaLink: String(fd.get('ctaLink')||'').trim(),
+      active: true
+    });
+    toast('Баннер сохранён', 'ok'); render();
+  });
+}
+
+function openSellerForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'card'; wrap.style.cssText = 'padding:20px;margin-top:20px';
+  wrap.innerHTML = `
+    <h3 style="margin:0 0 16px">Новый продавец</h3>
+    <form class="form" id="sf">
+      <div class="field"><label>Название*</label><input name="name" required></div>
+      <div class="row" style="gap:8px"><button class="btn" type="submit">Сохранить</button><button class="btn sec" type="button" id="sfCancel">Отмена</button></div>
+    </form>`;
+  $('#sellerForm').innerHTML = ''; $('#sellerForm').appendChild(wrap);
+  $('#sfCancel').addEventListener('click', () => $('#sellerForm').innerHTML = '');
+  $('#sf').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await API.saveSeller({ name: String(fd.get('name')).trim() });
+    toast('Продавец сохранён', 'ok'); render();
+  });
+}
+
+function openPickupForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'card'; wrap.style.cssText = 'padding:20px;margin-top:20px';
+  wrap.innerHTML = `
+    <h3 style="margin:0 0 16px">Новый пункт выдачи</h3>
+    <form class="form" id="ppf">
+      <div class="field"><label>Город*</label><input name="city" required></div>
+      <div class="field"><label>Адрес*</label><input name="address" required></div>
+      <div class="field"><label>Часы работы</label><input name="hours" placeholder="Пн-Пт 10:00–20:00"></div>
+      <div class="row" style="gap:8px"><button class="btn" type="submit">Сохранить</button><button class="btn sec" type="button" id="ppCancel">Отмена</button></div>
+    </form>`;
+  $('#pickupForm').innerHTML = ''; $('#pickupForm').appendChild(wrap);
+  $('#ppCancel').addEventListener('click', () => $('#pickupForm').innerHTML = '');
+  $('#ppf').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await API.savePickupPoint({
+      city: String(fd.get('city')).trim(),
+      address: String(fd.get('address')).trim(),
+      hours: String(fd.get('hours')||'').trim()
+    });
+    toast('ПВЗ сохранён', 'ok'); render();
+  });
+}
+
+/* ============ 15. Инициализация ============ */
+window.addEventListener('hashchange', render);
+window.addEventListener('DOMContentLoaded', () => {
+  if (!location.hash) location.hash = '#/';
+  render();
 });
-window.addEventListener('beforeunload',()=>{Camera.stop();});
 </script>
 </body>
 </html>
