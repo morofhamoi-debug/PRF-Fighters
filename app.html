@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Мои камеры</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: system-ui, sans-serif; background: #0e1116; color: #fff; overflow: hidden; }
+
+  /* ---------- Экран списка камер ---------- */
+  #listScreen { padding: 20px; height: 100%; overflow-y: auto; }
+  .header { font-size: 26px; font-weight: 700; margin-bottom: 20px; }
+  .cam-list { display: grid; gap: 12px; }
+  .cam-card {
+    background: #1a1f28; border-radius: 14px; padding: 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: background .15s;
+  }
+  .cam-card:active { background: #232935; }
+  .cam-icon {
+    width: 46px; height: 46px; border-radius: 10px;
+    background: #2563eb; display: grid; place-items: center;
+    font-size: 22px;
+  }
+  .cam-info { flex: 1; }
+  .cam-name { font-size: 16px; font-weight: 600; }
+  .cam-id   { font-size: 12px; color: #8b94a3; margin-top: 2px; }
+  .cam-del {
+    background: transparent; border: none; color: #ef4444;
+    font-size: 20px; padding: 8px; cursor: pointer;
+  }
+  .empty {
+    text-align: center; color: #6b7280;
+    padding: 60px 20px; font-size: 15px;
+  }
+  .add-btn {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: #2563eb; color: #fff; border: none;
+    padding: 14px 28px; border-radius: 30px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+  }
+
+  /* ---------- Экран просмотра ---------- */
+  #viewerScreen {
+    position: fixed; inset: 0; background: #000;
+    display: none; flex-direction: column;
+  }
+  #viewerScreen.active { display: flex; }
+  #remoteVideo { flex: 1; width: 100%; object-fit: contain; background: #000; }
+  .controls {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 20px 20px 30px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .zoom-row { display: flex; align-items: center; gap: 12px; }
+  .zoom-row input { flex: 1; accent-color: #2563eb; }
+  .zoom-row button {
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; width: 36px; height: 36px; border-radius: 50%;
+    font-size: 20px; cursor: pointer;
+  }
+  .btn-row { display: flex; justify-content: space-around; }
+  .ctrl-btn {
+    background: rgba(255,255,255,0.12); color: #fff;
+    border: none; padding: 12px 18px; border-radius: 12px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .ctrl-btn:active { background: rgba(255,255,255,0.25); }
+  .ctrl-btn .ico { font-size: 22px; }
+  .topbar {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 16px 20px;
+    background: linear-gradient(rgba(0,0,0,0.7), transparent);
+    display: flex; align-items: center; gap: 12px;
+    z-index: 5;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.15); color: #fff;
+    border: none; width: 40px; height: 40px; border-radius: 50%;
+    font-size: 20px; cursor: pointer;
+  }
+  .viewer-title { font-size: 16px; font-weight: 600; }
+  .conn-status { font-size: 12px; color: #9ca3af; margin-left: auto; }
+
+  /* ---------- Модалка добавления ---------- */
+  #addModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    z-index: 100;
+  }
+  #addModal.active { display: flex; }
+  .modal-box {
+    background: #1a1f28; border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 380px;
+  }
+  .modal-box h3 { margin-bottom: 16px; font-size: 18px; }
+  .modal-box input {
+    width: 100%; background: #0e1116; border: 1px solid #2d3441;
+    color: #fff; padding: 12px 14px; border-radius: 10px;
+    font-size: 15px; margin-bottom: 14px;
+  }
+  .modal-box input:focus { outline: none; border-color: #2563eb; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button {
+    flex: 1; padding: 12px; border-radius: 10px; border: none;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .btn-cancel { background: #2d3441; color: #fff; }
+  .btn-ok     { background: #2563eb; color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- СПИСОК КАМЕР -->
+<div id="listScreen">
+  <div class="header">Мои камеры</div>
+  <div class="cam-list" id="camList"></div>
+  <div class="empty" id="emptyHint">Камер пока нет.<br>Нажмите «Добавить камеру».</div>
+  <button class="add-btn" id="addBtn">+ Добавить камеру</button>
+</div>
+
+<!-- ПРОСМОТР -->
+<div id="viewerScreen">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div class="topbar">
+    <button class="back-btn" id="backBtn">←</button>
+    <div class="viewer-title" id="viewerTitle">Камера</div>
+    <div class="conn-status" id="connStatus">Подключение…</div>
+  </div>
+  <div class="controls">
+    <div class="zoom-row">
+      <button id="zoomOut">−</button>
+      <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+      <button id="zoomIn">+</button>
+    </div>
+    <div class="btn-row">
+      <button class="ctrl-btn" id="switchBtn"><span class="ico">🔄</span>Камера</button>
+      <button class="ctrl-btn" id="snapBtn"><span class="ico">📸</span>Снимок</button>
+      <button class="ctrl-btn" id="muteBtn"><span class="ico">🔊</span>Звук</button>
+      <button class="ctrl-btn" id="torchBtn"><span class="ico">🔦</span>Фонарь</button>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА -->
+<div id="addModal">
+  <div class="modal-box">
+    <h3>Добавить камеру</h3>
+    <input type="text" id="camIdInput" placeholder="ID камеры (напр. cam-default-7f3a9b2c)">
+    <input type="text" id="camNameInput" placeholder="Название (напр. Кухня)">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelAdd">Отмена</button>
+      <button class="btn-ok" id="confirmAdd">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+<script>
+// ====== ХРАНИЛИЩЕ КАМЕР ======
+const STORAGE_KEY = 'my_cameras';
+let cameras = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+const camList   = document.getElementById('camList');
+const emptyHint = document.getElementById('emptyHint');
+const addBtn    = document.getElementById('addBtn');
+const addModal  = document.getElementById('addModal');
+const camIdInput   = document.getElementById('camIdInput');
+const camNameInput = document.getElementById('camNameInput');
+const cancelAdd = document.getElementById('cancelAdd');
+const confirmAdd= document.getElementById('confirmAdd');
+
+const viewerScreen = document.getElementById('viewerScreen');
+const remoteVideo  = document.getElementById('remoteVideo');
+const viewerTitle  = document.getElementById('viewerTitle');
+const connStatus   = document.getElementById('connStatus');
+const backBtn      = document.getElementById('backBtn');
+const zoomSlider   = document.getElementById('zoomSlider');
+const zoomIn       = document.getElementById('zoomIn');
+const zoomOut      = document.getElementById('zoomOut');
+const switchBtn    = document.getElementById('switchBtn');
+const snapBtn      = document.getElementById('snapBtn');
+const muteBtn      = document.getElementById('muteBtn');
+const torchBtn     = document.getElementById('torchBtn');
+
+// ====== ОТРИСОВКА СПИСКА ======
+function renderList() {
+  camList.innerHTML = '';
+  emptyHint.style.display = cameras.length ? 'none' : 'block';
+
+  cameras.forEach((cam, idx) => {
+    const card = document.createElement('div');
+    card.className = 'cam-card';
+    card.innerHTML = `
+      <div class="cam-icon">📹</div>
+      <div class="cam-info">
+        <div class="cam-name">${escapeHtml(cam.name)}</div>
+        <div class="cam-id">${escapeHtml(cam.id)}</div>
+      </div>
+      <button class="cam-del" title="Удалить">✕</button>
+    `;
+    card.addEventListener('click', (e) => {
+      if (e.target.classList.contains('cam-del')) return;
+      openViewer(cam);
+    });
+    card.querySelector('.cam-del').addEventListener('click', (e) => {
+      e.stopPropagation();
+      cameras.splice(idx, 1);
+      save();
+      renderList();
+    });
+    camList.appendChild(card);
+  });
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cameras));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ====== ДОБАВЛЕНИЕ КАМЕРЫ ======
+addBtn.addEventListener('click', () => {
+  camIdInput.value = '';
+  camNameInput.value = '';
+  addModal.classList.add('active');
+  camIdInput.focus();
+});
+
+cancelAdd.addEventListener('click', () => addModal.classList.remove('active'));
+
+confirmAdd.addEventListener('click', () => {
+  const id = camIdInput.value.trim();
+  const name = camNameInput.value.trim() || 'Камера';
+  if (!id) { alert('Введите ID камеры'); return; }
+  cameras.push({ id, name });
+  save();
+  renderList();
+  addModal.classList.remove('active');
+});
+
+// ====== ПРОСМОТР КАМЕРЫ ======
+let peer = null;
+let dataConn = null;
+let mediaCall = null;
+let currentCam = null;
+let muted = true;
+
+function openViewer(cam) {
+  currentCam = cam;
+  viewerTitle.textContent = cam.name;
+  connStatus.textContent = 'Подключение…';
+  viewerScreen.classList.add('active');
+
+  peer = new Peer({ debug: 1 });
+
+  peer.on('open', () => {
+    // 1. DataConnection — для команд
+    dataConn = peer.connect(cam.id);
+    dataConn.on('open', () => {
+      connStatus.textContent = 'Онлайн';
+      dataConn.send({ type: 'info' });   // запрос данных о камере
+    });
+    dataConn.on('data', handleCameraMessage);
+    dataConn.on('close', () => connStatus.textContent = 'Отключено');
+
+    // 2. Медиазвонок — получаем видео+аудио
+    mediaCall = peer.call(cam.id, new MediaStream()); // пустой stream — мы только получаем
+    mediaCall.on('stream', (remoteStream) => {
+      remoteVideo.srcObject = remoteStream;
+      remoteVideo.muted = muted;
+    });
+    mediaCall.on('close', () => connStatus.textContent = 'Поток закрыт');
+  });
+
+  peer.on('error', (e) => {
+    console.error(e);
+    connStatus.textContent = 'Ошибка: ' + e.type;
+  });
+}
+
+function closeViewer() {
+  viewerScreen.classList.remove('active');
+  remoteVideo.srcObject = null;
+  dataConn?.close();
+  mediaCall?.close();
+  peer?.destroy();
+  dataConn = mediaCall = peer = null;
+  currentCam = null;
+}
+
+backBtn.addEventListener('click', closeViewer);
+
+// ====== КОМАНДЫ НА КАМЕРУ ======
+function sendCmd(cmd) {
+  if (dataConn?.open) dataConn.send(cmd);
+}
+
+zoomSlider.addEventListener('input', () => {
+  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
+});
+zoomIn.addEventListener('click', () => {
+  zoomSlider.value = Math.min(parseFloat(zoomSlider.max), parseFloat(zoomSlider.value) + 0.5);
+  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
+});
+zoomOut.addEventListener('click', () => {
+  zoomSlider.value = Math.max(parseFloat(zoomSlider.min), parseFloat(zoomSlider.value) - 0.5);
+  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
+});
+
+switchBtn.addEventListener('click', () => sendCmd({ type: 'switchCamera' }));
+torchBtn.addEventListener('click', () => sendCmd({ type: 'torch', value: true }));
+
+muteBtn.addEventListener('click', () => {
+  muted = !muted;
+  remoteVideo.muted = muted;
+  muteBtn.querySelector('.ico').textContent = muted ? '🔇' : '🔊';
+});
+
+// Снимок — сохраняется как PNG
+snapBtn.addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  canvas.width  = remoteVideo.videoWidth;
+  canvas.height = remoteVideo.videoHeight;
+  canvas.getContext('2d').drawImage(remoteVideo, 0, 0);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `${currentCam.name}_${Date.now()}.png`;
+  a.click();
+});
+
+// Ответы от камеры (например, диапазон зума)
+function handleCameraMessage(msg) {
+  if (!msg || msg.type !== 'info') return;
+  if (msg.zoom) {
+    zoomSlider.min = msg.zoom.min;
+    zoomSlider.max = msg.zoom.max;
+    zoomSlider.step = msg.zoom.step || 0.1;
+    zoomSlider.value = msg.zoom.min;
+  }
+  if (msg.front !== undefined) {
+    switchBtn.querySelector('.ico').textContent = msg.front ? '🤳' : '🔄';
+  }
+}
+
+// ====== СТАРТ ======
+renderList();
+</script>
+</body>
+</html>
