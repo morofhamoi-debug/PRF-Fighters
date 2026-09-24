@@ -6,289 +6,945 @@
 <meta name="theme-color" content="#000000">
 <title>Камера</title>
 <style>
+  :root {
+    --bg: #08080c;
+    --surface: #12121a;
+    --surface-2: #1a1a24;
+    --border: #232330;
+    --text: #f4f4f8;
+    --text-dim: #8a8a9a;
+    --accent: #3b82f6;
+    --accent-2: #8b5cf6;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --radius: 16px;
+    --radius-lg: 24px;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
   html, body {
-    width: 100%; height: 100%;
-    background: #000; overflow: hidden;
+    height: 100%; width: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #000;
+    color: var(--text);
+    overflow: hidden;
     overscroll-behavior: none;
   }
 
-  #preview {
+  svg { display: block; }
+  .icon { width: 22px; height: 22px; }
+
+  /* ==================== ЭКРАН АВТОРИЗАЦИИ ==================== */
+  #authScreen {
     position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
-    background: #000;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(59,130,246,0.18), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(139,92,246,0.15), transparent 50%),
+      var(--bg);
+    display: flex; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 40px);
+    z-index: 300;
+    transition: opacity .45s cubic-bezier(.4,0,.2,1),
+                transform .45s cubic-bezier(.4,0,.2,1),
+                filter .45s;
+  }
+  #authScreen.hidden {
+    opacity: 0; transform: scale(1.06); filter: blur(8px);
+    pointer-events: none;
   }
 
-  /* ============ ВЕРХНИЙ СТАТУС ============ */
+  .auth-inner {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center;
+    max-width: 420px; width: 100%; margin: 0 auto; gap: 24px;
+  }
+
+  .auth-logo {
+    width: 96px; height: 96px; border-radius: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 12px 40px rgba(59,130,246,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
+    position: relative;
+    animation: logoEnter .8s cubic-bezier(.34,1.56,.64,1) backwards;
+    animation-delay: .1s;
+  }
+  .auth-logo::after {
+    content: ''; position: absolute; inset: -6px; border-radius: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    opacity: 0.25; filter: blur(20px); z-index: -1;
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  .auth-logo svg { width: 48px; height: 48px; }
+  @keyframes logoEnter {
+    from { opacity: 0; transform: scale(.6) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes pulseGlow {
+    0%,100% { opacity: .2; transform: scale(1); }
+    50%     { opacity: .4; transform: scale(1.1); }
+  }
+
+  .auth-title {
+    font-size: 32px; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1.15;
+    background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeUp .6s ease backwards; animation-delay: .2s;
+  }
+  .auth-subtitle {
+    font-size: 15px; color: var(--text-dim);
+    line-height: 1.5; margin-top: 8px;
+    animation: fadeUp .6s ease backwards; animation-delay: .28s;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ==================== ПОЛЕ ТЕЛЕФОНА ==================== */
+  .phone-field {
+    position: relative; margin-top: 8px;
+    animation: fadeUp .6s ease backwards; animation-delay: .36s;
+  }
+  .phone-field-inner {
+    display: flex; align-items: center;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color .25s, background .25s, box-shadow .25s;
+    overflow: hidden;
+  }
+  .phone-field.focused .phone-field-inner {
+    border-color: var(--accent); background: #15151f;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+  }
+  .phone-field.error .phone-field-inner {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgba(239,68,68,0.12);
+    animation: shake .35s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-6px); }
+    40%,80% { transform: translateX(6px); }
+  }
+
+  .country-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px; height: 58px;
+    background: transparent; border: none;
+    border-right: 1.5px solid var(--border);
+    color: var(--text); font-size: 17px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .25s;
+    flex-shrink: 0;
+  }
+  .country-btn:active { background: rgba(255,255,255,0.05); }
+  .phone-field.focused .country-btn { border-color: var(--accent); }
+  .country-btn .flag { font-size: 22px; line-height: 1; }
+  .country-btn .chev {
+    width: 14px; height: 14px; color: var(--text-dim);
+    transition: transform .2s;
+  }
+  .country-btn.open .chev { transform: rotate(180deg); }
+
+  #phoneInput {
+    flex: 1; height: 58px;
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 17px; font-weight: 600;
+    padding: 0 16px; letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  #phoneInput::placeholder { color: #3f3f4d; font-weight: 500; letter-spacing: 0.01em; }
+
+  /* ==================== ЖЕЛЕЙНАЯ КНОПКА ==================== */
+  .gooey-wrap {
+    position: relative;
+    animation: fadeUp .6s ease backwards; animation-delay: .44s;
+  }
+  .gooey-btn {
+    position: relative; width: 100%; height: 58px;
+    border-radius: var(--radius); border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 32px rgba(59,130,246,0.4);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .15s ease, box-shadow .25s, opacity .25s;
+    z-index: 1;
+  }
+  .gooey-btn:active:not(:disabled) { transform: scale(0.97); }
+  .gooey-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .gooey-btn svg { width: 20px; height: 20px; }
+  .gooey-btn .spinner {
+    width: 20px; height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #gooeyFilter { position: absolute; width: 0; height: 0; pointer-events: none; }
+
+  .gooey-layer {
+    position: absolute; inset: 0; pointer-events: none;
+    filter: url(#gooeyFilterDef);
+    overflow: hidden; border-radius: var(--radius);
+  }
+  .gooey-blob {
+    position: absolute;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform .6s cubic-bezier(.4,0,.2,1), opacity .6s;
+    opacity: 1;
+  }
+  .gooey-blob.expand {
+    transform: translate(-50%, -50%) scale(12);
+    opacity: 0;
+  }
+
+  /* ==================== ВЫБОР СТРАНЫ ==================== */
+  #countryModal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    display: none; z-index: 400;
+    align-items: flex-end;
+  }
+  #countryModal.active { display: flex; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .country-sheet {
+    width: 100%; max-height: 75vh;
+    background: var(--surface);
+    border-radius: 28px 28px 0 0;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+    display: flex; flex-direction: column;
+    animation: sheetUp .35s cubic-bezier(.34,1.56,.64,1);
+    overflow: hidden;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: #2f2f40; border-radius: 2px;
+    margin: 12px auto 8px;
+  }
+  .sheet-title {
+    font-size: 18px; font-weight: 700;
+    padding: 8px 24px 16px;
+  }
+  .country-search {
+    margin: 0 20px 12px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 0 14px; height: 46px;
+  }
+  .country-search svg { width: 18px; height: 18px; color: var(--text-dim); }
+  .country-search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 15px;
+  }
+  .country-search input::placeholder { color: #4a4a5a; }
+
+  .country-list {
+    flex: 1; overflow-y: auto;
+    padding: 0 12px 12px;
+  }
+  .country-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 14px;
+    cursor: pointer; transition: background .15s;
+  }
+  .country-item:active { background: var(--surface-2); }
+  .country-item.selected { background: rgba(59,130,246,0.12); }
+  .country-item .flag { font-size: 26px; line-height: 1; width: 32px; text-align: center; }
+  .country-item .name { flex: 1; font-size: 15px; font-weight: 500; }
+  .country-item .code {
+    font-size: 14px; color: var(--text-dim);
+    font-variant-numeric: tabular-nums; font-weight: 600;
+  }
+  .country-item.selected .code { color: var(--accent); }
+
+  /* ==================== ЭКРАН OTP ==================== */
+  #otpScreen {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(59,130,246,0.18), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(139,92,246,0.15), transparent 50%),
+      var(--bg);
+    display: none; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+    z-index: 350;
+  }
+  #otpScreen.active { display: flex; animation: fadeIn .3s ease; }
+
+  .otp-back {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); display: grid; place-items: center;
+    cursor: pointer; flex-shrink: 0; margin-bottom: 24px;
+  }
+  .otp-back:active { background: var(--surface-2); }
+
+  .otp-inner {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; max-width: 420px; width: 100%;
+    margin: 0 auto; gap: 24px;
+  }
+  .otp-icon {
+    width: 72px; height: 72px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 8px 28px rgba(59,130,246,0.4);
+    margin-bottom: 4px;
+  }
+  .otp-icon svg { width: 36px; height: 36px; }
+  .otp-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .otp-subtitle { font-size: 15px; color: var(--text-dim); line-height: 1.5; margin-top: 6px; }
+  .otp-subtitle b { color: var(--text); font-weight: 600; }
+
+  .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 8px 0; }
+  .otp-input {
+    width: 48px; height: 58px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px; color: var(--text);
+    font-size: 22px; font-weight: 700; text-align: center;
+    outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+    font-variant-numeric: tabular-nums;
+  }
+  .otp-input:focus {
+    border-color: var(--accent);
+    background: #15151f;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+  }
+  .otp-input.filled { border-color: rgba(59,130,246,0.5); }
+
+  .otp-resend { text-align: center; font-size: 14px; color: var(--text-dim); }
+  .otp-resend button {
+    background: none; border: none;
+    color: var(--accent); font-weight: 600;
+    cursor: pointer; font-size: 14px; padding: 4px 8px;
+  }
+  .otp-resend button:disabled { color: #4a4a5a; cursor: not-allowed; }
+
+  /* ==================== ЭКРАН "НАЧАТЬ ТРАНСЛЯЦИЮ" ==================== */
+  #readyScreen {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(59,130,246,0.15), transparent 60%),
+      radial-gradient(circle at 50% 80%, rgba(139,92,246,0.12), transparent 60%),
+      var(--bg);
+    display: none; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 30px) 24px calc(env(safe-area-inset-bottom) + 30px);
+    z-index: 250;
+    overflow-y: auto;
+  }
+  #readyScreen.active {
+    display: flex; animation: fadeIn .4s ease;
+  }
+
+  .ready-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .ready-account {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+  }
+  .ready-account .flag { font-size: 20px; }
+  .ready-account .num {
+    flex: 1; min-width: 0;
+    font-size: 14px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ready-logout {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); display: grid; place-items: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .15s, color .15s;
+  }
+  .ready-logout:active { background: var(--surface-2); color: var(--text); }
+
+  .ready-body {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    max-width: 420px; width: 100%; margin: 0 auto;
+    gap: 24px; text-align: center;
+  }
+
+  .ready-icon {
+    width: 120px; height: 120px; border-radius: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(59,130,246,0.5);
+    position: relative;
+    animation: float 4s ease-in-out infinite;
+  }
+  .ready-icon::before {
+    content: ''; position: absolute; inset: -10px;
+    border-radius: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    opacity: 0.3; filter: blur(30px); z-index: -1;
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  .ready-icon svg { width: 60px; height: 60px; }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-10px); }
+  }
+
+  .ready-title {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1.2;
+    background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .ready-subtitle {
+    font-size: 15px; color: var(--text-dim);
+    line-height: 1.55; max-width: 320px;
+  }
+
+  .ready-features {
+    display: flex; flex-direction: column; gap: 10px;
+    width: 100%; max-width: 320px;
+    text-align: left;
+  }
+  .feature {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .feature-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: rgba(59,130,246,0.15);
+    display: grid; place-items: center;
+    color: var(--accent); flex-shrink: 0;
+  }
+  .feature-icon svg { width: 16px; height: 16px; }
+  .feature-text {
+    font-size: 13.5px; color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  .start-btn {
+    position: relative; width: 100%; max-width: 360px; height: 60px;
+    border-radius: 18px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 12px 40px rgba(59,130,246,0.5);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .15s;
+    overflow: hidden;
+  }
+  .start-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.25), transparent);
+    transform: translateX(-100%);
+    transition: transform .6s;
+  }
+  .start-btn:hover::before { transform: translateX(100%); }
+  .start-btn:active { transform: scale(0.97); }
+  .start-btn svg { width: 22px; height: 22px; }
+
+  /* ==================== ЭКРАН РАЗРЕШЕНИЙ ==================== */
+  #permScreen {
+    position: fixed; inset: 0;
+    background: #08080c;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center;
+    color: #fff; z-index: 240; gap: 20px;
+  }
+  #permScreen.active { display: flex; animation: fadeIn .3s ease; }
+  .perm-icon {
+    width: 96px; height: 96px; border-radius: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 12px 40px rgba(59,130,246,0.4);
+  }
+  .perm-icon svg { width: 48px; height: 48px; }
+  .perm-title { font-size: 22px; font-weight: 700; }
+  .perm-text { font-size: 15px; color: #a0a0b0; max-width: 320px; line-height: 1.5; }
+  .perm-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; border: none;
+    padding: 16px 32px; border-radius: 16px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(59,130,246,0.5);
+    margin-top: 10px;
+  }
+  .perm-btn:active { transform: scale(0.96); }
+  .perm-btn:disabled { opacity: 0.6; }
+  .perm-error {
+    color: var(--danger); font-size: 14px;
+    max-width: 320px; line-height: 1.5;
+  }
+
+  /* ==================== АКТИВНАЯ КАМЕРА ==================== */
+  #cameraScreen {
+    position: fixed; inset: 0;
+    background: #000; display: none;
+    z-index: 220;
+  }
+  #cameraScreen.active { display: block; animation: fadeIn .35s ease; }
+
+  #preview {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; background: #000;
+  }
+
+  /* Статус сверху */
   #statusBar {
     position: fixed;
     top: calc(env(safe-area-inset-top) + 12px);
     left: 12px; right: 12px;
     background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 16px;
     padding: 12px 16px;
     color: #fff;
     z-index: 10;
     display: flex; align-items: center; gap: 12px;
-    transition: opacity .3s, transform .3s;
   }
-  #statusBar.hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
-
   .status-dot {
     width: 10px; height: 10px; border-radius: 50%;
-    background: #ef4444;
-    flex-shrink: 0;
-    box-shadow: 0 0 10px #ef4444;
+    background: var(--danger); flex-shrink: 0;
+    box-shadow: 0 0 10px var(--danger);
     animation: pulse 1.5s infinite;
   }
   .status-dot.online {
-    background: #22c55e; box-shadow: 0 0 10px #22c55e;
+    background: var(--success);
+    box-shadow: 0 0 10px var(--success);
     animation: none;
   }
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-  .status-text {
-    flex: 1; min-width: 0;
-    font-size: 13px; line-height: 1.4;
-  }
+  .status-text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
   .status-text b {
-    font-size: 14px;
-    display: block;
+    font-size: 14px; display: block;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .status-text small {
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-  }
+  .status-text small { color: rgba(255,255,255,0.6); font-size: 11px; }
 
-  /* ============ QR ПАНЕЛЬ ============ */
+  /* Кнопка "Стоп" */
+  .stop-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444;
+    display: grid; place-items: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .15s;
+  }
+  .stop-btn:active { background: rgba(239,68,68,0.3); }
+  .stop-btn svg { width: 18px; height: 18px; }
+
+  /* QR панель */
   #qrPanel {
     position: fixed;
     bottom: calc(env(safe-area-inset-bottom) + 16px);
     right: 16px;
-    background: #fff;
-    border-radius: 20px;
-    padding: 14px;
+    background: #fff; border-radius: 20px; padding: 14px;
     z-index: 20;
     box-shadow: 0 12px 48px rgba(0,0,0,0.6);
     display: flex; flex-direction: column; align-items: center;
     transition: transform .3s ease, padding .3s ease;
     max-width: calc(100vw - 32px);
   }
-
-  #qrPanel.collapsed {
-    padding: 10px 16px;
-    transform: translateY(0);
-  }
-
+  #qrPanel.collapsed { padding: 10px 16px; }
   #qrBox {
-    width: 200px; height: 200px;
-    background: #fff;
+    width: 200px; height: 200px; background: #fff;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: opacity .2s;
+    border-radius: 12px; overflow: hidden;
   }
   #qrBox img, #qrBox canvas { display: block; max-width: 100%; max-height: 100%; }
-
   #qrPanel.collapsed #qrBox,
   #qrPanel.collapsed #qrLabel { display: none; }
 
   #qrLabel {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #333;
-    font-weight: 600;
-    text-align: center;
-    line-height: 1.3;
+    margin-top: 10px; font-size: 12px; color: #333;
+    font-weight: 600; text-align: center; line-height: 1.3;
   }
   #qrLabel small {
-    display: block;
-    color: #888;
-    font-weight: 500;
-    margin-top: 2px;
-    font-size: 11px;
+    display: block; color: #888;
+    font-weight: 500; margin-top: 2px; font-size: 11px;
   }
-
   #qrToggle {
     margin-top: 10px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    color: #fff;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; border: none;
+    padding: 8px 18px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
     cursor: pointer;
-    transition: transform .1s;
   }
-  #qrToggle:active { transform: scale(0.95); }
   #qrPanel.collapsed #qrToggle { margin-top: 0; }
 
-  /* ============ ОВЕРЛЕЙ ЗАПРОСА ДОСТУПА ============ */
-  #permissionOverlay {
-    position: fixed; inset: 0;
-    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    padding: 40px 24px;
-    text-align: center;
-    color: #fff;
-    z-index: 100;
-    gap: 20px;
+  /* ==================== TOAST ==================== */
+  #toast {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 100px);
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20,20,28,0.95);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    color: #fff; font-size: 14px; font-weight: 500;
+    padding: 12px 20px; border-radius: 14px;
+    border: 1px solid var(--border); z-index: 999;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+    max-width: 90vw; text-align: center;
   }
-  #permissionOverlay.hidden { display: none; }
-
-  .perm-icon {
-    width: 96px; height: 96px;
-    border-radius: 28px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    display: grid; place-items: center;
-    font-size: 48px;
-    box-shadow: 0 12px 40px rgba(59,130,246,0.4);
-    animation: float 3s ease-in-out infinite;
-  }
-  @keyframes float {
-    0%,100% { transform: translateY(0); }
-    50%     { transform: translateY(-8px); }
-  }
-
-  .perm-title { font-size: 22px; font-weight: 700; }
-  .perm-text {
-    font-size: 15px; color: #a0a0b0;
-    max-width: 320px; line-height: 1.5;
-  }
-
-  .perm-btn {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-    color: #fff; border: none;
-    padding: 16px 32px;
-    border-radius: 16px;
-    font-size: 16px; font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 8px 32px rgba(59,130,246,0.5);
-    transition: transform .15s;
-    margin-top: 10px;
-  }
-  .perm-btn:active { transform: scale(0.96); }
-
-  .perm-error {
-    color: #ef4444;
-    font-size: 14px;
-    max-width: 320px;
-    line-height: 1.5;
-  }
-
-  /* ============ ИНДИКАТОР ЗАПИСИ ============ */
-  .rec-indicator {
-    position: absolute;
-    top: calc(env(safe-area-inset-top) + 12px);
-    right: 12px;
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 8px 14px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
-    z-index: 5;
-  }
-  .rec-indicator .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #ef4444;
-    animation: pulse 1.5s infinite;
-  }
+  #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- ========== ОВЕРЛЕЙ ЗАПРОСА ДОСТУПА ========== -->
-<div id="permissionOverlay">
-  <div class="perm-icon">📷</div>
-  <div class="perm-title">Разрешите доступ</div>
-  <div class="perm-text">
-    Для работы камеры нужно разрешение на использование камеры и микрофона
+<!-- SVG-фильтр желе -->
+<svg id="gooeyFilter" aria-hidden="true">
+  <defs>
+    <filter id="gooeyFilterDef">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" mode="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo"/>
+      <feBlend in="SourceGraphic" in2="goo"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ==================== АВТОРИЗАЦИЯ ==================== -->
+<div id="authScreen">
+  <div class="auth-inner">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="auth-title">Регистрация камеры</div>
+      <div class="auth-subtitle">Введите номер телефона — по нему приложение найдёт эту камеру</div>
+    </div>
+
+    <div class="phone-field" id="phoneField">
+      <div class="phone-field-inner">
+        <button class="country-btn" id="countryBtn" type="button">
+          <span class="flag" id="countryFlag">🇷🇺</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <input type="tel" id="phoneInput" placeholder="918 000-00-00" inputmode="numeric" autocomplete="tel">
+      </div>
+    </div>
+
+    <div class="gooey-wrap">
+      <div class="gooey-layer" id="gooeyLayer"></div>
+      <button class="gooey-btn" id="authBtn">
+        <span id="authBtnContent" style="display:flex;align-items:center;gap:10px">
+          Продолжить
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+
+    <div id="authError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;line-height:1.4;padding:0 8px;"></div>
+
+    <div style="text-align:center;font-size:12px;color:#4a4a5a;line-height:1.6;padding:0 16px;">
+      Без SMS-подтверждения. Номер используется как идентификатор.
+    </div>
   </div>
+</div>
+
+<!-- ==================== ВЫБОР СТРАНЫ ==================== -->
+<div id="countryModal">
+  <div class="country-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Выберите страну</div>
+
+    <div class="country-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="countrySearch" placeholder="Поиск страны...">
+    </div>
+
+    <div class="country-list" id="countryList"></div>
+  </div>
+</div>
+
+<!-- ==================== OTP ==================== -->
+<div id="otpScreen">
+  <button class="otp-back" id="otpBack">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  </button>
+
+  <div class="otp-inner">
+    <div class="otp-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="otp-title">Введите код</div>
+      <div class="otp-subtitle">Мы отправили 6-значный код на <b id="otpPhone">+7 918 000-00-00</b></div>
+    </div>
+
+    <div class="otp-inputs" id="otpInputs">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="0">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="1">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="2">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="3">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="5">
+    </div>
+
+    <div class="otp-resend">
+      Не получили код? <button id="otpResend" disabled>Отправить снова (<span id="resendTimer">60</span>с)</button>
+    </div>
+
+    <div id="otpError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;"></div>
+  </div>
+</div>
+
+<!-- ==================== ЭКРАН "НАЧАТЬ ТРАНСЛЯЦИЮ" ==================== -->
+<div id="readyScreen">
+  <div class="ready-header">
+    <div class="ready-account">
+      <span class="flag" id="readyFlag">🇷🇺</span>
+      <span class="num" id="readyNum">+7 918 000-00-00</span>
+    </div>
+    <button class="ready-logout" id="readyLogout" aria-label="Выйти">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="ready-body">
+    <div class="ready-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="ready-title">Готовы к трансляции</div>
+      <div class="ready-subtitle">Нажмите кнопку — камера включится и станет доступна в приложении</div>
+    </div>
+
+    <div class="ready-features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="feature-text">Полноэкранный видеопоток в приложении</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="feature-text">Зум, переворот камеры и фонарь</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="feature-text">Микрофон и звук в реальном времени</div>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+      </svg>
+      Начать трансляцию
+    </button>
+  </div>
+</div>
+
+<!-- ==================== ЭКРАН РАЗРЕШЕНИЙ ==================== -->
+<div id="permScreen">
+  <div class="perm-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+  </div>
+  <div class="perm-title">Разрешите доступ</div>
+  <div class="perm-text">Для работы камеры нужно разрешение на использование камеры и микрофона</div>
   <button class="perm-btn" id="permBtn">Разрешить доступ</button>
   <div class="perm-error" id="permError"></div>
 </div>
 
-<!-- ========== ПРЕВЬЮ КАМЕРЫ ========== -->
-<video id="preview" autoplay muted playsinline></video>
+<!-- ==================== АКТИВНАЯ КАМЕРА ==================== -->
+<div id="cameraScreen">
+  <video id="preview" autoplay muted playsinline></video>
 
-<!-- ========== ВЕРХНИЙ СТАТУС ========== -->
-<div id="statusBar" class="hidden">
-  <div class="status-dot" id="statusDot"></div>
-  <div class="status-text">
-    <b id="statusTitle">Инициализация…</b>
-    <small id="statusSub">Ожидание</small>
+  <div id="statusBar">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text">
+      <b id="statusTitle">Инициализация…</b>
+      <small id="statusSub"></small>
+    </div>
+    <button class="stop-btn" id="stopBtn" aria-label="Остановить">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="6" width="12" height="12" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="qrPanel">
+    <div id="qrBox"></div>
+    <div id="qrLabel">
+      Отсканируй в приложении
+      <small id="qrIdLabel"></small>
+    </div>
+    <button id="qrToggle">Скрыть</button>
   </div>
 </div>
 
-<!-- ========== QR ПАНЕЛЬ ========== -->
-<div id="qrPanel" class="hidden">
-  <div id="qrBox"></div>
-  <div id="qrLabel">
-    Отсканируй в приложении
-    <small id="qrIdLabel"></small>
-  </div>
-  <button id="qrToggle">Скрыть</button>
-</div>
+<!-- ==================== TOAST ==================== -->
+<div id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 /* ============================================================
+   БАЗА СТРАН
+   ============================================================ */
+const COUNTRIES = [
+  { code: 'RU', name: 'Россия',          flag: '🇷🇺', dial: '+7',   digits: 10, format: '(###) ###-##-##' },
+  { code: 'KZ', name: 'Казахстан',       flag: '🇰🇿', dial: '+7',   digits: 10, format: '(###) ###-##-##' },
+  { code: 'AM', name: 'Армения',         flag: '🇦🇲', dial: '+374', digits: 8,  format: '## ######' },
+  { code: 'AZ', name: 'Азербайджан',     flag: '🇦🇿', dial: '+994', digits: 9,  format: '## ### ## ##' },
+  { code: 'BY', name: 'Беларусь',        flag: '🇧🇾', dial: '+375', digits: 9,  format: '(##) ###-##-##' },
+  { code: 'GE', name: 'Грузия',          flag: '🇬🇪', dial: '+995', digits: 9,  format: '### ### ###' },
+  { code: 'KG', name: 'Кыргызстан',      flag: '🇰🇬', dial: '+996', digits: 9,  format: '### ### ###' },
+  { code: 'MD', name: 'Молдова',         flag: '🇲🇩', dial: '+373', digits: 8,  format: '## ######' },
+  { code: 'TJ', name: 'Таджикистан',     flag: '🇹🇯', dial: '+992', digits: 9,  format: '## ### ####' },
+  { code: 'TM', name: 'Туркменистан',    flag: '🇹🇲', dial: '+993', digits: 8,  format: '## ##-##-##' },
+  { code: 'UZ', name: 'Узбекистан',      flag: '🇺🇿', dial: '+998', digits: 9,  format: '## ###-##-##' },
+  { code: 'UA', name: 'Украина',         flag: '🇺🇦', dial: '+380', digits: 9,  format: '(##) ###-##-##' },
+  { code: 'DE', name: 'Германия',        flag: '🇩🇪', dial: '+49',  digits: 10, format: '#### ######' },
+  { code: 'TR', name: 'Турция',          flag: '🇹🇷', dial: '+90',  digits: 10, format: '(###) ###-##-##' },
+  { code: 'US', name: 'США',             flag: '🇺🇸', dial: '+1',   digits: 10, format: '(###) ###-####' },
+  { code: 'GB', name: 'Великобритания',  flag: '🇬🇧', dial: '+44',  digits: 10, format: '#### ######' },
+];
+
+let selectedCountry = COUNTRIES[0];
+
+/* ============================================================
    НАСТРОЙКИ
    ============================================================ */
-
-// ID камеры можно задать в URL: camera.html?id=cam-kitchen
-// Если не задан — генерируется случайный и сохраняется в localStorage
 const params = new URLSearchParams(location.search);
 const CUSTOM_ID   = params.get('id');
 const CUSTOM_NAME = params.get('name') || 'Моя камера';
-const STORAGE_KEY = 'my_camera_id';
+const STORAGE_CAM_ID = 'my_camera_id';
 
 function getOrCreateCameraId() {
   if (CUSTOM_ID) return CUSTOM_ID;
-  let id = localStorage.getItem(STORAGE_KEY);
+  let id = localStorage.getItem(STORAGE_CAM_ID);
   if (!id) {
     id = 'cam-' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(STORAGE_CAM_ID, id);
   }
   return id;
 }
-
-const ROOM_ID   = getOrCreateCameraId();
-const CAMERA_NAME = CUSTOM_NAME;
+const ROOM_ID = getOrCreateCameraId();
 
 /* ============================================================
    DOM
    ============================================================ */
-const preview       = document.getElementById('preview');
-const permOverlay   = document.getElementById('permissionOverlay');
+const authScreen    = document.getElementById('authScreen');
+const phoneField    = document.getElementById('phoneField');
+const phoneInput    = document.getElementById('phoneInput');
+const countryBtn    = document.getElementById('countryBtn');
+const countryFlag   = document.getElementById('countryFlag');
+const authBtn       = document.getElementById('authBtn');
+const authBtnContent= document.getElementById('authBtnContent');
+const authError     = document.getElementById('authError');
+const gooeyLayer    = document.getElementById('gooeyLayer');
+
+const countryModal  = document.getElementById('countryModal');
+const countrySearch = document.getElementById('countrySearch');
+const countryList   = document.getElementById('countryList');
+
+const otpScreen     = document.getElementById('otpScreen');
+const otpBack       = document.getElementById('otpBack');
+const otpPhone      = document.getElementById('otpPhone');
+const otpInputs     = document.querySelectorAll('.otp-input');
+const otpResend     = document.getElementById('otpResend');
+const resendTimer   = document.getElementById('resendTimer');
+const otpError      = document.getElementById('otpError');
+
+const readyScreen   = document.getElementById('readyScreen');
+const readyFlag     = document.getElementById('readyFlag');
+const readyNum      = document.getElementById('readyNum');
+const readyLogout   = document.getElementById('readyLogout');
+const startBtn      = document.getElementById('startBtn');
+
+const permScreen    = document.getElementById('permScreen');
 const permBtn       = document.getElementById('permBtn');
 const permError     = document.getElementById('permError');
-const statusBar     = document.getElementById('statusBar');
+
+const cameraScreen  = document.getElementById('cameraScreen');
+const preview       = document.getElementById('preview');
 const statusDot     = document.getElementById('statusDot');
 const statusTitle   = document.getElementById('statusTitle');
 const statusSub     = document.getElementById('statusSub');
+const stopBtn       = document.getElementById('stopBtn');
 const qrPanel       = document.getElementById('qrPanel');
 const qrBox         = document.getElementById('qrBox');
 const qrIdLabel     = document.getElementById('qrIdLabel');
 const qrToggle      = document.getElementById('qrToggle');
 
+const toast         = document.getElementById('toast');
+
 /* ============================================================
    СОСТОЯНИЕ
    ============================================================ */
+let userPhone = null;
 let stream = null;
 let track = null;
 let peer = null;
@@ -296,49 +952,410 @@ let controllerConn = null;
 let activeCall = null;
 let zoomCaps = null;
 let frontCam = false;
+let generatedOtp = null;
+let resendInterval = null;
+let qrRendered = false;
+let qrCollapsed = false;
 
 /* ============================================================
-   UI ХЕЛПЕРЫ
+   TOAST
    ============================================================ */
-function setStatus(title, sub, online = false) {
-  statusBar.classList.remove('hidden');
-  statusTitle.textContent = title;
-  statusSub.textContent = sub || '';
-  statusDot.classList.toggle('online', !!online);
-}
-
-function showPermissionError(text) {
-  permError.textContent = text;
+let toastTimer = null;
+function showToast(text) {
+  toast.textContent = text;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
 }
 
 /* ============================================================
-   ЗАПУСК КАМЕРЫ
+   ФОРМАТИРОВАНИЕ НОМЕРА
    ============================================================ */
-async function startCamera(front = false) {
-  // Останавливаем предыдущий поток
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
+function formatByMask(digits, mask) {
+  let result = '', di = 0;
+  for (let i = 0; i < mask.length; i++) {
+    if (di >= digits.length) break;
+    const ch = mask[i];
+    if (ch === '#') result += digits[di++];
+    else result += ch;
+  }
+  return result;
+}
+function getRawDigits() { return phoneInput.value.replace(/\D/g, ''); }
+function applyMask() {
+  const digits = getRawDigits().slice(0, selectedCountry.digits);
+  phoneInput.value = formatByMask(digits, selectedCountry.format);
+}
+function isPhoneValid() { return getRawDigits().length === selectedCountry.digits; }
+function getFullPhone() {
+  const digits = getRawDigits();
+  if (digits.length !== selectedCountry.digits) return null;
+  return selectedCountry.dial + digits;
+}
+function formatPhoneDisplay() {
+  return selectedCountry.dial + ' ' + formatByMask(getRawDigits(), selectedCountry.format);
+}
+
+/* ============================================================
+   СТРАНА
+   ============================================================ */
+function selectCountry(country) {
+  selectedCountry = country;
+  countryFlag.textContent = country.flag;
+  phoneInput.placeholder = country.format.replace(/#/g, '0');
+  phoneInput.value = '';
+  authError.textContent = '';
+  phoneField.classList.remove('error');
+  phoneInput.focus();
+}
+
+function renderCountryList(filter = '') {
+  const f = filter.toLowerCase().trim();
+  countryList.innerHTML = '';
+  const list = COUNTRIES.filter(c =>
+    !f || c.name.toLowerCase().includes(f) || c.dial.includes(f) || c.code.toLowerCase().includes(f)
+  );
+
+  if (!list.length) {
+    countryList.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px 20px;font-size:14px;">Ничего не найдено</div>';
+    return;
   }
 
-  const constraints = {
+  list.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'country-item' + (c.code === selectedCountry.code ? ' selected' : '');
+    item.innerHTML = `
+      <div class="flag">${c.flag}</div>
+      <div class="name">${c.name}</div>
+      <div class="code">${c.dial}</div>
+    `;
+    item.addEventListener('click', () => {
+      selectCountry(c);
+      closeCountryModal();
+    });
+    countryList.appendChild(item);
+  });
+}
+
+function openCountryModal() {
+  countryBtn.classList.add('open');
+  countryModal.classList.add('active');
+  countrySearch.value = '';
+  renderCountryList();
+  setTimeout(() => countrySearch.focus(), 100);
+}
+function closeCountryModal() {
+  countryBtn.classList.remove('open');
+  countryModal.classList.remove('active');
+}
+
+countryBtn.addEventListener('click', openCountryModal);
+countryModal.addEventListener('click', (e) => {
+  if (e.target === countryModal) closeCountryModal();
+});
+countrySearch.addEventListener('input', (e) => renderCountryList(e.target.value));
+
+/* ============================================================
+   ВВОД ТЕЛЕФОНА
+   ============================================================ */
+phoneInput.addEventListener('focus', () => phoneField.classList.add('focused'));
+phoneInput.addEventListener('blur', () => phoneField.classList.remove('focused'));
+phoneInput.addEventListener('input', () => {
+  authError.textContent = '';
+  phoneField.classList.remove('error');
+  applyMask();
+});
+phoneInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') authBtn.click();
+});
+
+/* ============================================================
+   ЖЕЛЕЙНАЯ КНОПКА
+   ============================================================ */
+function createGooeyBlob(e) {
+  const rect = authBtn.getBoundingClientRect();
+  let x, y;
+  if (e && (e.touches || e.changedTouches)) {
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+    x = t.clientX - rect.left;
+    y = t.clientY - rect.top;
+  } else if (e && e.clientX !== undefined) {
+    x = e.clientX - rect.left;
+    y = e.clientY - rect.top;
+  } else {
+    x = rect.width / 2;
+    y = rect.height / 2;
+  }
+
+  const blob = document.createElement('div');
+  blob.className = 'gooey-blob';
+  blob.style.left = x + 'px';
+  blob.style.top  = y + 'px';
+  gooeyLayer.appendChild(blob);
+
+  requestAnimationFrame(() => requestAnimationFrame(() => blob.classList.add('expand')));
+  setTimeout(() => blob.remove(), 700);
+}
+
+let gooeyHandled = false;
+authBtn.addEventListener('pointerdown', (e) => {
+  gooeyHandled = true;
+  createGooeyBlob(e);
+});
+authBtn.addEventListener('touchstart', (e) => {
+  if (gooeyHandled) { gooeyHandled = false; return; }
+  createGooeyBlob(e);
+}, { passive: true });
+
+/* ============================================================
+   OTP
+   ============================================================ */
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function startResendTimer(seconds = 60) {
+  clearInterval(resendInterval);
+  let t = seconds;
+  resendTimer.textContent = t;
+  otpResend.disabled = true;
+
+  resendInterval = setInterval(() => {
+    t--;
+    resendTimer.textContent = t;
+    if (t <= 0) {
+      clearInterval(resendInterval);
+      otpResend.disabled = false;
+      otpResend.innerHTML = 'Отправить снова';
+    }
+  }, 1000);
+}
+
+function sendOtp() {
+  generatedOtp = generateOtp();
+  showToast('Демо-код: ' + generatedOtp);
+  console.log('[OTP]', getFullPhone(), '→', generatedOtp);
+  startResendTimer(60);
+}
+
+function openOtpScreen() {
+  otpPhone.textContent = formatPhoneDisplay();
+  otpInputs.forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('filled');
+  });
+  otpError.textContent = '';
+  otpScreen.classList.add('active');
+  setTimeout(() => otpInputs[0].focus(), 350);
+  sendOtp();
+}
+
+function closeOtpScreen() {
+  otpScreen.classList.remove('active');
+  clearInterval(resendInterval);
+}
+
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener('input', (e) => {
+    const v = e.target.value.replace(/\D/g, '');
+    e.target.value = v.slice(0, 1);
+    e.target.classList.toggle('filled', !!e.target.value);
+    if (v && i < otpInputs.length - 1) otpInputs[i + 1].focus();
+    checkOtpComplete();
+  });
+
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !e.target.value && i > 0) {
+      otpInputs[i - 1].focus();
+      otpInputs[i - 1].value = '';
+      otpInputs[i - 1].classList.remove('filled');
+    }
+  });
+
+  inp.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    for (let k = 0; k < 6 && k < pasted.length; k++) {
+      otpInputs[k].value = pasted[k];
+      otpInputs[k].classList.add('filled');
+    }
+    const next = Math.min(pasted.length, 5);
+    otpInputs[next].focus();
+    checkOtpComplete();
+  });
+});
+
+function checkOtpComplete() {
+  const code = Array.from(otpInputs).map(i => i.value).join('');
+  if (code.length === 6) verifyOtp(code);
+}
+
+async function verifyOtp(code) {
+  otpError.textContent = '';
+
+  if (code !== generatedOtp) {
+    otpError.textContent = 'Неверный код. Попробуйте ещё раз.';
+    otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    otpInputs[0].focus();
+    if (navigator.vibrate) navigator.vibrate(80);
+    return;
+  }
+
+  otpScreen.style.transition = 'opacity .3s, transform .3s';
+  otpScreen.style.opacity = '0';
+  otpScreen.style.transform = 'scale(1.04)';
+
+  await new Promise(r => setTimeout(r, 300));
+  closeOtpScreen();
+  otpScreen.style.opacity = '';
+  otpScreen.style.transform = '';
+
+  await goToReadyScreen();
+}
+
+otpBack.addEventListener('click', () => {
+  closeOtpScreen();
+  setTimeout(() => phoneInput.focus(), 400);
+});
+
+otpResend.addEventListener('click', () => {
+  if (otpResend.disabled) return;
+  sendOtp();
+  otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+  otpInputs[0].focus();
+});
+
+/* ============================================================
+   КНОПКА "ПРОДОЛЖИТЬ"
+   ============================================================ */
+function setAuthLoading(loading) {
+  authBtn.disabled = loading;
+  if (loading) {
+    authBtnContent.innerHTML = '<div class="spinner"></div>';
+  } else {
+    authBtnContent.innerHTML = `
+      Продолжить
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="12 5 19 12 12 19"/>
+      </svg>
+    `;
+  }
+}
+
+authBtn.addEventListener('click', () => {
+  authError.textContent = '';
+  phoneField.classList.remove('error');
+
+  if (!isPhoneValid()) {
+    authError.textContent = `Введите ${selectedCountry.digits} цифр после ${selectedCountry.dial}`;
+    phoneField.classList.add('error');
+    if (navigator.vibrate) navigator.vibrate(40);
+    return;
+  }
+
+  setAuthLoading(true);
+  setTimeout(() => {
+    setAuthLoading(false);
+    openOtpScreen();
+  }, 500);
+});
+
+/* ============================================================
+   ПЕРЕХОД НА ЭКРАН "НАЧАТЬ ТРАНСЛЯЦИЮ"
+   ============================================================ */
+async function goToReadyScreen() {
+  userPhone = getFullPhone();
+  localStorage.setItem('my_phone', userPhone);
+  localStorage.setItem('my_country', selectedCountry.code);
+
+  readyFlag.textContent = selectedCountry.flag;
+  readyNum.textContent = formatPhoneDisplay();
+
+  authScreen.classList.add('hidden');
+  await new Promise(r => setTimeout(r, 250));
+  readyScreen.classList.add('active');
+}
+
+/* ============================================================
+   ВЫХОД
+   ============================================================ */
+readyLogout.addEventListener('click', () => {
+  if (!confirm('Выйти из аккаунта?')) return;
+
+  localStorage.removeItem('my_phone');
+  localStorage.removeItem('my_country');
+  userPhone = null;
+
+  readyScreen.classList.remove('active');
+  setTimeout(() => {
+    authScreen.classList.remove('hidden');
+    phoneInput.value = '';
+    authError.textContent = '';
+    phoneField.classList.remove('error', 'focused');
+    setAuthLoading(false);
+    setTimeout(() => phoneInput.focus(), 500);
+  }, 300);
+
+  showToast('Вы вышли из аккаунта');
+});
+
+/* ============================================================
+   КНОПКА "НАЧАТЬ ТРАНСЛЯЦИЮ"
+   ============================================================ */
+startBtn.addEventListener('click', () => {
+  readyScreen.classList.remove('active');
+  setTimeout(() => permScreen.classList.add('active'), 250);
+});
+
+/* ============================================================
+   ЗАПРОС РАЗРЕШЕНИЙ И СТАРТ КАМЕРЫ
+   ============================================================ */
+async function requestPermissionsAndStart() {
+  permError.textContent = '';
+  permBtn.disabled = true;
+  permBtn.textContent = 'Запрос…';
+
+  try {
+    await startCamera(false);
+    permScreen.classList.remove('active');
+    cameraScreen.classList.add('active');
+    setStatus('Камера запущена', 'Инициализация сети…', false);
+    startPeer();
+  } catch (err) {
+    console.error(err);
+    let msg = 'Не удалось получить доступ к камере.';
+    if (err.name === 'NotAllowedError') msg = 'Доступ запрещён. Разрешите камеру и микрофон и попробуйте снова.';
+    else if (err.name === 'NotFoundError') msg = 'Камера не найдена.';
+    else if (err.name === 'NotReadableError') msg = 'Камера занята другим приложением.';
+    else if (location.protocol !== 'https:' && location.hostname !== 'localhost') msg = 'Нужен HTTPS.';
+    permError.textContent = msg;
+    permBtn.disabled = false;
+    permBtn.textContent = 'Попробовать снова';
+  }
+}
+permBtn.addEventListener('click', requestPermissionsAndStart);
+
+/* ============================================================
+   КАМЕРА
+   ============================================================ */
+async function startCamera(front) {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: front ? 'user' : 'environment',
       width:  { ideal: 1920 },
       height: { ideal: 1080 }
     },
     audio: true
-  };
+  });
 
-  stream = await navigator.mediaDevices.getUserMedia(constraints);
   preview.srcObject = stream;
   track = stream.getVideoTracks()[0];
 
-  // Читаем возможности камеры (зум, фонарь)
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   zoomCaps = caps.zoom || null;
-
-  console.log('[camera] Возможности:', caps);
   return caps;
 }
 
@@ -347,145 +1364,83 @@ async function startCamera(front = false) {
    ============================================================ */
 function startPeer() {
   if (peer) peer.destroy();
-
   peer = new Peer(ROOM_ID, { debug: 1 });
 
-  peer.on('open', (id) => {
-    console.log('[peer] ID:', id);
-    setStatus(
-      'Готово к подключению',
-      'Отсканируйте QR в приложении',
-      false
-    );
+  peer.on('open', () => {
+    setStatus('Готово к подключению', 'Отсканируйте QR в приложении', false);
     showQrPanel();
   });
 
   peer.on('error', (err) => {
-    console.error('[peer] error:', err);
+    console.error('[peer]', err);
     if (err.type === 'unavailable-id') {
-      // ID уже занят — генерируем новый
-      localStorage.removeItem(STORAGE_KEY);
-      setStatus('Ошибка ID', 'Перезапуск…', false);
-      setTimeout(() => location.reload(), 1500);
+      localStorage.removeItem(STORAGE_CAM_ID);
+      setTimeout(() => location.reload(), 1000);
     } else {
       setStatus('Ошибка сети', err.type || 'unknown', false);
     }
   });
 
-  // DataConnection — команды от приложения
   peer.on('connection', (conn) => {
-    console.log('[peer] Пульт подключён');
     controllerConn = conn;
-
     conn.on('data', handleCommand);
     conn.on('open', () => {
       setStatus('Пульт подключён', 'Камера активна', true);
-      // Сразу отправляем сведения о возможностях
-      conn.send({
-        type: 'info',
-        zoom: zoomCaps,
-        front: frontCam
-      });
+      conn.send({ type: 'info', zoom: zoomCaps, front: frontCam });
     });
     conn.on('close', () => {
-      console.log('[peer] Пульт отключился');
       controllerConn = null;
       setStatus('Готово к подключению', 'Отсканируйте QR в приложении', false);
     });
-    conn.on('error', (e) => console.warn('[conn] error:', e));
   });
 
-  // Медиазвонок — отдаём видео+аудио
   peer.on('call', (call) => {
-    console.log('[peer] Запрос видео');
     activeCall = call;
     call.answer(stream);
-
-    call.on('close', () => {
-      activeCall = null;
-    });
-    call.on('error', (e) => console.warn('[call] error:', e));
+    call.on('close', () => activeCall = null);
   });
 }
 
 /* ============================================================
-   ОБРАБОТКА КОМАНД
+   КОМАНДЫ
    ============================================================ */
 async function handleCommand(cmd) {
   if (!cmd || typeof cmd !== 'object') return;
-  console.log('[cmd]', cmd);
 
   switch (cmd.type) {
-
     case 'zoom': {
       if (!zoomCaps || !track) return;
-      const v = Math.max(
-        zoomCaps.min,
-        Math.min(zoomCaps.max, Number(cmd.value) || zoomCaps.min)
-      );
-      try {
-        await track.applyConstraints({ advanced: [{ zoom: v }] });
-      } catch (e) {
-        console.warn('[zoom] fail:', e);
-      }
+      const v = Math.max(zoomCaps.min, Math.min(zoomCaps.max, Number(cmd.value) || zoomCaps.min));
+      try { await track.applyConstraints({ advanced: [{ zoom: v }] }); } catch {}
       break;
     }
-
     case 'switchCamera': {
       frontCam = !frontCam;
       try {
         await startCamera(frontCam);
-
-        // Подменяем дорожку в активном звонке
         if (activeCall) {
-          const sender = activeCall.peerConnection
-            .getSenders()
-            .find(s => s.track && s.track.kind === 'video');
-          if (sender) await sender.replaceTrack(track);
-
-          const audioSender = activeCall.peerConnection
-            .getSenders()
-            .find(s => s.track && s.track.kind === 'audio');
-          const newAudio = stream.getAudioTracks()[0];
-          if (audioSender && newAudio) await audioSender.replaceTrack(newAudio);
+          const vs = activeCall.peerConnection.getSenders().find(s => s.track?.kind === 'video');
+          if (vs) await vs.replaceTrack(track);
+          const as = activeCall.peerConnection.getSenders().find(s => s.track?.kind === 'audio');
+          const na = stream.getAudioTracks()[0];
+          if (as && na) await as.replaceTrack(na);
         }
-
-        // Обновляем возможности (у фронталки зума может не быть)
         const caps = track.getCapabilities ? track.getCapabilities() : {};
         zoomCaps = caps.zoom || null;
-
         if (controllerConn?.open) {
-          controllerConn.send({
-            type: 'info',
-            zoom: zoomCaps,
-            front: frontCam
-          });
+          controllerConn.send({ type: 'info', zoom: zoomCaps, front: frontCam });
         }
-      } catch (e) {
-        console.error('[switch] fail:', e);
-      }
+      } catch (e) { console.error(e); }
       break;
     }
-
     case 'torch': {
       if (!track) return;
-      try {
-        await track.applyConstraints({
-          advanced: [{ torch: !!cmd.value }]
-        });
-      } catch (e) {
-        console.warn('[torch] не поддерживается');
-      }
+      try { await track.applyConstraints({ advanced: [{ torch: !!cmd.value }] }); } catch {}
       break;
     }
-
     case 'info': {
       if (controllerConn?.open) {
-        controllerConn.send({
-          type: 'info',
-          zoom: zoomCaps,
-          front: frontCam
-        });
+        controllerConn.send({ type: 'info', zoom: zoomCaps, front: frontCam });
       }
       break;
     }
@@ -493,31 +1448,20 @@ async function handleCommand(cmd) {
 }
 
 /* ============================================================
-   QR ПАНЕЛЬ
+   QR
    ============================================================ */
-let qrRendered = false;
-let qrCollapsed = false;
-
 function showQrPanel() {
   if (!qrRendered) {
     qrBox.innerHTML = '';
-    const payload = JSON.stringify({
-      id: ROOM_ID,
-      name: CAMERA_NAME
-    });
     new QRCode(qrBox, {
-      text: payload,
-      width: 200,
-      height: 200,
-      colorDark: '#000',
-      colorLight: '#fff',
+      text: JSON.stringify({ id: ROOM_ID, name: CUSTOM_NAME }),
+      width: 200, height: 200,
+      colorDark: '#000', colorLight: '#fff',
       correctLevel: QRCode.CorrectLevel.M
     });
     qrIdLabel.textContent = 'ID: ' + ROOM_ID;
     qrRendered = true;
   }
-
-  qrPanel.classList.remove('hidden');
   qrPanel.style.display = 'flex';
 }
 
@@ -528,58 +1472,73 @@ qrToggle.addEventListener('click', () => {
 });
 
 /* ============================================================
-   ЗАПРОС ДОСТУПА
+   СТАТУС
    ============================================================ */
-async function requestPermissionsAndStart() {
-  permError.textContent = '';
-  permBtn.disabled = true;
-  permBtn.textContent = 'Запрос…';
-
-  try {
-    await startCamera(false);
-    permOverlay.classList.add('hidden');
-    setStatus('Камера запущена', 'Инициализация сети…', false);
-    startPeer();
-  } catch (err) {
-    console.error(err);
-    let msg = 'Не удалось получить доступ к камере.';
-
-    if (err.name === 'NotAllowedError') {
-      msg = 'Доступ запрещён. Разрешите камеру и микрофон в настройках браузера и обновите страницу.';
-    } else if (err.name === 'NotFoundError') {
-      msg = 'Камера не найдена на этом устройстве.';
-    } else if (err.name === 'NotReadableError') {
-      msg = 'Камера занята другим приложением. Закройте его и попробуйте снова.';
-    } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      msg = 'Нужен HTTPS. Откройте страницу через https:// (GitHub Pages подходит).';
-    }
-
-    showPermissionError(msg);
-    permBtn.disabled = false;
-    permBtn.textContent = 'Попробовать снова';
-  }
+function setStatus(title, sub, online) {
+  statusTitle.textContent = title;
+  statusSub.textContent = sub || '';
+  statusDot.classList.toggle('online', !!online);
 }
 
-permBtn.addEventListener('click', requestPermissionsAndStart);
+/* ============================================================
+   КНОПКА "СТОП" — останавливаем трансляцию и возвращаемся
+   ============================================================ */
+stopBtn.addEventListener('click', () => {
+  if (!confirm('Остановить трансляцию?')) return;
+
+  // Закрываем соединения
+  try { controllerConn?.close(); } catch {}
+  try { activeCall?.close(); } catch {}
+  try { peer?.destroy(); } catch {}
+  controllerConn = activeCall = peer = null;
+
+  // Останавливаем камеру
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  preview.srcObject = null;
+
+  // Скрываем QR панель
+  qrPanel.style.display = 'none';
+  qrRendered = false;
+  qrCollapsed = false;
+  qrPanel.classList.remove('collapsed');
+  qrToggle.textContent = 'Скрыть';
+
+  // Возвращаемся на экран "Начать трансляцию"
+  cameraScreen.classList.remove('active');
+  readyScreen.classList.add('active');
+});
 
 /* ============================================================
-   АВТОЗАПУСК — если разрешения уже даны
+   АВТОЛОГИН
    ============================================================ */
-(async function tryAutoStart() {
-  // Проверяем уже выданные разрешения (если API доступно)
-  if (navigator.permissions?.query) {
-    try {
-      const cam = await navigator.permissions.query({ name: 'camera' });
-      const mic = await navigator.permissions.query({ name: 'microphone' });
-      if (cam.state === 'granted' && mic.state === 'granted') {
-        requestPermissionsAndStart();
-        return;
-      }
-    } catch (e) {
-      // Некоторые браузеры не поддерживают запрос этих разрешений — игнорируем
+(async function autoLogin() {
+  const saved = localStorage.getItem('my_phone');
+  const savedCountry = localStorage.getItem('my_country');
+
+  if (savedCountry) {
+    const c = COUNTRIES.find(x => x.code === savedCountry);
+    if (c) {
+      selectedCountry = c;
+      countryFlag.textContent = c.flag;
+      phoneInput.placeholder = c.format.replace(/#/g, '0');
     }
   }
-  // Иначе ждём нажатия кнопки
+
+  if (!saved) {
+    setTimeout(() => phoneInput.focus(), 500);
+    return;
+  }
+
+  userPhone = saved;
+  const dial = selectedCountry.dial.replace('+', '');
+  const digits = saved.replace(/\D/g, '').slice(dial.length);
+  phoneInput.value = formatByMask(digits, selectedCountry.format);
+
+  readyFlag.textContent = selectedCountry.flag;
+  readyNum.textContent = selectedCountry.dial + ' ' + phoneInput.value;
+
+  authScreen.classList.add('hidden');
+  setTimeout(() => readyScreen.classList.add('active'), 250);
 })();
 
 /* ============================================================
@@ -588,6 +1547,7 @@ permBtn.addEventListener('click', requestPermissionsAndStart);
 window.addEventListener('beforeunload', () => {
   if (stream) stream.getTracks().forEach(t => t.stop());
   if (peer) peer.destroy();
+  clearInterval(resendInterval);
 });
 </script>
 </body>
