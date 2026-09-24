@@ -35,9 +35,8 @@
   svg { display: block; }
   .icon { width: 22px; height: 22px; }
   .icon-sm { width: 18px; height: 18px; }
-  .icon-lg { width: 28px; height: 28px; }
 
-  /* ==================== ЭКРАН РЕГИСТРАЦИИ ==================== */
+  /* ==================== ЭКРАН АВТОРИЗАЦИИ ==================== */
   #authScreen {
     position: fixed; inset: 0;
     background:
@@ -68,16 +67,13 @@
     gap: 24px;
   }
 
-  /* Логотип с анимацией */
   .auth-logo {
     width: 96px; height: 96px;
     border-radius: 28px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     display: grid; place-items: center;
     color: #fff;
-    box-shadow:
-      0 12px 40px rgba(59,130,246,0.45),
-      0 0 0 1px rgba(255,255,255,0.08) inset;
+    box-shadow: 0 12px 40px rgba(59,130,246,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
     position: relative;
     animation: logoEnter .8s cubic-bezier(.34,1.56,.64,1) backwards;
     animation-delay: .1s;
@@ -87,13 +83,10 @@
     position: absolute; inset: -6px;
     border-radius: 34px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    opacity: 0.25;
-    filter: blur(20px);
-    z-index: -1;
+    opacity: 0.25; filter: blur(20px); z-index: -1;
     animation: pulseGlow 3s ease-in-out infinite;
   }
   .auth-logo svg { width: 48px; height: 48px; }
-
   @keyframes logoEnter {
     from { opacity: 0; transform: scale(.6) translateY(20px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
@@ -105,33 +98,27 @@
 
   .auth-title {
     font-size: 32px; font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
+    letter-spacing: -0.02em; line-height: 1.15;
     background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: fadeUp .6s ease backwards;
-    animation-delay: .2s;
+    animation: fadeUp .6s ease backwards; animation-delay: .2s;
   }
   .auth-subtitle {
-    font-size: 15px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    margin-top: 8px;
-    animation: fadeUp .6s ease backwards;
-    animation-delay: .28s;
+    font-size: 15px; color: var(--text-dim);
+    line-height: 1.5; margin-top: 8px;
+    animation: fadeUp .6s ease backwards; animation-delay: .28s;
   }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Поле ввода телефона */
+  /* ==================== ПОЛЕ ТЕЛЕФОНА ==================== */
   .phone-field {
     position: relative;
     margin-top: 8px;
-    animation: fadeUp .6s ease backwards;
-    animation-delay: .36s;
+    animation: fadeUp .6s ease backwards; animation-delay: .36s;
   }
   .phone-field-inner {
     display: flex; align-items: center;
@@ -157,139 +144,255 @@
     40%,80% { transform: translateX(6px); }
   }
 
-  .phone-flag {
-    padding: 0 14px;
-    height: 58px;
-    display: flex; align-items: center;
-    color: var(--text-dim);
-    font-size: 16px; font-weight: 700;
+  /* Кнопка выбора страны */
+  .country-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px; height: 58px;
+    background: transparent; border: none;
     border-right: 1.5px solid var(--border);
-    font-variant-numeric: tabular-nums;
-    transition: color .25s, border-color .25s;
-  }
-  .phone-field.focused .phone-flag {
     color: var(--text);
-    border-color: var(--accent);
+    font-size: 17px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, border-color .25s;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
   }
+  .country-btn:active { background: rgba(255,255,255,0.05); }
+  .phone-field.focused .country-btn { border-color: var(--accent); }
+  .country-btn .flag { font-size: 22px; line-height: 1; }
+  .country-btn .chev {
+    width: 14px; height: 14px;
+    color: var(--text-dim);
+    transition: transform .2s;
+  }
+  .country-btn.open .chev { transform: rotate(180deg); }
 
   #phoneInput {
-    flex: 1;
-    height: 58px;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-size: 17px;
-    font-weight: 600;
+    flex: 1; height: 58px;
+    background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 17px; font-weight: 600;
     padding: 0 16px;
     letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
   }
   #phoneInput::placeholder {
-    color: #3f3f4d;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    color: #3f3f4d; font-weight: 500; letter-spacing: 0.01em;
   }
 
-  /* Кнопка продолжить */
-  .auth-btn {
+  /* ==================== КНОПКА С ЭФФЕКТОМ ЖЕЛЕ ==================== */
+  .gooey-wrap {
     position: relative;
+    animation: fadeUp .6s ease backwards; animation-delay: .44s;
+  }
+  .gooey-btn {
+    position: relative;
+    width: 100%;
     height: 58px;
     border-radius: var(--radius);
     border: none;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     color: #fff;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 16px; font-weight: 700;
     letter-spacing: 0.01em;
     cursor: pointer;
     box-shadow: 0 10px 32px rgba(59,130,246,0.4);
-    transition: transform .15s ease, box-shadow .25s, opacity .25s;
     overflow: hidden;
     display: flex; align-items: center; justify-content: center; gap: 10px;
-    animation: fadeUp .6s ease backwards;
-    animation-delay: .44s;
+    transition: transform .15s ease, box-shadow .25s, opacity .25s;
+    z-index: 1;
   }
-  .auth-btn::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.25), transparent);
-    transform: translateX(-100%);
-    transition: transform .6s;
-  }
-  .auth-btn:hover::before { transform: translateX(100%); }
-  .auth-btn:active:not(:disabled) {
-    transform: scale(0.97);
-    box-shadow: 0 6px 20px rgba(59,130,246,0.5);
-  }
-  .auth-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  .auth-btn svg { width: 20px; height: 20px; }
-  .auth-btn .spinner {
+  .gooey-btn:active:not(:disabled) { transform: scale(0.97); box-shadow: 0 6px 20px rgba(59,130,246,0.5); }
+  .gooey-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .gooey-btn svg { width: 20px; height: 20px; }
+  .gooey-btn .spinner {
     width: 20px; height: 20px;
     border: 2.5px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
+    border-top-color: #fff; border-radius: 50%;
     animation: spin .7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .auth-error {
-    color: var(--danger);
-    font-size: 13.5px;
-    font-weight: 500;
-    text-align: center;
-    min-height: 20px;
-    line-height: 1.4;
-    animation: fadeUp .3s ease backwards;
-    padding: 0 8px;
+  /* SVG-фильтр для эффекта желе */
+  #gooeyFilter {
+    position: absolute; width: 0; height: 0;
+    pointer-events: none;
   }
-
-  .auth-note {
-    text-align: center;
-    font-size: 12px;
-    color: #4a4a5a;
-    line-height: 1.6;
-    padding: 0 16px;
-    animation: fadeUp .6s ease backwards;
-    animation-delay: .52s;
-  }
-  .auth-note svg {
-    display: inline-block;
-    vertical-align: -3px;
-    width: 14px; height: 14px;
-    margin-right: 5px;
-    opacity: 0.7;
-  }
-
-  /* Прогресс сверху */
-  .auth-progress {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: transparent;
+  .gooey-layer {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    filter: url(#gooeyFilter);
     overflow: hidden;
-    opacity: 0;
-    transition: opacity .3s;
+    border-radius: var(--radius);
   }
-  .auth-progress.active { opacity: 1; }
-  .auth-progress::after {
-    content: '';
+  .gooey-blob {
     position: absolute;
-    top: 0; left: 0;
-    height: 100%; width: 40%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    border-radius: 2px;
-    animation: slide 1.2s ease-in-out infinite;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform .6s cubic-bezier(.4,0,.2,1), opacity .6s;
+    opacity: 1;
   }
-  @keyframes slide {
-    0% { left: -40%; }
-    100% { left: 100%; }
+  .gooey-blob.expand {
+    transform: translate(-50%, -50%) scale(12);
+    opacity: 0;
   }
 
-  /* ==================== LIST ==================== */
+  /* ==================== ВЫБОР СТРАНЫ (МОДАЛКА) ==================== */
+  #countryModal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: none;
+    z-index: 400;
+    align-items: flex-end;
+    padding: 0;
+  }
+  #countryModal.active { display: flex; animation: fadeIn .2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .country-sheet {
+    width: 100%;
+    max-height: 75vh;
+    background: var(--surface);
+    border-radius: 28px 28px 0 0;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+    display: flex; flex-direction: column;
+    animation: sheetUp .35s cubic-bezier(.34,1.56,.64,1);
+    overflow: hidden;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: #2f2f40; border-radius: 2px;
+    margin: 12px auto 8px;
+  }
+  .sheet-title {
+    font-size: 18px; font-weight: 700;
+    padding: 8px 24px 16px;
+    color: var(--text);
+  }
+
+  .country-search {
+    margin: 0 20px 12px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0 14px;
+    height: 46px;
+  }
+  .country-search svg { width: 18px; height: 18px; color: var(--text-dim); }
+  .country-search input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 15px;
+  }
+  .country-search input::placeholder { color: #4a4a5a; }
+
+  .country-list {
+    flex: 1; overflow-y: auto;
+    padding: 0 12px 12px;
+  }
+  .country-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .country-item:active { background: var(--surface-2); }
+  .country-item.selected { background: rgba(59,130,246,0.12); }
+  .country-item .flag { font-size: 26px; line-height: 1; width: 32px; text-align: center; }
+  .country-item .name { flex: 1; font-size: 15px; font-weight: 500; }
+  .country-item .code {
+    font-size: 14px; color: var(--text-dim);
+    font-variant-numeric: tabular-nums; font-weight: 600;
+  }
+  .country-item.selected .code { color: var(--accent); }
+
+  /* ==================== ЭКРАН OTP ==================== */
+  #otpScreen {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(59,130,246,0.18), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(139,92,246,0.15), transparent 50%),
+      var(--bg);
+    display: none; flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+    z-index: 350;
+  }
+  #otpScreen.active { display: flex; animation: fadeIn .3s ease; }
+
+  .otp-back {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); display: grid; place-items: center;
+    cursor: pointer; flex-shrink: 0;
+    margin-bottom: 24px;
+  }
+  .otp-back:active { background: var(--surface-2); }
+
+  .otp-inner {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; max-width: 420px; width: 100%;
+    margin: 0 auto; gap: 24px;
+  }
+
+  .otp-icon {
+    width: 72px; height: 72px; border-radius: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 8px 28px rgba(59,130,246,0.4);
+    margin-bottom: 4px;
+  }
+  .otp-icon svg { width: 36px; height: 36px; }
+
+  .otp-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .otp-subtitle { font-size: 15px; color: var(--text-dim); line-height: 1.5; margin-top: 6px; }
+  .otp-subtitle b { color: var(--text); font-weight: 600; }
+
+  .otp-inputs {
+    display: flex; gap: 10px; justify-content: center;
+    margin: 8px 0;
+  }
+  .otp-input {
+    width: 48px; height: 58px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    color: var(--text);
+    font-size: 22px; font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+    font-variant-numeric: tabular-nums;
+  }
+  .otp-input:focus {
+    border-color: var(--accent);
+    background: #15151f;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+  }
+  .otp-input.filled { border-color: rgba(59,130,246,0.5); }
+
+  .otp-resend {
+    text-align: center;
+    font-size: 14px; color: var(--text-dim);
+  }
+  .otp-resend button {
+    background: none; border: none;
+    color: var(--accent); font-weight: 600;
+    cursor: pointer; font-size: 14px;
+    padding: 4px 8px;
+  }
+  .otp-resend button:disabled { color: #4a4a5a; cursor: not-allowed; }
+
+  /* ==================== СПИСОК КАМЕР ==================== */
   #listScreen {
     height: 100%; overflow-y: auto;
     padding: calc(env(safe-area-inset-top) + 24px) 20px 40px;
@@ -297,15 +400,12 @@
       radial-gradient(circle at 20% 0%, rgba(59,130,246,0.12), transparent 50%),
       radial-gradient(circle at 80% 100%, rgba(139,92,246,0.1), transparent 50%),
       var(--bg);
-    opacity: 0;
-    transform: translateY(10px);
+    opacity: 0; transform: translateY(10px);
     transition: opacity .5s ease .1s, transform .5s ease .1s;
     pointer-events: none;
   }
   #listScreen.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
+    opacity: 1; transform: translateY(0); pointer-events: auto;
   }
 
   .page-header {
@@ -321,35 +421,23 @@
   }
   .page-subtitle {
     color: var(--text-dim); font-size: 14px; margin-top: 4px; font-weight: 500;
-    display: flex; align-items: center; gap: 6px;
   }
-  .page-subtitle svg { width: 14px; height: 14px; opacity: 0.7; }
 
   .logout-btn {
-    width: 44px; height: 44px;
-    border-radius: 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    display: grid; place-items: center;
-    cursor: pointer;
-    transition: background .15s, color .15s, transform .1s;
+    width: 44px; height: 44px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-dim); display: grid; place-items: center;
+    cursor: pointer; transition: background .15s, color .15s, transform .1s;
     flex-shrink: 0;
   }
-  .logout-btn:active {
-    background: var(--surface-2);
-    color: var(--text);
-    transform: scale(0.94);
-  }
+  .logout-btn:active { background: var(--surface-2); color: var(--text); transform: scale(0.94); }
   .logout-btn svg { width: 20px; height: 20px; }
 
   .cam-list { display: flex; flex-direction: column; gap: 12px; }
 
   .cam-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
     display: flex; align-items: center; gap: 14px;
     cursor: pointer;
     transition: transform .15s ease, background .2s, border-color .2s;
@@ -363,7 +451,6 @@
   }
   .cam-card:active { transform: scale(0.98); background: var(--surface-2); border-color: #2f2f40; }
   .cam-card:active::before { opacity: 1; }
-
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(14px) scale(.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -372,10 +459,8 @@
   .cam-thumb {
     width: 56px; height: 56px; border-radius: 16px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    display: grid; place-items: center;
-    color: #fff;
-    flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+    display: grid; place-items: center; color: #fff;
+    flex-shrink: 0; box-shadow: 0 4px 16px rgba(59,130,246,0.35);
   }
   .cam-thumb svg { width: 28px; height: 28px; }
 
@@ -390,14 +475,12 @@
   }
   .status-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 8px var(--success);
+    background: var(--success); box-shadow: 0 0 8px var(--success);
   }
   .cam-del {
     background: rgba(239,68,68,0.1); border: none;
     color: var(--danger); width: 40px; height: 40px;
-    border-radius: 12px;
-    cursor: pointer; flex-shrink: 0;
+    border-radius: 12px; cursor: pointer; flex-shrink: 0;
     display: grid; place-items: center;
     transition: background .15s;
   }
@@ -405,8 +488,7 @@
   .cam-del svg { width: 18px; height: 18px; }
 
   .empty {
-    text-align: center;
-    padding: 60px 20px;
+    text-align: center; padding: 60px 20px;
     color: var(--text-dim);
     display: flex; flex-direction: column; align-items: center; gap: 16px;
     animation: fadeUp .5s ease backwards;
@@ -415,8 +497,7 @@
     width: 88px; height: 88px; border-radius: 28px;
     background: var(--surface); border: 1px solid var(--border);
     display: grid; place-items: center;
-    color: var(--text-dim);
-    opacity: 0.8;
+    color: var(--text-dim); opacity: 0.8;
   }
   .empty-icon svg { width: 40px; height: 40px; }
   .empty-title { color: var(--text); font-size: 17px; font-weight: 600; }
@@ -425,38 +506,29 @@
   /* ==================== VIEWER ==================== */
   #viewerScreen {
     position: fixed; inset: 0;
-    background: #000;
-    display: none;
-    flex-direction: column;
+    background: #000; display: none; flex-direction: column;
     z-index: 100;
   }
   #viewerScreen.active { display: flex; animation: fadeIn .25s ease; }
 
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
   #remoteVideo {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
-    object-fit: contain;
-    background: #000;
+    object-fit: contain; background: #000;
   }
 
   .viewer-top {
-    position: absolute;
-    top: 0; left: 0; right: 0;
+    position: absolute; top: 0; left: 0; right: 0;
     padding: calc(env(safe-area-inset-top) + 14px) 16px 14px;
     background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, transparent 100%);
-    display: flex; align-items: center; gap: 12px;
-    z-index: 5;
+    display: flex; align-items: center; gap: 12px; z-index: 5;
   }
   .icon-btn {
     width: 44px; height: 44px; border-radius: 14px;
     background: rgba(255,255,255,0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    display: grid; place-items: center;
+    color: #fff; display: grid; place-items: center;
     cursor: pointer; flex-shrink: 0;
     transition: background .15s, transform .1s;
   }
@@ -470,16 +542,13 @@
   .viewer-status {
     display: flex; align-items: center; gap: 6px;
     font-size: 12px; color: rgba(255,255,255,0.7);
-    padding: 6px 10px;
-    background: rgba(255,255,255,0.08);
+    padding: 6px 10px; background: rgba(255,255,255,0.08);
     border-radius: 20px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   }
   .viewer-status .dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: var(--danger);
-    animation: pulse 1.5s infinite;
+    background: var(--danger); animation: pulse 1.5s infinite;
   }
   .viewer-status.online .dot {
     background: var(--success); animation: none;
@@ -488,32 +557,26 @@
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
   .viewer-bottom {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
+    position: absolute; bottom: 0; left: 0; right: 0;
     padding: 20px 16px calc(env(safe-area-inset-bottom) + 20px);
     background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
-    display: flex; flex-direction: column; gap: 16px;
-    z-index: 5;
+    display: flex; flex-direction: column; gap: 16px; z-index: 5;
   }
 
   .zoom-wrap {
     display: flex; align-items: center; gap: 10px;
     background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 22px;
-    padding: 8px 12px;
+    border-radius: 22px; padding: 8px 12px;
   }
   .zoom-value {
     font-size: 13px; font-weight: 700; color: #fff;
-    min-width: 44px; text-align: center;
-    font-variant-numeric: tabular-nums;
+    min-width: 44px; text-align: center; font-variant-numeric: tabular-nums;
   }
   .zoom-btn {
     width: 34px; height: 34px; border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    border: none; color: #fff;
+    background: rgba(255,255,255,0.12); border: none; color: #fff;
     cursor: pointer; display: grid; place-items: center;
     transition: background .15s;
   }
@@ -521,85 +584,70 @@
   .zoom-btn svg { width: 18px; height: 18px; }
 
   .zoom-slider {
-    flex: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 4px; border-radius: 2px;
-    background: rgba(255,255,255,0.2);
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2);
     outline: none;
   }
   .zoom-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    cursor: pointer;
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.4); cursor: pointer;
   }
   .zoom-slider::-moz-range-thumb {
     width: 20px; height: 20px; border-radius: 50%;
-    background: #fff; border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    cursor: pointer;
+    background: #fff; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.4); cursor: pointer;
   }
 
   .actions {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
   }
   .action-btn {
     background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
-    color: #fff;
-    padding: 14px 8px;
-    border-radius: 18px;
+    color: #fff; padding: 14px 8px; border-radius: 18px;
     font-size: 11px; font-weight: 600;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
-    cursor: pointer;
-    transition: background .15s, transform .1s;
+    cursor: pointer; transition: background .15s, transform .1s;
   }
   .action-btn:active { background: rgba(255,255,255,0.22); transform: scale(0.96); }
   .action-btn.active {
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    border-color: transparent;
-    box-shadow: 0 4px 20px rgba(59,130,246,0.5);
+    border-color: transparent; box-shadow: 0 4px 20px rgba(59,130,246,0.5);
   }
   .action-btn svg { width: 22px; height: 22px; }
 
   /* ==================== TOAST ==================== */
   #toast {
-    position: fixed;
-    left: 50%; bottom: calc(env(safe-area-inset-bottom) + 100px);
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 100px);
     transform: translateX(-50%) translateY(20px);
     background: rgba(20,20,28,0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    color: #fff;
-    font-size: 14px; font-weight: 500;
-    padding: 12px 20px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    color: #fff; font-size: 14px; font-weight: 500;
+    padding: 12px 20px; border-radius: 14px;
+    border: 1px solid var(--border); z-index: 999;
+    opacity: 0; pointer-events: none;
     transition: opacity .25s, transform .25s;
-    max-width: 90vw;
-    text-align: center;
+    max-width: 90vw; text-align: center;
   }
-  #toast.visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- ==================== РЕГИСТРАЦИЯ ==================== -->
-<div id="authScreen">
-  <div class="auth-progress" id="authProgress"></div>
+<!-- SVG-фильтр для эффекта желе -->
+<svg id="gooeyFilter" aria-hidden="true">
+  <defs>
+    <filter id="gooeyFilterDef">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" mode="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo"/>
+      <feBlend in="SourceGraphic" in2="goo"/>
+    </filter>
+  </defs>
+</svg>
 
+<!-- ==================== ЭКРАН АВТОРИЗАЦИИ ==================== -->
+<div id="authScreen">
   <div class="auth-inner">
     <div class="auth-logo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -615,36 +663,95 @@
 
     <div class="phone-field" id="phoneField">
       <div class="phone-field-inner">
-        <div class="phone-flag">+</div>
+        <button class="country-btn" id="countryBtn" type="button">
+          <span class="flag" id="countryFlag">🇷🇺</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
         <input
           type="tel"
           id="phoneInput"
-          placeholder="372 5555 5555"
+          placeholder="918 000-00-00"
           inputmode="numeric"
-          autocomplete="tel"
-          autofocus>
+          autocomplete="tel">
       </div>
     </div>
 
-    <button class="auth-btn" id="authBtn">
-      <span id="authBtnContent" style="display:flex;align-items:center;gap:10px">
-        Продолжить
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="5" y1="12" x2="19" y2="12"/>
-          <polyline points="12 5 19 12 12 19"/>
-        </svg>
-      </span>
-    </button>
+    <div class="gooey-wrap">
+      <div class="gooey-layer" id="gooeyLayer"></div>
+      <button class="gooey-btn" id="authBtn">
+        <span id="authBtnContent" style="display:flex;align-items:center;gap:10px">
+          Продолжить
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </span>
+      </button>
+    </div>
 
-    <div class="auth-error" id="authError"></div>
+    <div class="auth-error" id="authError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;line-height:1.4;padding:0 8px;"></div>
 
-    <div class="auth-note">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
+    <div class="auth-note" style="text-align:center;font-size:12px;color:#4a4a5a;line-height:1.6;padding:0 16px;">
       Без SMS-подтверждения. Номер используется как идентификатор аккаунта.
     </div>
+  </div>
+</div>
+
+<!-- ==================== МОДАЛКА ВЫБОРА СТРАНЫ ==================== -->
+<div id="countryModal">
+  <div class="country-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Выберите страну</div>
+
+    <div class="country-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="countrySearch" placeholder="Поиск страны...">
+    </div>
+
+    <div class="country-list" id="countryList"></div>
+  </div>
+</div>
+
+<!-- ==================== ЭКРАН OTP ==================== -->
+<div id="otpScreen">
+  <button class="otp-back" id="otpBack">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  </button>
+
+  <div class="otp-inner">
+    <div class="otp-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    </div>
+
+    <div>
+      <div class="otp-title">Введите код</div>
+      <div class="otp-subtitle">Мы отправили 6-значный код на <b id="otpPhone">+7 918 000-00-00</b></div>
+    </div>
+
+    <div class="otp-inputs" id="otpInputs">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="0">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="1">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="2">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="3">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="5">
+    </div>
+
+    <div class="otp-resend">
+      Не получили код? <button id="otpResend" disabled>Отправить снова (<span id="resendTimer">60</span>с)</button>
+    </div>
+
+    <div id="otpError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;"></div>
   </div>
 </div>
 
@@ -653,9 +760,7 @@
   <div class="page-header">
     <div class="page-header-text">
       <div class="page-title">Мои камеры</div>
-      <div class="page-subtitle" id="pageSubtitle">
-        <span id="pageSubtitleText">Загрузка…</span>
-      </div>
+      <div class="page-subtitle" id="pageSubtitle">Загрузка…</div>
     </div>
     <button class="logout-btn" id="logoutBtn" aria-label="Выйти">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -763,35 +868,56 @@
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script>
 /* ============================================================
-   ХРАНИЛИЩЕ
+   БАЗА СТРАН
    ============================================================ */
-const STORAGE_KEY     = 'my_cameras_v2';
-const STORAGE_PHONE   = 'my_phone';
+const COUNTRIES = [
+  { code: 'RU', name: 'Россия',          flag: '🇷🇺', dial: '+7',   digits: 10, format: '(###) ###-##-##' },
+  { code: 'KZ', name: 'Казахстан',       flag: '🇰🇿', dial: '+7',   digits: 10, format: '(###) ###-##-##' },
+  { code: 'AM', name: 'Армения',         flag: '🇦🇲', dial: '+374', digits: 8,  format: '## ######' },
+  { code: 'AZ', name: 'Азербайджан',     flag: '🇦🇿', dial: '+994', digits: 9,  format: '## ### ## ##' },
+  { code: 'BY', name: 'Беларусь',        flag: '🇧🇾', dial: '+375', digits: 9,  format: '(##) ###-##-##' },
+  { code: 'GE', name: 'Грузия',          flag: '🇬🇪', dial: '+995', digits: 9,  format: '### ### ###' },
+  { code: 'KG', name: 'Кыргызстан',      flag: '🇰🇬', dial: '+996', digits: 9,  format: '### ### ###' },
+  { code: 'MD', name: 'Молдова',         flag: '🇲🇩', dial: '+373', digits: 8,  format: '## ######' },
+  { code: 'TJ', name: 'Таджикистан',     flag: '🇹🇯', dial: '+992', digits: 9,  format: '## ### ####' },
+  { code: 'TM', name: 'Туркменистан',    flag: '🇹🇲', dial: '+993', digits: 8,  format: '## ##-##-##' },
+  { code: 'UZ', name: 'Узбекистан',      flag: '🇺🇿', dial: '+998', digits: 9,  format: '## ###-##-##' },
+  { code: 'UA', name: 'Украина',         flag: '🇺🇦', dial: '+380', digits: 9,  format: '(##) ###-##-##' },
+  { code: 'DE', name: 'Германия',        flag: '🇩🇪', dial: '+49',  digits: 10, format: '#### ######' },
+  { code: 'TR', name: 'Турция',          flag: '🇹🇷', dial: '+90',  digits: 10, format: '(###) ###-##-##' },
+  { code: 'US', name: 'США',             flag: '🇺🇸', dial: '+1',   digits: 10, format: '(###) ###-####' },
+  { code: 'GB', name: 'Великобритания',  flag: '🇬🇧', dial: '+44',  digits: 10, format: '#### ######' },
+];
 
-let cameras = [];
-let userPhone = null;
-
-function loadLocalCameras() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
-}
-function saveLocalCameras() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cameras));
-}
+let selectedCountry = COUNTRIES[0];
 
 /* ============================================================
    DOM
    ============================================================ */
 const authScreen    = document.getElementById('authScreen');
-const authProgress  = document.getElementById('authProgress');
 const phoneField    = document.getElementById('phoneField');
 const phoneInput    = document.getElementById('phoneInput');
+const countryBtn    = document.getElementById('countryBtn');
+const countryFlag   = document.getElementById('countryFlag');
 const authBtn       = document.getElementById('authBtn');
 const authBtnContent= document.getElementById('authBtnContent');
 const authError     = document.getElementById('authError');
+const gooeyLayer    = document.getElementById('gooeyLayer');
+
+const countryModal  = document.getElementById('countryModal');
+const countrySearch = document.getElementById('countrySearch');
+const countryList   = document.getElementById('countryList');
+
+const otpScreen     = document.getElementById('otpScreen');
+const otpBack       = document.getElementById('otpBack');
+const otpPhone      = document.getElementById('otpPhone');
+const otpInputs     = document.querySelectorAll('.otp-input');
+const otpResend     = document.getElementById('otpResend');
+const resendTimer   = document.getElementById('resendTimer');
+const otpError      = document.getElementById('otpError');
 
 const listScreen    = document.getElementById('listScreen');
-const pageSubtitleText = document.getElementById('pageSubtitleText');
+const pageSubtitle  = document.getElementById('pageSubtitle');
 const logoutBtn     = document.getElementById('logoutBtn');
 const camList       = document.getElementById('camList');
 const emptyState    = document.getElementById('emptyState');
@@ -807,7 +933,6 @@ const zoomSlider    = document.getElementById('zoomSlider');
 const zoomInBtn     = document.getElementById('zoomInBtn');
 const zoomOutBtn    = document.getElementById('zoomOutBtn');
 const zoomValue     = document.getElementById('zoomValue');
-
 const switchBtn     = document.getElementById('switchBtn');
 const snapBtn       = document.getElementById('snapBtn');
 const muteBtn       = document.getElementById('muteBtn');
@@ -841,54 +966,173 @@ function showToast(text) {
   toast.textContent = text;
   toast.classList.add('visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2200);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
 }
 
 /* ============================================================
-   ВАЛИДАЦИЯ ТЕЛЕФОНА
+   ФОРМАТИРОВАНИЕ НОМЕРА ПО МАСКЕ СТРАНЫ
    ============================================================ */
-function normalizePhone(raw) {
-  const s = String(raw).replace(/\D/g, '');
-  if (s.length < 7 || s.length > 15) return null;
-  return '+' + s;
-}
-
-function formatPhoneInput(value) {
-  const digits = value.replace(/\D/g, '');
-  let out = '';
-  for (let i = 0; i < digits.length; i++) {
-    if (i === 3 || i === 6 || i === 9 || i === 12) out += ' ';
-    out += digits[i];
+function formatByMask(digits, mask) {
+  let result = '';
+  let di = 0;
+  for (let i = 0; i < mask.length; i++) {
+    if (di >= digits.length) break;
+    const ch = mask[i];
+    if (ch === '#') {
+      result += digits[di++];
+    } else {
+      result += ch;
+    }
   }
-  return out;
+  return result;
+}
+
+function getRawDigits() {
+  return phoneInput.value.replace(/\D/g, '');
+}
+
+function applyMask() {
+  const digits = getRawDigits().slice(0, selectedCountry.digits);
+  phoneInput.value = formatByMask(digits, selectedCountry.format);
 }
 
 /* ============================================================
-   ОБРАБОТЧИКИ ПОЛЯ ВВОДА
+   ВЫБОР СТРАНЫ
    ============================================================ */
-phoneInput.addEventListener('focus', () => {
-  phoneField.classList.add('focused');
-});
-phoneInput.addEventListener('blur', () => {
-  phoneField.classList.remove('focused');
-});
-phoneInput.addEventListener('input', (e) => {
-  e.target.value = formatPhoneInput(e.target.value);
+function selectCountry(country) {
+  selectedCountry = country;
+  countryFlag.textContent = country.flag;
+  phoneInput.placeholder = country.format.replace(/#/g, '0');
+  phoneInput.value = '';
   authError.textContent = '';
   phoneField.classList.remove('error');
+  phoneInput.focus();
+}
+
+function renderCountryList(filter = '') {
+  const f = filter.toLowerCase().trim();
+  countryList.innerHTML = '';
+  const list = COUNTRIES.filter(c =>
+    !f || c.name.toLowerCase().includes(f) || c.dial.includes(f) || c.code.toLowerCase().includes(f)
+  );
+
+  if (!list.length) {
+    countryList.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:40px 20px;font-size:14px;">Ничего не найдено</div>';
+    return;
+  }
+
+  list.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'country-item' + (c.code === selectedCountry.code ? ' selected' : '');
+    item.innerHTML = `
+      <div class="flag">${c.flag}</div>
+      <div class="name">${c.name}</div>
+      <div class="code">${c.dial}</div>
+    `;
+    item.addEventListener('click', () => {
+      selectCountry(c);
+      closeCountryModal();
+    });
+    countryList.appendChild(item);
+  });
+}
+
+function openCountryModal() {
+  countryBtn.classList.add('open');
+  countryModal.classList.add('active');
+  countrySearch.value = '';
+  renderCountryList();
+  setTimeout(() => countrySearch.focus(), 100);
+}
+
+function closeCountryModal() {
+  countryBtn.classList.remove('open');
+  countryModal.classList.remove('active');
+}
+
+countryBtn.addEventListener('click', openCountryModal);
+countryModal.addEventListener('click', (e) => {
+  if (e.target === countryModal) closeCountryModal();
 });
+countrySearch.addEventListener('input', (e) => renderCountryList(e.target.value));
+
+/* ============================================================
+   ПОЛЕ ВВОДА
+   ============================================================ */
+phoneInput.addEventListener('focus', () => phoneField.classList.add('focused'));
+phoneInput.addEventListener('blur', () => phoneField.classList.remove('focused'));
+
+phoneInput.addEventListener('input', () => {
+  authError.textContent = '';
+  phoneField.classList.remove('error');
+  applyMask();
+});
+
 phoneInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') authBtn.click();
 });
 
 /* ============================================================
-   РЕГИСТРАЦИЯ
+   ЭФФЕКТ ЖЕЛЕ НА КНОПКЕ
    ============================================================ */
+function createGooeyBlob(e) {
+  const rect = authBtn.getBoundingClientRect();
+  let x, y;
+
+  if (e && (e.touches || e.changedTouches)) {
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+    x = t.clientX - rect.left;
+    y = t.clientY - rect.top;
+  } else if (e && e.clientX !== undefined) {
+    x = e.clientX - rect.left;
+    y = e.clientY - rect.top;
+  } else {
+    x = rect.width / 2;
+    y = rect.height / 2;
+  }
+
+  const blob = document.createElement('div');
+  blob.className = 'gooey-blob';
+  blob.style.left = x + 'px';
+  blob.style.top  = y + 'px';
+  blob.style.filter = 'url(#gooeyFilterDef)';
+  gooeyLayer.appendChild(blob);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => blob.classList.add('expand'));
+  });
+
+  setTimeout(() => blob.remove(), 700);
+}
+
+let gooeyHandled = false;
+authBtn.addEventListener('pointerdown', (e) => {
+  gooeyHandled = false;
+  createGooeyBlob(e);
+  gooeyHandled = true;
+});
+authBtn.addEventListener('touchstart', (e) => {
+  if (gooeyHandled) return;
+  createGooeyBlob(e);
+}, { passive: true });
+
+/* ============================================================
+   ВАЛИДАЦИЯ
+   ============================================================ */
+function getFullPhone() {
+  const digits = getRawDigits();
+  if (digits.length !== selectedCountry.digits) return null;
+  return selectedCountry.dial + digits;
+}
+
+function isPhoneValid() {
+  return getRawDigits().length === selectedCountry.digits;
+}
+
 function setAuthLoading(loading) {
   authBtn.disabled = loading;
   if (loading) {
     authBtnContent.innerHTML = '<div class="spinner"></div>';
-    authProgress.classList.add('active');
   } else {
     authBtnContent.innerHTML = `
       Продолжить
@@ -897,71 +1141,194 @@ function setAuthLoading(loading) {
         <polyline points="12 5 19 12 12 19"/>
       </svg>
     `;
-    authProgress.classList.remove('active');
   }
 }
 
-authBtn.addEventListener('click', async () => {
+/* ============================================================
+   ОТПРАВКА КОДА (демо — код генерируется на клиенте)
+   ============================================================ */
+let generatedOtp = null;
+let resendInterval = null;
+
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function startResendTimer(seconds = 60) {
+  clearInterval(resendInterval);
+  let t = seconds;
+  resendTimer.textContent = t;
+  otpResend.disabled = true;
+
+  resendInterval = setInterval(() => {
+    t--;
+    resendTimer.textContent = t;
+    if (t <= 0) {
+      clearInterval(resendInterval);
+      otpResend.disabled = false;
+      otpResend.innerHTML = 'Отправить снова';
+    }
+  }, 1000);
+}
+
+function sendOtp() {
+  generatedOtp = generateOtp();
+  // В реальном приложении здесь вызов SMS-провайдера.
+  // Для демонстрации показываем код в toast.
+  showToast('Демо-код: ' + generatedOtp);
+  console.log('[OTP] Код для', getFullPhone(), ':', generatedOtp);
+  startResendTimer(60);
+}
+
+/* ============================================================
+   ПЕРЕХОД НА ЭКРАН OTP
+   ============================================================ */
+function openOtpScreen() {
+  otpPhone.textContent = formatPhoneDisplay();
+  otpInputs.forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('filled');
+  });
+  otpError.textContent = '';
+  otpScreen.classList.add('active');
+  setTimeout(() => otpInputs[0].focus(), 350);
+  sendOtp();
+}
+
+function closeOtpScreen() {
+  otpScreen.classList.remove('active');
+  clearInterval(resendInterval);
+}
+
+function formatPhoneDisplay() {
+  const d = getRawDigits();
+  return selectedCountry.dial + ' ' + formatByMask(d, selectedCountry.format);
+}
+
+/* ============================================================
+   ВВОД OTP
+   ============================================================ */
+otpInputs.forEach((inp, i) => {
+  inp.addEventListener('input', (e) => {
+    const v = e.target.value.replace(/\D/g, '');
+    e.target.value = v.slice(0, 1);
+    e.target.classList.toggle('filled', !!e.target.value);
+    if (v && i < otpInputs.length - 1) otpInputs[i + 1].focus();
+    checkOtpComplete();
+  });
+
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !e.target.value && i > 0) {
+      otpInputs[i - 1].focus();
+      otpInputs[i - 1].value = '';
+      otpInputs[i - 1].classList.remove('filled');
+    }
+  });
+
+  inp.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    for (let k = 0; k < 6 && k < pasted.length; k++) {
+      otpInputs[k].value = pasted[k];
+      otpInputs[k].classList.add('filled');
+    }
+    const next = Math.min(pasted.length, 5);
+    otpInputs[next].focus();
+    checkOtpComplete();
+  });
+});
+
+function checkOtpComplete() {
+  const code = Array.from(otpInputs).map(i => i.value).join('');
+  if (code.length === 6) {
+    verifyOtp(code);
+  }
+}
+
+async function verifyOtp(code) {
+  otpError.textContent = '';
+
+  // Демо-проверка
+  if (code !== generatedOtp) {
+    otpError.textContent = 'Неверный код. Попробуйте ещё раз.';
+    otpInputs.forEach(i => {
+      i.value = '';
+      i.classList.remove('filled');
+    });
+    otpInputs[0].focus();
+    if (navigator.vibrate) navigator.vibrate(80);
+    return;
+  }
+
+  // Успех
+  otpScreen.style.transition = 'opacity .3s, transform .3s';
+  otpScreen.style.opacity = '0';
+  otpScreen.style.transform = 'scale(1.04)';
+
+  await new Promise(r => setTimeout(r, 300));
+  closeOtpScreen();
+  otpScreen.style.opacity = '';
+  otpScreen.style.transform = '';
+
+  await enterApp();
+}
+
+otpBack.addEventListener('click', () => {
+  closeOtpScreen();
+  // Возвращаем фокус на поле телефона
+  setTimeout(() => phoneInput.focus(), 400);
+});
+
+otpResend.addEventListener('click', () => {
+  if (otpResend.disabled) return;
+  sendOtp();
+  otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+  otpInputs[0].focus();
+});
+
+/* ============================================================
+   ОСНОВНАЯ КНОПКА
+   ============================================================ */
+authBtn.addEventListener('click', () => {
   authError.textContent = '';
   phoneField.classList.remove('error');
 
-  const phone = normalizePhone(phoneInput.value);
-  if (!phone) {
-    authError.textContent = 'Введите корректный номер (7–15 цифр)';
+  if (!isPhoneValid()) {
+    authError.textContent = `Введите ${selectedCountry.digits} цифр после ${selectedCountry.dial}`;
     phoneField.classList.add('error');
     if (navigator.vibrate) navigator.vibrate(40);
     return;
   }
 
   setAuthLoading(true);
-
-  try {
-    // Небольшая задержка для плавности анимации
-    await new Promise(r => setTimeout(r, 600));
-
-    userPhone = phone;
-    localStorage.setItem(STORAGE_PHONE, phone);
-
-    await enterApp();
-  } catch (e) {
-    console.error(e);
-    authError.textContent = 'Ошибка. Попробуйте ещё раз.';
-    phoneField.classList.add('error');
+  setTimeout(() => {
     setAuthLoading(false);
-  }
+    openOtpScreen();
+  }, 500);
 });
 
 /* ============================================================
-   ПЕРЕХОД В ОСНОВНОЕ ПРИЛОЖЕНИЕ
+   ВХОД В ПРИЛОЖЕНИЕ
    ============================================================ */
+let userPhone = null;
+
 async function enterApp() {
-  // 1. Скрываем экран регистрации с плавной анимацией
+  userPhone = getFullPhone();
+  localStorage.setItem('my_phone', userPhone);
+  localStorage.setItem('my_country', selectedCountry.code);
+
   authScreen.classList.add('hidden');
-
-  // 2. Показываем список
-  setTimeout(() => {
-    listScreen.classList.add('visible');
-  }, 200);
-
-  // 3. Загружаем камеры
+  setTimeout(() => listScreen.classList.add('visible'), 200);
   await loadCamerasForPhone();
 }
 
 /* ============================================================
-   ЗАГРУЗКА КАМЕР (пока локально)
-   ------------------------------------------------------------
-   ⚠️ Сейчас камеры хранятся в localStorage — они видны только
-   на этом устройстве. Чтобы список синхронизировался по номеру
-   между устройствами, надо подключить Supabase (см. инструкцию).
+   ЗАГРУЗКА КАМЕР
    ============================================================ */
-async function loadCamerasForPhone() {
-  // TODO: здесь будет запрос к Supabase
-  // const { data } = await supabase
-  //   .from('cameras')
-  //   .select('*')
-  //   .eq('user_phone', userPhone);
+let cameras = [];
 
-  cameras = loadLocalCameras();
+async function loadCamerasForPhone() {
+  cameras = [];
   renderList();
 }
 
@@ -973,11 +1340,9 @@ function renderList() {
   const has = cameras.length > 0;
   emptyState.style.display = has ? 'none' : 'flex';
 
-  if (has) {
-    pageSubtitleText.textContent = `${cameras.length} ${plural(cameras.length, 'камера', 'камеры', 'камер')}`;
-  } else {
-    pageSubtitleText.textContent = 'Нет подключённых камер';
-  }
+  pageSubtitle.textContent = has
+    ? `${cameras.length} ${plural(cameras.length, 'камера', 'камеры', 'камер')}`
+    : 'Нет подключённых камер';
 
   cameras.forEach((cam, idx) => {
     const card = document.createElement('div');
@@ -1007,10 +1372,8 @@ function renderList() {
 }
 
 function removeCamera(idx) {
-  const cam = cameras[idx];
-  if (!confirm(`Удалить «${cam.name}»?`)) return;
+  if (!confirm('Удалить камеру?')) return;
   cameras.splice(idx, 1);
-  saveLocalCameras();
   renderList();
   showToast('Камера удалена');
 }
@@ -1029,15 +1392,14 @@ function escapeHtml(s) {
 }
 
 /* ============================================================
-   ВЫХОД ИЗ АККАУНТА
+   ВЫХОД
    ============================================================ */
 logoutBtn.addEventListener('click', () => {
   if (!confirm('Выйти из аккаунта?')) return;
-
-  localStorage.removeItem(STORAGE_PHONE);
+  localStorage.removeItem('my_phone');
+  localStorage.removeItem('my_country');
   userPhone = null;
 
-  // Сброс UI
   listScreen.classList.remove('visible');
   setTimeout(() => {
     authScreen.classList.remove('hidden');
@@ -1054,12 +1416,8 @@ logoutBtn.addEventListener('click', () => {
 /* ============================================================
    ПРОСМОТР КАМЕРЫ
    ============================================================ */
-let peer = null;
-let dataConn = null;
-let mediaCall = null;
-let currentCam = null;
-let isMuted = true;
-let torchOn = false;
+let peer = null, dataConn = null, mediaCall = null, currentCam = null;
+let isMuted = true, torchOn = false;
 
 function openViewer(cam) {
   currentCam = cam;
@@ -1069,7 +1427,6 @@ function openViewer(cam) {
   viewerScreen.classList.add('active');
 
   peer = new Peer({ debug: 1 });
-
   peer.on('open', () => {
     dataConn = peer.connect(cam.id, { reliable: true });
     dataConn.on('open', () => {
@@ -1078,22 +1435,16 @@ function openViewer(cam) {
     });
     dataConn.on('data', handleCameraMessage);
     dataConn.on('close', () => setStatus('Отключено', false));
-    dataConn.on('error', (e) => console.warn('DataConn error:', e));
 
     mediaCall = peer.call(cam.id, new MediaStream());
-    mediaCall.on('stream', (remoteStream) => {
-      remoteVideo.srcObject = remoteStream;
+    mediaCall.on('stream', (rs) => {
+      remoteVideo.srcObject = rs;
       remoteVideo.muted = isMuted;
       setStatus('Онлайн', true);
     });
     mediaCall.on('close', () => setStatus('Поток закрыт', false));
-    mediaCall.on('error', (e) => console.warn('Call error:', e));
   });
-
-  peer.on('error', (e) => {
-    console.error(e);
-    setStatus('Ошибка: ' + (e.type || 'unknown'), false);
-  });
+  peer.on('error', (e) => setStatus('Ошибка: ' + (e.type || 'unknown'), false));
 }
 
 function closeViewer() {
@@ -1126,12 +1477,7 @@ function resetControls() {
 
 backBtn.addEventListener('click', closeViewer);
 
-/* ============================================================
-   КОМАНДЫ
-   ============================================================ */
-function sendCmd(cmd) {
-  if (dataConn?.open) dataConn.send(cmd);
-}
+function sendCmd(cmd) { if (dataConn?.open) dataConn.send(cmd); }
 
 function updateZoom(value) {
   value = Math.max(parseFloat(zoomSlider.min), Math.min(parseFloat(zoomSlider.max), value));
@@ -1147,7 +1493,6 @@ zoomSlider.addEventListener('input', (e) => {
 });
 zoomInBtn.addEventListener('click', () => updateZoom(parseFloat(zoomSlider.value) + 0.5));
 zoomOutBtn.addEventListener('click', () => updateZoom(parseFloat(zoomSlider.value) - 0.5));
-
 switchBtn.addEventListener('click', () => sendCmd({ type: 'switchCamera' }));
 
 torchBtn.addEventListener('click', () => {
@@ -1165,10 +1510,7 @@ muteBtn.addEventListener('click', () => {
 });
 
 snapBtn.addEventListener('click', () => {
-  if (!remoteVideo.videoWidth) {
-    flashButton(snapBtn);
-    return;
-  }
+  if (!remoteVideo.videoWidth) return;
   const canvas = document.createElement('canvas');
   canvas.width  = remoteVideo.videoWidth;
   canvas.height = remoteVideo.videoHeight;
@@ -1180,33 +1522,19 @@ snapBtn.addEventListener('click', () => {
     a.download = `${currentCam.name}_${Date.now()}.png`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    flashButton(snapBtn);
     showToast('Снимок сохранён');
   }, 'image/png');
 });
 
-function flashButton(el) {
-  el.animate(
-    [{ transform: 'scale(1)' }, { transform: 'scale(0.85)' }, { transform: 'scale(1)' }],
-    { duration: 200, easing: 'ease' }
-  );
-}
-
-/* ============================================================
-   СООБЩЕНИЯ ОТ КАМЕРЫ
-   ============================================================ */
 function handleCameraMessage(msg) {
   if (!msg || typeof msg !== 'object') return;
-
-  if (msg.type === 'info') {
-    if (msg.zoom && typeof msg.zoom.min === 'number') {
-      zoomSlider.min = msg.zoom.min;
-      zoomSlider.max = msg.zoom.max;
-      zoomSlider.step = msg.zoom.step || 0.1;
-      const start = Math.max(msg.zoom.min, Math.min(msg.zoom.max, 1));
-      zoomSlider.value = start;
-      zoomValue.textContent = start.toFixed(1) + '×';
-    }
+  if (msg.type === 'info' && msg.zoom && typeof msg.zoom.min === 'number') {
+    zoomSlider.min = msg.zoom.min;
+    zoomSlider.max = msg.zoom.max;
+    zoomSlider.step = msg.zoom.step || 0.1;
+    const start = Math.max(msg.zoom.min, Math.min(msg.zoom.max, 1));
+    zoomSlider.value = start;
+    zoomValue.textContent = start.toFixed(1) + '×';
   }
 }
 
@@ -1214,16 +1542,29 @@ function handleCameraMessage(msg) {
    АВТОЛОГИН
    ============================================================ */
 (async function autoLogin() {
-  const saved = localStorage.getItem(STORAGE_PHONE);
+  const saved = localStorage.getItem('my_phone');
+  const savedCountry = localStorage.getItem('my_country');
+
+  if (savedCountry) {
+    const c = COUNTRIES.find(x => x.code === savedCountry);
+    if (c) {
+      selectedCountry = c;
+      countryFlag.textContent = c.flag;
+      phoneInput.placeholder = c.format.replace(/#/g, '0');
+    }
+  }
+
   if (!saved) {
     setTimeout(() => phoneInput.focus(), 500);
     return;
   }
 
   userPhone = saved;
-  phoneInput.value = formatPhoneInput(saved.replace('+', ''));
+  // Извлекаем цифры из сохранённого номера
+  const dial = selectedCountry.dial.replace('+', '');
+  const digits = saved.replace(/\D/g, '').slice(dial.length);
+  phoneInput.value = formatByMask(digits, selectedCountry.format);
 
-  // Плавно входим
   authScreen.classList.add('hidden');
   setTimeout(() => listScreen.classList.add('visible'), 200);
   await loadCamerasForPhone();
@@ -1234,6 +1575,7 @@ function handleCameraMessage(msg) {
    ============================================================ */
 window.addEventListener('beforeunload', () => {
   try { peer?.destroy(); } catch {}
+  clearInterval(resendInterval);
 });
 </script>
 </body>
