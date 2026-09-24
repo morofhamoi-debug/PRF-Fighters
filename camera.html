@@ -564,46 +564,6 @@
   .stop-btn:active { background: rgba(239,68,68,0.3); }
   .stop-btn svg { width: 18px; height: 18px; }
 
-  /* QR панель */
-  #qrPanel {
-    position: fixed;
-    bottom: calc(env(safe-area-inset-bottom) + 16px);
-    right: 16px;
-    background: #fff; border-radius: 20px; padding: 14px;
-    z-index: 20;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
-    display: flex; flex-direction: column; align-items: center;
-    transition: transform .3s ease, padding .3s ease;
-    max-width: calc(100vw - 32px);
-  }
-  #qrPanel.collapsed { padding: 10px 16px; }
-  #qrBox {
-    width: 200px; height: 200px; background: #fff;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 12px; overflow: hidden;
-  }
-  #qrBox img, #qrBox canvas { display: block; max-width: 100%; max-height: 100%; }
-  #qrPanel.collapsed #qrBox,
-  #qrPanel.collapsed #qrLabel { display: none; }
-
-  #qrLabel {
-    margin-top: 10px; font-size: 12px; color: #333;
-    font-weight: 600; text-align: center; line-height: 1.3;
-  }
-  #qrLabel small {
-    display: block; color: #888;
-    font-weight: 500; margin-top: 2px; font-size: 11px;
-  }
-  #qrToggle {
-    margin-top: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #fff; border: none;
-    padding: 8px 18px; border-radius: 12px;
-    font-size: 13px; font-weight: 600;
-    cursor: pointer;
-  }
-  #qrPanel.collapsed #qrToggle { margin-top: 0; }
-
   /* ==================== TOAST ==================== */
   #toast {
     position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 100px);
@@ -677,7 +637,7 @@
     <div id="authError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;line-height:1.4;padding:0 8px;"></div>
 
     <div style="text-align:center;font-size:12px;color:#4a4a5a;line-height:1.6;padding:0 16px;">
-      Без SMS-подтверждения. Номер используется как идентификатор.
+      Демо-режим: код показывается в уведомлении
     </div>
   </div>
 </div>
@@ -833,23 +793,21 @@
       </svg>
     </button>
   </div>
-
-  <div id="qrPanel">
-    <div id="qrBox"></div>
-    <div id="qrLabel">
-      Отсканируй в приложении
-      <small id="qrIdLabel"></small>
-    </div>
-    <button id="qrToggle">Скрыть</button>
-  </div>
 </div>
 
 <!-- ==================== TOAST ==================== -->
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
+/* ============================================================
+   SUPABASE
+   ============================================================ */
+const SUPABASE_URL = 'https://nrodmjklosemmmapufb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yb2Rtamtyb3NlbW1tYXJwdWZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQ5OTIsImV4cCI6MjEwNTg2MDk5Mn0.3Xbpkf4-GT7LjnawCvHAHwJfuxXoAmoUCzp_7zPiClc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 /* ============================================================
    БАЗА СТРАН
    ============================================================ */
@@ -934,10 +892,6 @@ const statusDot     = document.getElementById('statusDot');
 const statusTitle   = document.getElementById('statusTitle');
 const statusSub     = document.getElementById('statusSub');
 const stopBtn       = document.getElementById('stopBtn');
-const qrPanel       = document.getElementById('qrPanel');
-const qrBox         = document.getElementById('qrBox');
-const qrIdLabel     = document.getElementById('qrIdLabel');
-const qrToggle      = document.getElementById('qrToggle');
 
 const toast         = document.getElementById('toast');
 
@@ -954,8 +908,6 @@ let zoomCaps = null;
 let frontCam = false;
 let generatedOtp = null;
 let resendInterval = null;
-let qrRendered = false;
-let qrCollapsed = false;
 
 /* ============================================================
    TOAST
@@ -1108,7 +1060,7 @@ authBtn.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 /* ============================================================
-   OTP
+   OTP (демо)
    ============================================================ */
 function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -1262,12 +1214,38 @@ authBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
+   РЕГИСТРАЦИЯ КАМЕРЫ В SUPABASE
+   ============================================================ */
+async function registerCameraInCloud(phone) {
+  try {
+    const { error } = await sb
+      .from('cameras')
+      .upsert({
+        id: ROOM_ID,
+        name: CUSTOM_NAME,
+        user_phone: phone
+      }, { onConflict: 'id' });
+    if (error) {
+      console.error('[Supabase register]', error);
+      return false;
+    }
+    console.log('[Supabase] Камера зарегистрирована:', ROOM_ID, phone);
+    return true;
+  } catch (e) {
+    console.error('[Supabase register exception]', e);
+    return false;
+  }
+}
+
+/* ============================================================
    ПЕРЕХОД НА ЭКРАН "НАЧАТЬ ТРАНСЛЯЦИЮ"
    ============================================================ */
 async function goToReadyScreen() {
   userPhone = getFullPhone();
   localStorage.setItem('my_phone', userPhone);
   localStorage.setItem('my_country', selectedCountry.code);
+
+  await registerCameraInCloud(userPhone);
 
   readyFlag.textContent = selectedCountry.flag;
   readyNum.textContent = formatPhoneDisplay();
@@ -1280,8 +1258,15 @@ async function goToReadyScreen() {
 /* ============================================================
    ВЫХОД
    ============================================================ */
-readyLogout.addEventListener('click', () => {
+readyLogout.addEventListener('click', async () => {
   if (!confirm('Выйти из аккаунта?')) return;
+
+  try {
+    await sb.from('cameras').delete().eq('id', ROOM_ID);
+    console.log('[Supabase] Камера удалена из облака');
+  } catch (e) {
+    console.warn('[Supabase delete]', e);
+  }
 
   localStorage.removeItem('my_phone');
   localStorage.removeItem('my_country');
@@ -1367,8 +1352,7 @@ function startPeer() {
   peer = new Peer(ROOM_ID, { debug: 1 });
 
   peer.on('open', () => {
-    setStatus('Готово к подключению', 'Отсканируйте QR в приложении', false);
-    showQrPanel();
+    setStatus('Готово к подключению', 'Откройте приложение на телефоне', false);
   });
 
   peer.on('error', (err) => {
@@ -1390,7 +1374,7 @@ function startPeer() {
     });
     conn.on('close', () => {
       controllerConn = null;
-      setStatus('Готово к подключению', 'Отсканируйте QR в приложении', false);
+      setStatus('Готово к подключению', 'Откройте приложение на телефоне', false);
     });
   });
 
@@ -1448,30 +1432,6 @@ async function handleCommand(cmd) {
 }
 
 /* ============================================================
-   QR
-   ============================================================ */
-function showQrPanel() {
-  if (!qrRendered) {
-    qrBox.innerHTML = '';
-    new QRCode(qrBox, {
-      text: JSON.stringify({ id: ROOM_ID, name: CUSTOM_NAME }),
-      width: 200, height: 200,
-      colorDark: '#000', colorLight: '#fff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
-    qrIdLabel.textContent = 'ID: ' + ROOM_ID;
-    qrRendered = true;
-  }
-  qrPanel.style.display = 'flex';
-}
-
-qrToggle.addEventListener('click', () => {
-  qrCollapsed = !qrCollapsed;
-  qrPanel.classList.toggle('collapsed', qrCollapsed);
-  qrToggle.textContent = qrCollapsed ? 'Показать QR' : 'Скрыть';
-});
-
-/* ============================================================
    СТАТУС
    ============================================================ */
 function setStatus(title, sub, online) {
@@ -1486,24 +1446,14 @@ function setStatus(title, sub, online) {
 stopBtn.addEventListener('click', () => {
   if (!confirm('Остановить трансляцию?')) return;
 
-  // Закрываем соединения
   try { controllerConn?.close(); } catch {}
   try { activeCall?.close(); } catch {}
   try { peer?.destroy(); } catch {}
   controllerConn = activeCall = peer = null;
 
-  // Останавливаем камеру
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   preview.srcObject = null;
 
-  // Скрываем QR панель
-  qrPanel.style.display = 'none';
-  qrRendered = false;
-  qrCollapsed = false;
-  qrPanel.classList.remove('collapsed');
-  qrToggle.textContent = 'Скрыть';
-
-  // Возвращаемся на экран "Начать трансляцию"
   cameraScreen.classList.remove('active');
   readyScreen.classList.add('active');
 });
@@ -1533,6 +1483,8 @@ stopBtn.addEventListener('click', () => {
   const dial = selectedCountry.dial.replace('+', '');
   const digits = saved.replace(/\D/g, '').slice(dial.length);
   phoneInput.value = formatByMask(digits, selectedCountry.format);
+
+  await registerCameraInCloud(saved);
 
   readyFlag.textContent = selectedCountry.flag;
   readyNum.textContent = selectedCountry.dial + ' ' + phoneInput.value;
