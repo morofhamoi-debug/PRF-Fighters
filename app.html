@@ -19,7 +19,6 @@
     --success: #22c55e;
     --radius: 16px;
     --radius-lg: 24px;
-    --shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -33,7 +32,12 @@
     overscroll-behavior: none;
   }
 
-  /* ==================== LIST SCREEN ==================== */
+  svg { display: block; }
+  .icon { width: 22px; height: 22px; }
+  .icon-sm { width: 18px; height: 18px; }
+  .icon-lg { width: 28px; height: 28px; }
+
+  /* ==================== LIST ==================== */
   #listScreen {
     height: 100%; overflow-y: auto;
     padding: calc(env(safe-area-inset-top) + 24px) 20px 120px;
@@ -51,8 +55,7 @@
     background-clip: text;
   }
   .page-subtitle {
-    color: var(--text-dim); font-size: 14px; margin-top: 4px;
-    font-weight: 500;
+    color: var(--text-dim); font-size: 14px; margin-top: 4px; font-weight: 500;
   }
 
   .cam-list { display: flex; flex-direction: column; gap: 12px; }
@@ -65,8 +68,7 @@
     display: flex; align-items: center; gap: 14px;
     cursor: pointer;
     transition: transform .15s ease, background .2s, border-color .2s;
-    position: relative;
-    overflow: hidden;
+    position: relative; overflow: hidden;
     animation: slideIn .3s ease backwards;
   }
   .cam-card::before {
@@ -86,9 +88,12 @@
     width: 56px; height: 56px; border-radius: 16px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     display: grid; place-items: center;
-    font-size: 24px; flex-shrink: 0;
+    color: #fff;
+    flex-shrink: 0;
     box-shadow: 0 4px 16px rgba(59,130,246,0.35);
   }
+  .cam-thumb svg { width: 28px; height: 28px; }
+
   .cam-info { flex: 1; min-width: 0; }
   .cam-name {
     font-size: 16px; font-weight: 600;
@@ -105,25 +110,29 @@
   }
   .cam-del {
     background: rgba(239,68,68,0.1); border: none;
-    color: var(--danger); width: 36px; height: 36px;
-    border-radius: 12px; font-size: 16px;
+    color: var(--danger); width: 40px; height: 40px;
+    border-radius: 12px;
     cursor: pointer; flex-shrink: 0;
+    display: grid; place-items: center;
     transition: background .15s;
   }
   .cam-del:active { background: rgba(239,68,68,0.25); }
+  .cam-del svg { width: 18px; height: 18px; }
 
   .empty {
     text-align: center;
-    padding: 80px 20px;
+    padding: 60px 20px;
     color: var(--text-dim);
     display: flex; flex-direction: column; align-items: center; gap: 16px;
   }
   .empty-icon {
-    width: 80px; height: 80px; border-radius: 24px;
+    width: 88px; height: 88px; border-radius: 28px;
     background: var(--surface); border: 1px solid var(--border);
-    display: grid; place-items: center; font-size: 36px;
-    opacity: 0.7;
+    display: grid; place-items: center;
+    color: var(--text-dim);
+    opacity: 0.8;
   }
+  .empty-icon svg { width: 40px; height: 40px; }
   .empty-title { color: var(--text); font-size: 17px; font-weight: 600; }
   .empty-text { font-size: 14px; max-width: 260px; line-height: 1.5; }
 
@@ -179,7 +188,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
-    color: #fff; font-size: 20px;
+    color: #fff;
     display: grid; place-items: center;
     cursor: pointer; flex-shrink: 0;
     transition: background .15s, transform .1s;
@@ -231,17 +240,18 @@
   }
   .zoom-value {
     font-size: 13px; font-weight: 700; color: #fff;
-    min-width: 40px; text-align: center;
+    min-width: 44px; text-align: center;
     font-variant-numeric: tabular-nums;
   }
   .zoom-btn {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 34px; height: 34px; border-radius: 50%;
     background: rgba(255,255,255,0.12);
-    border: none; color: #fff; font-size: 18px;
+    border: none; color: #fff;
     cursor: pointer; display: grid; place-items: center;
     transition: background .15s;
   }
   .zoom-btn:active { background: rgba(255,255,255,0.3); }
+  .zoom-btn svg { width: 18px; height: 18px; }
 
   .zoom-slider {
     flex: 1;
@@ -279,7 +289,7 @@
     padding: 14px 8px;
     border-radius: 18px;
     font-size: 11px; font-weight: 600;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
     cursor: pointer;
     transition: background .15s, transform .1s;
   }
@@ -289,12 +299,12 @@
     border-color: transparent;
     box-shadow: 0 4px 20px rgba(59,130,246,0.5);
   }
-  .action-btn .ico { font-size: 22px; }
+  .action-btn svg { width: 22px; height: 22px; }
 
   /* ==================== QR MODAL ==================== */
   #qrModal {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.9);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: none;
@@ -305,9 +315,7 @@
   }
   #qrModal.active { display: flex; flex-direction: column; animation: fadeIn .2s ease; }
 
-  .qr-header {
-    text-align: center; margin-bottom: 24px;
-  }
+  .qr-header { text-align: center; margin-bottom: 20px; }
   .qr-title { font-size: 22px; font-weight: 700; color: #fff; }
   .qr-desc {
     color: var(--text-dim); font-size: 14px;
@@ -321,45 +329,77 @@
     overflow: hidden;
     background: #000;
     max-height: 520px;
+    min-height: 260px;
   }
   #qrReader { width: 100%; height: 100%; }
-  #qrReader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+  #qrReader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+  /* Скрываем стандартный интерфейс html5-qrcode */
+  #qrReader__dashboard { display: none !important; }
+  #qrReader__scan_region { background: transparent !important; }
+  #qrReader__scan_region img { display: none !important; }
 
   .qr-frame {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: min(70%, 260px); aspect-ratio: 1;
+    width: min(65%, 240px); aspect-ratio: 1;
     pointer-events: none;
+    z-index: 2;
   }
   .qr-frame::before,
   .qr-frame::after,
   .qr-frame > span::before,
   .qr-frame > span::after {
     content: ''; position: absolute;
-    width: 32px; height: 32px;
+    width: 36px; height: 36px;
     border: 3px solid #fff;
+    filter: drop-shadow(0 0 8px rgba(59,130,246,0.6));
   }
-  .qr-frame::before    { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
-  .qr-frame::after     { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
-  .qr-frame > span::before { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
-  .qr-frame > span::after  { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+  .qr-frame::before    { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 0; }
+  .qr-frame::after     { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 14px 0 0; }
+  .qr-frame > span::before { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 14px; }
+  .qr-frame > span::after  { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 14px 0; }
 
   .qr-hint {
     text-align: center;
     color: var(--text-dim); font-size: 13px;
-    margin-top: 20px;
-  }
-  .qr-cancel {
     margin-top: 16px;
-    width: 100%; height: 54px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: #fff; font-size: 15px; font-weight: 600;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: background .15s;
+    min-height: 20px;
+    transition: color .2s;
   }
-  .qr-cancel:active { background: var(--surface); }
+  .qr-hint.success { color: var(--success); font-weight: 600; }
+  .qr-hint.error   { color: var(--danger); }
+
+  .qr-actions {
+    display: flex; gap: 10px;
+    margin-top: 14px;
+  }
+  .qr-btn {
+    height: 56px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: #fff;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background .15s, border-color .15s;
+    padding: 0 20px;
+  }
+  .qr-btn:active { background: var(--surface); }
+  .qr-btn svg { width: 20px; height: 20px; }
+  .qr-btn.flex-1 { flex: 1; }
+  .qr-btn.torch-btn { flex: 0 0 56px; padding: 0; }
+  .qr-btn.torch-btn.on {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-color: transparent;
+    color: #1a1a24;
+    box-shadow: 0 4px 20px rgba(251,191,36,0.5);
+  }
+  .qr-btn.torch-btn.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -374,17 +414,25 @@
   <div class="cam-list" id="camList"></div>
 
   <div class="empty" id="emptyState">
-    <div class="empty-icon">📷</div>
-    <div class="empty-title">Камер пока нет</div>
-    <div class="empty-text">
-      Отсканируйте QR-код на устройстве-камере, чтобы начать.
+    <div class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
     </div>
+    <div class="empty-title">Камер пока нет</div>
+    <div class="empty-text">Отсканируйте QR-код на устройстве-камере, чтобы начать.</div>
   </div>
 </div>
 
 <button class="fab" id="addBtn">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <path d="M14 14h3v3h-3z"/>
+    <path d="M18 18h3v3h-3z"/>
+    <line x1="14" y1="21" x2="17" y2="18"/>
   </svg>
   Сканировать QR
 </button>
@@ -394,7 +442,11 @@
   <video id="remoteVideo" autoplay playsinline></video>
 
   <div class="viewer-top">
-    <button class="icon-btn" id="backBtn">←</button>
+    <button class="icon-btn" id="backBtn" aria-label="Назад">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
     <div class="viewer-title" id="viewerTitle">Камера</div>
     <div class="viewer-status" id="viewerStatus">
       <div class="dot"></div>
@@ -404,27 +456,58 @@
 
   <div class="viewer-bottom">
     <div class="zoom-wrap">
-      <button class="zoom-btn" id="zoomOutBtn">−</button>
+      <button class="zoom-btn" id="zoomOutBtn" aria-label="Уменьшить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
       <input type="range" class="zoom-slider" id="zoomSlider" min="1" max="5" step="0.1" value="1">
-      <button class="zoom-btn" id="zoomInBtn">+</button>
+      <button class="zoom-btn" id="zoomInBtn" aria-label="Увеличить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
       <div class="zoom-value" id="zoomValue">1.0×</div>
     </div>
 
     <div class="actions">
       <button class="action-btn" id="switchBtn">
-        <span class="ico">🔄</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 2l4 4-4 4"/>
+          <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+          <path d="M7 22l-4-4 4-4"/>
+          <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+        </svg>
         <span>Перевернуть</span>
       </button>
+
       <button class="action-btn" id="snapBtn">
-        <span class="ico">📸</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
         <span>Снимок</span>
       </button>
+
       <button class="action-btn active" id="muteBtn">
-        <span class="ico" id="muteIco">🔇</span>
+        <svg id="muteIconOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <line x1="23" y1="9" x2="17" y2="15"/>
+          <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+        <svg id="muteIconOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
         <span>Звук</span>
       </button>
+
       <button class="action-btn" id="torchBtn">
-        <span class="ico">🔦</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
         <span>Фонарь</span>
       </button>
     </div>
@@ -444,7 +527,21 @@
   </div>
 
   <div class="qr-hint" id="qrHint">Поиск QR-кода…</div>
-  <button class="qr-cancel" id="qrCancelBtn">Отмена</button>
+
+  <div class="qr-actions">
+    <button class="qr-btn torch-btn hidden" id="qrTorchBtn" aria-label="Фонарик">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </button>
+    <button class="qr-btn flex-1" id="qrCancelBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      Отмена
+    </button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
@@ -487,12 +584,30 @@ const zoomValue     = document.getElementById('zoomValue');
 const switchBtn     = document.getElementById('switchBtn');
 const snapBtn       = document.getElementById('snapBtn');
 const muteBtn       = document.getElementById('muteBtn');
-const muteIco       = document.getElementById('muteIco');
+const muteIconOn    = document.getElementById('muteIconOn');
+const muteIconOff   = document.getElementById('muteIconOff');
 const torchBtn      = document.getElementById('torchBtn');
 
 const qrModal       = document.getElementById('qrModal');
 const qrHint        = document.getElementById('qrHint');
 const qrCancelBtn   = document.getElementById('qrCancelBtn');
+const qrTorchBtn    = document.getElementById('qrTorchBtn');
+
+/* ============================================================
+   SVG-ИКОНКА ДЛЯ КАРТОЧКИ (видеокамера)
+   ============================================================ */
+const VIDEO_ICON = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14"/>
+    <rect x="3" y="6" width="12" height="12" rx="2"/>
+  </svg>
+`;
+const X_ICON = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+`;
 
 /* ============================================================
    СПИСОК КАМЕР
@@ -510,7 +625,7 @@ function renderList() {
     card.className = 'cam-card';
     card.style.animationDelay = (idx * 40) + 'ms';
     card.innerHTML = `
-      <div class="cam-thumb">📹</div>
+      <div class="cam-thumb">${VIDEO_ICON}</div>
       <div class="cam-info">
         <div class="cam-name">${escapeHtml(cam.name)}</div>
         <div class="cam-meta">
@@ -518,7 +633,7 @@ function renderList() {
           <span>Готово к подключению</span>
         </div>
       </div>
-      <button class="cam-del" aria-label="Удалить">✕</button>
+      <button class="cam-del" aria-label="Удалить">${X_ICON}</button>
     `;
     card.addEventListener('click', (e) => {
       if (e.target.closest('.cam-del')) return;
@@ -557,20 +672,27 @@ function escapeHtml(s) {
    QR-СКАНЕР
    ============================================================ */
 let qrScanner = null;
+let qrTorchOn = false;
+let scanCooldown = false;
 
 async function openQrScanner() {
   qrHint.textContent = 'Поиск QR-кода…';
+  qrHint.className = 'qr-hint';
+  qrTorchOn = false;
+  qrTorchBtn.classList.remove('on');
+  qrTorchBtn.classList.add('hidden');
   qrModal.classList.add('active');
 
   try {
     qrScanner = new Html5Qrcode('qrReader', { verbose: false });
+
     await qrScanner.start(
       { facingMode: 'environment' },
       {
         fps: 10,
         qrbox: (vw, vh) => {
           const m = Math.min(vw, vh);
-          const size = Math.floor(m * 0.7);
+          const size = Math.floor(m * 0.65);
           return { width: size, height: size };
         },
         aspectRatio: 1.0
@@ -578,10 +700,24 @@ async function openQrScanner() {
       onQrScanned,
       () => {} // игнорируем промежуточные ошибки распознавания
     );
+
+    // Проверяем поддержку фонарика
+    try {
+      const caps = qrScanner.getRunningTrackCapabilities();
+      if (caps && caps.torch) {
+        qrTorchBtn.classList.remove('hidden');
+      }
+    } catch (e) {
+      console.warn('Torch caps:', e);
+    }
   } catch (e) {
-    console.error(e);
-    qrHint.textContent = 'Ошибка доступа к камере';
-    setTimeout(closeQrScanner, 1500);
+    console.error('QR start error:', e);
+    let msg = 'Ошибка доступа к камере';
+    if (e?.name === 'NotAllowedError') msg = 'Разрешите доступ к камере для сканирования';
+    else if (e?.name === 'NotFoundError') msg = 'Камера не найдена';
+    qrHint.textContent = msg;
+    qrHint.className = 'qr-hint error';
+    setTimeout(closeQrScanner, 2200);
   }
 }
 
@@ -591,10 +727,11 @@ async function closeQrScanner() {
     try { qrScanner.clear(); } catch {}
     qrScanner = null;
   }
+  qrTorchOn = false;
+  qrTorchBtn.classList.remove('on');
   qrModal.classList.remove('active');
 }
 
-let scanCooldown = false;
 function onQrScanned(text) {
   if (scanCooldown) return;
 
@@ -604,17 +741,22 @@ function onQrScanned(text) {
 
   if (!data || typeof data.id !== 'string' || !data.id) return;
 
-  // Проверка дубликата
+  // Дубликат?
   if (cameras.some(c => c.id === data.id)) {
     qrHint.textContent = 'Эта камера уже добавлена';
+    qrHint.className = 'qr-hint error';
     scanCooldown = true;
-    setTimeout(() => { scanCooldown = false; qrHint.textContent = 'Поиск QR-кода…'; }, 1500);
+    setTimeout(() => {
+      scanCooldown = false;
+      qrHint.textContent = 'Поиск QR-кода…';
+      qrHint.className = 'qr-hint';
+    }, 1500);
     return;
   }
 
-  // Наш QR — добавляем
   scanCooldown = true;
   qrHint.textContent = '✓ Камера добавлена';
+  qrHint.className = 'qr-hint success';
 
   cameras.push({
     id: data.id,
@@ -623,11 +765,26 @@ function onQrScanned(text) {
   saveCameras();
   renderList();
 
-  // Вибрация если поддерживается
   if (navigator.vibrate) navigator.vibrate(60);
 
-  setTimeout(closeQrScanner, 500);
+  setTimeout(closeQrScanner, 600);
 }
+
+/* ---------- Кнопка фонарика во время сканирования ---------- */
+qrTorchBtn.addEventListener('click', async () => {
+  if (!qrScanner) return;
+  try {
+    qrTorchOn = !qrTorchOn;
+    await qrScanner.applyVideoConstraints({
+      advanced: [{ torch: qrTorchOn }]
+    });
+    qrTorchBtn.classList.toggle('on', qrTorchOn);
+  } catch (e) {
+    console.error('Torch error:', e);
+    qrTorchOn = false;
+    qrTorchBtn.classList.remove('on');
+  }
+});
 
 addBtn.addEventListener('click', openQrScanner);
 qrCancelBtn.addEventListener('click', closeQrScanner);
@@ -656,7 +813,7 @@ function openViewer(cam) {
     dataConn = peer.connect(cam.id, { reliable: true });
     dataConn.on('open', () => {
       setStatus('Онлайн', true);
-      dataConn.send({ type: 'info' }); // запрос возможностей камеры
+      dataConn.send({ type: 'info' });
     });
     dataConn.on('data', handleCameraMessage);
     dataConn.on('close', () => setStatus('Отключено', false));
@@ -698,13 +855,13 @@ function setStatus(text, online) {
 function resetControls() {
   isMuted = true;
   remoteVideo.muted = true;
-  muteIco.textContent = '🔇';
+  muteIconOn.style.display = '';
+  muteIconOff.style.display = 'none';
   muteBtn.classList.add('active');
   zoomSlider.value = 1;
   zoomValue.textContent = '1.0×';
   torchOn = false;
   torchBtn.classList.remove('active');
-  switchBtn.querySelector('.ico').textContent = '🔄';
 }
 
 backBtn.addEventListener('click', closeViewer);
@@ -742,7 +899,8 @@ torchBtn.addEventListener('click', () => {
 muteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
   remoteVideo.muted = isMuted;
-  muteIco.textContent = isMuted ? '🔇' : '🔊';
+  muteIconOn.style.display  = isMuted ? '' : 'none';
+  muteIconOff.style.display = isMuted ? 'none' : '';
   muteBtn.classList.toggle('active', isMuted);
 });
 
@@ -787,9 +945,6 @@ function handleCameraMessage(msg) {
       const start = Math.max(msg.zoom.min, Math.min(msg.zoom.max, 1));
       zoomSlider.value = start;
       zoomValue.textContent = start.toFixed(1) + '×';
-    }
-    if (typeof msg.front === 'boolean') {
-      switchBtn.querySelector('.ico').textContent = msg.front ? '🤳' : '🔄';
     }
   }
 }
