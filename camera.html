@@ -2,36 +2,293 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
 <title>Камера</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: system-ui; }
-  video { width: 100%; height: 100%; object-fit: cover; }
-  #status {
-    position: fixed; top: 12px; left: 12px; right: 12px;
-    color: #fff; font-size: 14px;
-    background: rgba(0,0,0,0.6); padding: 10px 14px;
-    border-radius: 10px; z-index: 10;
-    line-height: 1.4;
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    overscroll-behavior: none;
   }
-  #status b { color: #4ade80; }
+
+  #preview {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+
+  /* ============ ВЕРХНИЙ СТАТУС ============ */
+  #statusBar {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 12px);
+    left: 12px; right: 12px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 12px 16px;
+    color: #fff;
+    z-index: 10;
+    display: flex; align-items: center; gap: 12px;
+    transition: opacity .3s, transform .3s;
+  }
+  #statusBar.hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    box-shadow: 0 0 10px #ef4444;
+    animation: pulse 1.5s infinite;
+  }
+  .status-dot.online {
+    background: #22c55e; box-shadow: 0 0 10px #22c55e;
+    animation: none;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .status-text {
+    flex: 1; min-width: 0;
+    font-size: 13px; line-height: 1.4;
+  }
+  .status-text b {
+    font-size: 14px;
+    display: block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .status-text small {
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+  }
+
+  /* ============ QR ПАНЕЛЬ ============ */
+  #qrPanel {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+    right: 16px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 14px;
+    z-index: 20;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+    display: flex; flex-direction: column; align-items: center;
+    transition: transform .3s ease, padding .3s ease;
+    max-width: calc(100vw - 32px);
+  }
+
+  #qrPanel.collapsed {
+    padding: 10px 16px;
+    transform: translateY(0);
+  }
+
+  #qrBox {
+    width: 200px; height: 200px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: opacity .2s;
+  }
+  #qrBox img, #qrBox canvas { display: block; max-width: 100%; max-height: 100%; }
+
+  #qrPanel.collapsed #qrBox,
+  #qrPanel.collapsed #qrLabel { display: none; }
+
+  #qrLabel {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #333;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+  }
+  #qrLabel small {
+    display: block;
+    color: #888;
+    font-weight: 500;
+    margin-top: 2px;
+    font-size: 11px;
+  }
+
+  #qrToggle {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .1s;
+  }
+  #qrToggle:active { transform: scale(0.95); }
+  #qrPanel.collapsed #qrToggle { margin-top: 0; }
+
+  /* ============ ОВЕРЛЕЙ ЗАПРОСА ДОСТУПА ============ */
+  #permissionOverlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+    color: #fff;
+    z-index: 100;
+    gap: 20px;
+  }
+  #permissionOverlay.hidden { display: none; }
+
+  .perm-icon {
+    width: 96px; height: 96px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: grid; place-items: center;
+    font-size: 48px;
+    box-shadow: 0 12px 40px rgba(59,130,246,0.4);
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-8px); }
+  }
+
+  .perm-title { font-size: 22px; font-weight: 700; }
+  .perm-text {
+    font-size: 15px; color: #a0a0b0;
+    max-width: 320px; line-height: 1.5;
+  }
+
+  .perm-btn {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff; border: none;
+    padding: 16px 32px;
+    border-radius: 16px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(59,130,246,0.5);
+    transition: transform .15s;
+    margin-top: 10px;
+  }
+  .perm-btn:active { transform: scale(0.96); }
+
+  .perm-error {
+    color: #ef4444;
+    font-size: 14px;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+
+  /* ============ ИНДИКАТОР ЗАПИСИ ============ */
+  .rec-indicator {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 12px);
+    right: 12px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 8px 14px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+    z-index: 5;
+  }
+  .rec-indicator .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ef4444;
+    animation: pulse 1.5s infinite;
+  }
 </style>
 </head>
 <body>
+
+<!-- ========== ОВЕРЛЕЙ ЗАПРОСА ДОСТУПА ========== -->
+<div id="permissionOverlay">
+  <div class="perm-icon">📷</div>
+  <div class="perm-title">Разрешите доступ</div>
+  <div class="perm-text">
+    Для работы камеры нужно разрешение на использование камеры и микрофона
+  </div>
+  <button class="perm-btn" id="permBtn">Разрешить доступ</button>
+  <div class="perm-error" id="permError"></div>
+</div>
+
+<!-- ========== ПРЕВЬЮ КАМЕРЫ ========== -->
 <video id="preview" autoplay muted playsinline></video>
-<div id="status">Запуск…</div>
+
+<!-- ========== ВЕРХНИЙ СТАТУС ========== -->
+<div id="statusBar" class="hidden">
+  <div class="status-dot" id="statusDot"></div>
+  <div class="status-text">
+    <b id="statusTitle">Инициализация…</b>
+    <small id="statusSub">Ожидание</small>
+  </div>
+</div>
+
+<!-- ========== QR ПАНЕЛЬ ========== -->
+<div id="qrPanel" class="hidden">
+  <div id="qrBox"></div>
+  <div id="qrLabel">
+    Отсканируй в приложении
+    <small id="qrIdLabel"></small>
+  </div>
+  <button id="qrToggle">Скрыть</button>
+</div>
 
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
-// ID камеры можно задать в URL: camera.html?id=my-cam-1
-// Если не задан — берётся ID по умолчанию
+/* ============================================================
+   НАСТРОЙКИ
+   ============================================================ */
+
+// ID камеры можно задать в URL: camera.html?id=cam-kitchen
+// Если не задан — генерируется случайный и сохраняется в localStorage
 const params = new URLSearchParams(location.search);
-const ROOM_ID = params.get('id') || 'cam-default-7f3a9b2c';
+const CUSTOM_ID   = params.get('id');
+const CUSTOM_NAME = params.get('name') || 'Моя камера';
+const STORAGE_KEY = 'my_camera_id';
 
-const preview = document.getElementById('preview');
-const statusEl = document.getElementById('status');
+function getOrCreateCameraId() {
+  if (CUSTOM_ID) return CUSTOM_ID;
+  let id = localStorage.getItem(STORAGE_KEY);
+  if (!id) {
+    id = 'cam-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(STORAGE_KEY, id);
+  }
+  return id;
+}
 
+const ROOM_ID   = getOrCreateCameraId();
+const CAMERA_NAME = CUSTOM_NAME;
+
+/* ============================================================
+   DOM
+   ============================================================ */
+const preview       = document.getElementById('preview');
+const permOverlay   = document.getElementById('permissionOverlay');
+const permBtn       = document.getElementById('permBtn');
+const permError     = document.getElementById('permError');
+const statusBar     = document.getElementById('statusBar');
+const statusDot     = document.getElementById('statusDot');
+const statusTitle   = document.getElementById('statusTitle');
+const statusSub     = document.getElementById('statusSub');
+const qrPanel       = document.getElementById('qrPanel');
+const qrBox         = document.getElementById('qrBox');
+const qrIdLabel     = document.getElementById('qrIdLabel');
+const qrToggle      = document.getElementById('qrToggle');
+
+/* ============================================================
+   СОСТОЯНИЕ
+   ============================================================ */
 let stream = null;
 let track = null;
 let peer = null;
@@ -40,100 +297,189 @@ let activeCall = null;
 let zoomCaps = null;
 let frontCam = false;
 
-const setStatus = (html) => statusEl.innerHTML = html;
+/* ============================================================
+   UI ХЕЛПЕРЫ
+   ============================================================ */
+function setStatus(title, sub, online = false) {
+  statusBar.classList.remove('hidden');
+  statusTitle.textContent = title;
+  statusSub.textContent = sub || '';
+  statusDot.classList.toggle('online', !!online);
+}
 
+function showPermissionError(text) {
+  permError.textContent = text;
+}
+
+/* ============================================================
+   ЗАПУСК КАМЕРЫ
+   ============================================================ */
 async function startCamera(front = false) {
-  if (stream) stream.getTracks().forEach(t => t.stop());
+  // Останавливаем предыдущий поток
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
 
-  stream = await navigator.mediaDevices.getUserMedia({
+  const constraints = {
     video: {
       facingMode: front ? 'user' : 'environment',
       width:  { ideal: 1920 },
       height: { ideal: 1080 }
     },
-    audio: true   // микрофон тоже — чтобы приложение могло слышать
-  });
+    audio: true
+  };
 
-  track = stream.getVideoTracks()[0];
+  stream = await navigator.mediaDevices.getUserMedia(constraints);
   preview.srcObject = stream;
+  track = stream.getVideoTracks()[0];
 
+  // Читаем возможности камеры (зум, фонарь)
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   zoomCaps = caps.zoom || null;
 
-  setStatus(
-    `✅ Камера запущена<br>` +
-    `ID: <b>${ROOM_ID}</b><br>` +
-    (zoomCaps
-      ? `Зум: ${zoomCaps.min}–${zoomCaps.max}`
-      : `Зум не поддерживается этим устройством`)
-  );
+  console.log('[camera] Возможности:', caps);
+  return caps;
 }
 
+/* ============================================================
+   PEERJS
+   ============================================================ */
 function startPeer() {
-  peer = new Peer(ROOM_ID, { debug: 2 });
+  if (peer) peer.destroy();
+
+  peer = new Peer(ROOM_ID, { debug: 1 });
 
   peer.on('open', (id) => {
+    console.log('[peer] ID:', id);
     setStatus(
-      `✅ Готово. Жду подключения…<br>` +
-      `ID камеры: <b>${id}</b><br>` +
-      `Введите этот ID в приложении`
+      'Готово к подключению',
+      'Отсканируйте QR в приложении',
+      false
     );
+    showQrPanel();
   });
 
-  peer.on('error', (e) => {
-    console.error(e);
-    setStatus('❌ Ошибка Peer: ' + e.type);
+  peer.on('error', (err) => {
+    console.error('[peer] error:', err);
+    if (err.type === 'unavailable-id') {
+      // ID уже занят — генерируем новый
+      localStorage.removeItem(STORAGE_KEY);
+      setStatus('Ошибка ID', 'Перезапуск…', false);
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      setStatus('Ошибка сети', err.type || 'unknown', false);
+    }
   });
 
+  // DataConnection — команды от приложения
   peer.on('connection', (conn) => {
+    console.log('[peer] Пульт подключён');
     controllerConn = conn;
+
     conn.on('data', handleCommand);
-    conn.on('close', () => controllerConn = null);
+    conn.on('open', () => {
+      setStatus('Пульт подключён', 'Камера активна', true);
+      // Сразу отправляем сведения о возможностях
+      conn.send({
+        type: 'info',
+        zoom: zoomCaps,
+        front: frontCam
+      });
+    });
+    conn.on('close', () => {
+      console.log('[peer] Пульт отключился');
+      controllerConn = null;
+      setStatus('Готово к подключению', 'Отсканируйте QR в приложении', false);
+    });
+    conn.on('error', (e) => console.warn('[conn] error:', e));
   });
 
+  // Медиазвонок — отдаём видео+аудио
   peer.on('call', (call) => {
+    console.log('[peer] Запрос видео');
     activeCall = call;
-    call.answer(stream);   // отдаём видео+аудио
-    call.on('close', () => activeCall = null);
+    call.answer(stream);
+
+    call.on('close', () => {
+      activeCall = null;
+    });
+    call.on('error', (e) => console.warn('[call] error:', e));
   });
 }
 
+/* ============================================================
+   ОБРАБОТКА КОМАНД
+   ============================================================ */
 async function handleCommand(cmd) {
   if (!cmd || typeof cmd !== 'object') return;
+  console.log('[cmd]', cmd);
 
   switch (cmd.type) {
+
     case 'zoom': {
-      if (!zoomCaps) return;
-      const v = Math.max(zoomCaps.min, Math.min(zoomCaps.max, Number(cmd.value) || 1));
+      if (!zoomCaps || !track) return;
+      const v = Math.max(
+        zoomCaps.min,
+        Math.min(zoomCaps.max, Number(cmd.value) || zoomCaps.min)
+      );
       try {
         await track.applyConstraints({ advanced: [{ zoom: v }] });
-      } catch (e) { console.warn(e); }
+      } catch (e) {
+        console.warn('[zoom] fail:', e);
+      }
       break;
     }
 
     case 'switchCamera': {
       frontCam = !frontCam;
-      await startCamera(frontCam);
-      if (activeCall) {
-        const sender = activeCall.peerConnection
-          .getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) await sender.replaceTrack(track);
-      }
-      if (controllerConn?.open) {
-        controllerConn.send({ type: 'info', front: frontCam, zoom: zoomCaps });
+      try {
+        await startCamera(frontCam);
+
+        // Подменяем дорожку в активном звонке
+        if (activeCall) {
+          const sender = activeCall.peerConnection
+            .getSenders()
+            .find(s => s.track && s.track.kind === 'video');
+          if (sender) await sender.replaceTrack(track);
+
+          const audioSender = activeCall.peerConnection
+            .getSenders()
+            .find(s => s.track && s.track.kind === 'audio');
+          const newAudio = stream.getAudioTracks()[0];
+          if (audioSender && newAudio) await audioSender.replaceTrack(newAudio);
+        }
+
+        // Обновляем возможности (у фронталки зума может не быть)
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        zoomCaps = caps.zoom || null;
+
+        if (controllerConn?.open) {
+          controllerConn.send({
+            type: 'info',
+            zoom: zoomCaps,
+            front: frontCam
+          });
+        }
+      } catch (e) {
+        console.error('[switch] fail:', e);
       }
       break;
     }
 
     case 'torch': {
+      if (!track) return;
       try {
-        await track.applyConstraints({ advanced: [{ torch: !!cmd.value }] });
-      } catch (e) { console.warn('Torch не поддерживается'); }
+        await track.applyConstraints({
+          advanced: [{ torch: !!cmd.value }]
+        });
+      } catch (e) {
+        console.warn('[torch] не поддерживается');
+      }
       break;
     }
 
     case 'info': {
-      // приложение запросило сведения о камере
       if (controllerConn?.open) {
         controllerConn.send({
           type: 'info',
@@ -146,20 +492,102 @@ async function handleCommand(cmd) {
   }
 }
 
-(async function main() {
-  try {
-    setStatus('Запрос доступа к камере и микрофону…');
-    await startCamera();
-    startPeer();
-  } catch (e) {
-    console.error(e);
-    setStatus('❌ ' + e.message);
+/* ============================================================
+   QR ПАНЕЛЬ
+   ============================================================ */
+let qrRendered = false;
+let qrCollapsed = false;
+
+function showQrPanel() {
+  if (!qrRendered) {
+    qrBox.innerHTML = '';
+    const payload = JSON.stringify({
+      id: ROOM_ID,
+      name: CAMERA_NAME
+    });
+    new QRCode(qrBox, {
+      text: payload,
+      width: 200,
+      height: 200,
+      colorDark: '#000',
+      colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    qrIdLabel.textContent = 'ID: ' + ROOM_ID;
+    qrRendered = true;
   }
+
+  qrPanel.classList.remove('hidden');
+  qrPanel.style.display = 'flex';
+}
+
+qrToggle.addEventListener('click', () => {
+  qrCollapsed = !qrCollapsed;
+  qrPanel.classList.toggle('collapsed', qrCollapsed);
+  qrToggle.textContent = qrCollapsed ? 'Показать QR' : 'Скрыть';
+});
+
+/* ============================================================
+   ЗАПРОС ДОСТУПА
+   ============================================================ */
+async function requestPermissionsAndStart() {
+  permError.textContent = '';
+  permBtn.disabled = true;
+  permBtn.textContent = 'Запрос…';
+
+  try {
+    await startCamera(false);
+    permOverlay.classList.add('hidden');
+    setStatus('Камера запущена', 'Инициализация сети…', false);
+    startPeer();
+  } catch (err) {
+    console.error(err);
+    let msg = 'Не удалось получить доступ к камере.';
+
+    if (err.name === 'NotAllowedError') {
+      msg = 'Доступ запрещён. Разрешите камеру и микрофон в настройках браузера и обновите страницу.';
+    } else if (err.name === 'NotFoundError') {
+      msg = 'Камера не найдена на этом устройстве.';
+    } else if (err.name === 'NotReadableError') {
+      msg = 'Камера занята другим приложением. Закройте его и попробуйте снова.';
+    } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      msg = 'Нужен HTTPS. Откройте страницу через https:// (GitHub Pages подходит).';
+    }
+
+    showPermissionError(msg);
+    permBtn.disabled = false;
+    permBtn.textContent = 'Попробовать снова';
+  }
+}
+
+permBtn.addEventListener('click', requestPermissionsAndStart);
+
+/* ============================================================
+   АВТОЗАПУСК — если разрешения уже даны
+   ============================================================ */
+(async function tryAutoStart() {
+  // Проверяем уже выданные разрешения (если API доступно)
+  if (navigator.permissions?.query) {
+    try {
+      const cam = await navigator.permissions.query({ name: 'camera' });
+      const mic = await navigator.permissions.query({ name: 'microphone' });
+      if (cam.state === 'granted' && mic.state === 'granted') {
+        requestPermissionsAndStart();
+        return;
+      }
+    } catch (e) {
+      // Некоторые браузеры не поддерживают запрос этих разрешений — игнорируем
+    }
+  }
+  // Иначе ждём нажатия кнопки
 })();
 
+/* ============================================================
+   ПРИ ЗАКРЫТИИ
+   ============================================================ */
 window.addEventListener('beforeunload', () => {
-  stream?.getTracks().forEach(t => t.stop());
-  peer?.destroy();
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (peer) peer.destroy();
 });
 </script>
 </body>
