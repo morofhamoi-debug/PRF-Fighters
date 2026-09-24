@@ -517,7 +517,6 @@
     object-fit: cover; background: #000;
   }
 
-  /* Статус сверху */
   #statusBar {
     position: fixed;
     top: calc(env(safe-area-inset-top) + 12px);
@@ -551,7 +550,6 @@
   }
   .status-text small { color: rgba(255,255,255,0.6); font-size: 11px; }
 
-  /* Кнопка "Стоп" */
   .stop-btn {
     width: 40px; height: 40px; border-radius: 12px;
     background: rgba(239,68,68,0.15);
@@ -576,13 +574,13 @@
     opacity: 0; pointer-events: none;
     transition: opacity .25s, transform .25s;
     max-width: 90vw; text-align: center;
+    line-height: 1.4;
   }
   #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- SVG-фильтр желе -->
 <svg id="gooeyFilter" aria-hidden="true">
   <defs>
     <filter id="gooeyFilterDef">
@@ -908,6 +906,7 @@ let zoomCaps = null;
 let frontCam = false;
 let generatedOtp = null;
 let resendInterval = null;
+let heartbeatTimer = null;
 
 /* ============================================================
    TOAST
@@ -917,7 +916,7 @@ function showToast(text) {
   toast.textContent = text;
   toast.classList.add('visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
 }
 
 /* ============================================================
@@ -1214,27 +1213,69 @@ authBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   РЕГИСТРАЦИЯ КАМЕРЫ В SUPABASE
+   РЕГИСТРАЦИЯ КАМЕРЫ В SUPABASE (с диагностикой)
    ============================================================ */
 async function registerCameraInCloud(phone) {
   try {
-    const { error } = await sb
+    showToast('📡 Сохранение камеры…');
+    console.log('[Supabase] upsert:', { id: ROOM_ID, name: CUSTOM_NAME, user_phone: phone });
+
+    const { data, error } = await sb
       .from('cameras')
       .upsert({
         id: ROOM_ID,
         name: CUSTOM_NAME,
-        user_phone: phone
-      }, { onConflict: 'id' });
+        user_phone: phone,
+        is_live: false,
+        last_seen: new Date().toISOString()
+      }, { onConflict: 'id' })
+      .select();
+
     if (error) {
       console.error('[Supabase register]', error);
+      showToast('❌ ' + (error.message || error.code || 'Ошибка БД'));
       return false;
     }
-    console.log('[Supabase] Камера зарегистрирована:', ROOM_ID, phone);
+
+    console.log('[Supabase] OK:', data);
+    showToast('✅ Камера сохранена');
     return true;
   } catch (e) {
     console.error('[Supabase register exception]', e);
+    showToast('💥 ' + (e.message || 'Ошибка сети'));
     return false;
   }
+}
+
+/* ============================================================
+   LIVE-СТАТУС (heartbeat)
+   ============================================================ */
+async function setLiveStatus(isLive) {
+  try {
+    const { error } = await sb
+      .from('cameras')
+      .update({
+        is_live: isLive,
+        last_seen: new Date().toISOString()
+      })
+      .eq('id', ROOM_ID);
+    if (error) console.warn('[heartbeat]', error);
+    else console.log('[heartbeat]', isLive ? 'LIVE' : 'STOPPED');
+  } catch (e) {
+    console.warn('[heartbeat exception]', e);
+  }
+}
+
+function startHeartbeat() {
+  setLiveStatus(true);
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(() => setLiveStatus(true), 15000);
+}
+
+function stopHeartbeat() {
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+  setLiveStatus(false);
 }
 
 /* ============================================================
@@ -1261,9 +1302,10 @@ async function goToReadyScreen() {
 readyLogout.addEventListener('click', async () => {
   if (!confirm('Выйти из аккаунта?')) return;
 
+  stopHeartbeat();
   try {
     await sb.from('cameras').delete().eq('id', ROOM_ID);
-    console.log('[Supabase] Камера удалена из облака');
+    console.log('[Supabase] Камера удалена');
   } catch (e) {
     console.warn('[Supabase delete]', e);
   }
@@ -1307,6 +1349,7 @@ async function requestPermissionsAndStart() {
     cameraScreen.classList.add('active');
     setStatus('Камера запущена', 'Инициализация сети…', false);
     startPeer();
+    startHeartbeat();   // ← включаем Live-статус
   } catch (err) {
     console.error(err);
     let msg = 'Не удалось получить доступ к камере.';
@@ -1441,7 +1484,7 @@ function setStatus(title, sub, online) {
 }
 
 /* ============================================================
-   КНОПКА "СТОП" — останавливаем трансляцию и возвращаемся
+   КНОПКА "СТОП"
    ============================================================ */
 stopBtn.addEventListener('click', () => {
   if (!confirm('Остановить трансляцию?')) return;
@@ -1453,6 +1496,8 @@ stopBtn.addEventListener('click', () => {
 
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   preview.srcObject = null;
+
+  stopHeartbeat();   // ← выключаем Live-статус
 
   cameraScreen.classList.remove('active');
   readyScreen.classList.add('active');
@@ -1497,6 +1542,7 @@ stopBtn.addEventListener('click', () => {
    ПРИ ЗАКРЫТИИ
    ============================================================ */
 window.addEventListener('beforeunload', () => {
+  stopHeartbeat();
   if (stream) stream.getTracks().forEach(t => t.stop());
   if (peer) peer.destroy();
   clearInterval(resendInterval);
