@@ -144,7 +144,6 @@
     40%,80% { transform: translateX(6px); }
   }
 
-  /* Кнопка выбора страны */
   .country-btn {
     display: flex; align-items: center; gap: 6px;
     padding: 0 12px; height: 58px;
@@ -212,7 +211,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* SVG-фильтр для эффекта желе */
   #gooeyFilter {
     position: absolute; width: 0; height: 0;
     pointer-events: none;
@@ -694,7 +692,7 @@
     <div class="auth-error" id="authError" style="color:var(--danger);font-size:13.5px;font-weight:500;text-align:center;min-height:20px;line-height:1.4;padding:0 8px;"></div>
 
     <div class="auth-note" style="text-align:center;font-size:12px;color:#4a4a5a;line-height:1.6;padding:0 16px;">
-      Без SMS-подтверждения. Номер используется как идентификатор аккаунта.
+      Демо-режим: код показывается в уведомлении
     </div>
   </div>
 </div>
@@ -865,8 +863,16 @@
 <!-- ==================== TOAST ==================== -->
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <script>
+/* ============================================================
+   SUPABASE
+   ============================================================ */
+const SUPABASE_URL = 'https://nrodmjklosemmmapufb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yb2Rtamtyb3NlbW1tYXJwdWZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyODQ5OTIsImV4cCI6MjEwNTg2MDk5Mn0.3Xbpkf4-GT7LjnawCvHAHwJfuxXoAmoUCzp_7zPiClc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 /* ============================================================
    БАЗА СТРАН
    ============================================================ */
@@ -970,7 +976,7 @@ function showToast(text) {
 }
 
 /* ============================================================
-   ФОРМАТИРОВАНИЕ НОМЕРА ПО МАСКЕ СТРАНЫ
+   ФОРМАТИРОВАНИЕ НОМЕРА
    ============================================================ */
 function formatByMask(digits, mask) {
   let result = '';
@@ -1145,7 +1151,7 @@ function setAuthLoading(loading) {
 }
 
 /* ============================================================
-   ОТПРАВКА КОДА (демо — код генерируется на клиенте)
+   OTP (демо)
    ============================================================ */
 let generatedOtp = null;
 let resendInterval = null;
@@ -1173,16 +1179,11 @@ function startResendTimer(seconds = 60) {
 
 function sendOtp() {
   generatedOtp = generateOtp();
-  // В реальном приложении здесь вызов SMS-провайдера.
-  // Для демонстрации показываем код в toast.
   showToast('Демо-код: ' + generatedOtp);
   console.log('[OTP] Код для', getFullPhone(), ':', generatedOtp);
   startResendTimer(60);
 }
 
-/* ============================================================
-   ПЕРЕХОД НА ЭКРАН OTP
-   ============================================================ */
 function openOtpScreen() {
   otpPhone.textContent = formatPhoneDisplay();
   otpInputs.forEach(inp => {
@@ -1248,7 +1249,6 @@ function checkOtpComplete() {
 async function verifyOtp(code) {
   otpError.textContent = '';
 
-  // Демо-проверка
   if (code !== generatedOtp) {
     otpError.textContent = 'Неверный код. Попробуйте ещё раз.';
     otpInputs.forEach(i => {
@@ -1260,7 +1260,6 @@ async function verifyOtp(code) {
     return;
   }
 
-  // Успех
   otpScreen.style.transition = 'opacity .3s, transform .3s';
   otpScreen.style.opacity = '0';
   otpScreen.style.transform = 'scale(1.04)';
@@ -1275,7 +1274,6 @@ async function verifyOtp(code) {
 
 otpBack.addEventListener('click', () => {
   closeOtpScreen();
-  // Возвращаем фокус на поле телефона
   setTimeout(() => phoneInput.focus(), 400);
 });
 
@@ -1311,6 +1309,8 @@ authBtn.addEventListener('click', () => {
    ВХОД В ПРИЛОЖЕНИЕ
    ============================================================ */
 let userPhone = null;
+let cameras = [];
+let realtimeChannel = null;
 
 async function enterApp() {
   userPhone = getFullPhone();
@@ -1323,12 +1323,47 @@ async function enterApp() {
 }
 
 /* ============================================================
-   ЗАГРУЗКА КАМЕР
+   ЗАГРУЗКА КАМЕР ИЗ SUPABASE + REALTIME
    ============================================================ */
-let cameras = [];
-
 async function loadCamerasForPhone() {
-  cameras = [];
+  await fetchCameras();
+
+  // Отписываемся от старой подписки, если была
+  if (realtimeChannel) {
+    try { sb.removeChannel(realtimeChannel); } catch {}
+    realtimeChannel = null;
+  }
+
+  // Подписываемся на изменения таблицы cameras в реальном времени
+  realtimeChannel = sb
+    .channel('cameras-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'cameras' },
+      () => { fetchCameras(); }
+    )
+    .subscribe();
+}
+
+async function fetchCameras() {
+  if (!userPhone) return;
+  try {
+    const { data, error } = await sb
+      .from('cameras')
+      .select('id, name, user_phone, created_at')
+      .eq('user_phone', userPhone)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[Supabase fetch]', error);
+      cameras = [];
+    } else {
+      cameras = data || [];
+    }
+  } catch (e) {
+    console.error('[Supabase fetch exception]', e);
+    cameras = [];
+  }
   renderList();
 }
 
@@ -1365,17 +1400,31 @@ function renderList() {
     });
     card.querySelector('.cam-del').addEventListener('click', (e) => {
       e.stopPropagation();
-      removeCamera(idx);
+      removeCamera(cam);
     });
     camList.appendChild(card);
   });
 }
 
-function removeCamera(idx) {
-  if (!confirm('Удалить камеру?')) return;
-  cameras.splice(idx, 1);
-  renderList();
-  showToast('Камера удалена');
+async function removeCamera(cam) {
+  if (!confirm(`Удалить «${cam.name}»?`)) return;
+  try {
+    const { error } = await sb
+      .from('cameras')
+      .delete()
+      .eq('id', cam.id);
+    if (error) {
+      console.error('[Supabase delete]', error);
+      showToast('Не удалось удалить');
+      return;
+    }
+    showToast('Камера удалена');
+    // Обновление списка придёт через realtime, но на всякий случай:
+    await fetchCameras();
+  } catch (e) {
+    console.error(e);
+    showToast('Ошибка');
+  }
 }
 
 function plural(n, one, few, many) {
@@ -1394,11 +1443,19 @@ function escapeHtml(s) {
 /* ============================================================
    ВЫХОД
    ============================================================ */
-logoutBtn.addEventListener('click', () => {
+logoutBtn.addEventListener('click', async () => {
   if (!confirm('Выйти из аккаунта?')) return;
+
+  // Отписываемся от realtime
+  if (realtimeChannel) {
+    try { sb.removeChannel(realtimeChannel); } catch {}
+    realtimeChannel = null;
+  }
+
   localStorage.removeItem('my_phone');
   localStorage.removeItem('my_country');
   userPhone = null;
+  cameras = [];
 
   listScreen.classList.remove('visible');
   setTimeout(() => {
@@ -1560,7 +1617,6 @@ function handleCameraMessage(msg) {
   }
 
   userPhone = saved;
-  // Извлекаем цифры из сохранённого номера
   const dial = selectedCountry.dial.replace('+', '');
   const digits = saved.replace(/\D/g, '').slice(dial.length);
   phoneInput.value = formatByMask(digits, selectedCountry.format);
@@ -1575,6 +1631,7 @@ function handleCameraMessage(msg) {
    ============================================================ */
 window.addEventListener('beforeunload', () => {
   try { peer?.destroy(); } catch {}
+  try { if (realtimeChannel) sb.removeChannel(realtimeChannel); } catch {}
   clearInterval(resendInterval);
 });
 </script>
