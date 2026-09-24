@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Камера</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: system-ui; }
+  video { width: 100%; height: 100%; object-fit: cover; }
+  #status {
+    position: fixed; top: 12px; left: 12px; right: 12px;
+    color: #fff; font-size: 14px;
+    background: rgba(0,0,0,0.6); padding: 10px 14px;
+    border-radius: 10px; z-index: 10;
+    line-height: 1.4;
+  }
+  #status b { color: #4ade80; }
+</style>
+</head>
+<body>
+<video id="preview" autoplay muted playsinline></video>
+<div id="status">Запуск…</div>
+
+<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+<script>
+// ID камеры можно задать в URL: camera.html?id=my-cam-1
+// Если не задан — берётся ID по умолчанию
+const params = new URLSearchParams(location.search);
+const ROOM_ID = params.get('id') || 'cam-default-7f3a9b2c';
+
+const preview = document.getElementById('preview');
+const statusEl = document.getElementById('status');
+
+let stream = null;
+let track = null;
+let peer = null;
+let controllerConn = null;
+let activeCall = null;
+let zoomCaps = null;
+let frontCam = false;
+
+const setStatus = (html) => statusEl.innerHTML = html;
+
+async function startCamera(front = false) {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: front ? 'user' : 'environment',
+      width:  { ideal: 1920 },
+      height: { ideal: 1080 }
+    },
+    audio: true   // микрофон тоже — чтобы приложение могло слышать
+  });
+
+  track = stream.getVideoTracks()[0];
+  preview.srcObject = stream;
+
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  zoomCaps = caps.zoom || null;
+
+  setStatus(
+    `✅ Камера запущена<br>` +
+    `ID: <b>${ROOM_ID}</b><br>` +
+    (zoomCaps
+      ? `Зум: ${zoomCaps.min}–${zoomCaps.max}`
+      : `Зум не поддерживается этим устройством`)
+  );
+}
+
+function startPeer() {
+  peer = new Peer(ROOM_ID, { debug: 2 });
+
+  peer.on('open', (id) => {
+    setStatus(
+      `✅ Готово. Жду подключения…<br>` +
+      `ID камеры: <b>${id}</b><br>` +
+      `Введите этот ID в приложении`
+    );
+  });
+
+  peer.on('error', (e) => {
+    console.error(e);
+    setStatus('❌ Ошибка Peer: ' + e.type);
+  });
+
+  peer.on('connection', (conn) => {
+    controllerConn = conn;
+    conn.on('data', handleCommand);
+    conn.on('close', () => controllerConn = null);
+  });
+
+  peer.on('call', (call) => {
+    activeCall = call;
+    call.answer(stream);   // отдаём видео+аудио
+    call.on('close', () => activeCall = null);
+  });
+}
+
+async function handleCommand(cmd) {
+  if (!cmd || typeof cmd !== 'object') return;
+
+  switch (cmd.type) {
+    case 'zoom': {
+      if (!zoomCaps) return;
+      const v = Math.max(zoomCaps.min, Math.min(zoomCaps.max, Number(cmd.value) || 1));
+      try {
+        await track.applyConstraints({ advanced: [{ zoom: v }] });
+      } catch (e) { console.warn(e); }
+      break;
+    }
+
+    case 'switchCamera': {
+      frontCam = !frontCam;
+      await startCamera(frontCam);
+      if (activeCall) {
+        const sender = activeCall.peerConnection
+          .getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) await sender.replaceTrack(track);
+      }
+      if (controllerConn?.open) {
+        controllerConn.send({ type: 'info', front: frontCam, zoom: zoomCaps });
+      }
+      break;
+    }
+
+    case 'torch': {
+      try {
+        await track.applyConstraints({ advanced: [{ torch: !!cmd.value }] });
+      } catch (e) { console.warn('Torch не поддерживается'); }
+      break;
+    }
+
+    case 'info': {
+      // приложение запросило сведения о камере
+      if (controllerConn?.open) {
+        controllerConn.send({
+          type: 'info',
+          zoom: zoomCaps,
+          front: frontCam
+        });
+      }
+      break;
+    }
+  }
+}
+
+(async function main() {
+  try {
+    setStatus('Запрос доступа к камере и микрофону…');
+    await startCamera();
+    startPeer();
+  } catch (e) {
+    console.error(e);
+    setStatus('❌ ' + e.message);
+  }
+})();
+
+window.addEventListener('beforeunload', () => {
+  stream?.getTracks().forEach(t => t.stop());
+  peer?.destroy();
+});
+</script>
+</body>
+</html>
