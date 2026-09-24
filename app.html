@@ -236,7 +236,7 @@
     opacity: 0;
   }
 
-  /* ==================== ВЫБОР СТРАНЫ (МОДАЛКА) ==================== */
+  /* ==================== ВЫБОР СТРАНЫ ==================== */
   #countryModal {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.7);
@@ -459,8 +459,24 @@
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
     display: grid; place-items: center; color: #fff;
     flex-shrink: 0; box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+    position: relative;
   }
   .cam-thumb svg { width: 28px; height: 28px; }
+  .cam-thumb.live {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 4px 16px rgba(34,197,94,0.45);
+  }
+  .cam-thumb.live::after {
+    content: '';
+    position: absolute; inset: -4px;
+    border-radius: 20px;
+    border: 2px solid rgba(34,197,94,0.5);
+    animation: liveRing 1.8s ease-in-out infinite;
+  }
+  @keyframes liveRing {
+    0%,100% { opacity: 0.3; transform: scale(1); }
+    50%     { opacity: 0; transform: scale(1.15); }
+  }
 
   .cam-info { flex: 1; min-width: 0; }
   .cam-name {
@@ -470,11 +486,33 @@
   .cam-meta {
     display: flex; align-items: center; gap: 6px;
     font-size: 12px; color: var(--text-dim); margin-top: 4px;
+    font-weight: 500;
   }
   .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--success); box-shadow: 0 0 8px var(--success);
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
   }
+  .status-dot.online {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: dotPulse 1.5s ease-in-out infinite;
+  }
+  .status-dot.offline {
+    background: var(--danger);
+    box-shadow: 0 0 6px rgba(239,68,68,0.6);
+  }
+  @keyframes dotPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: 0.5; transform: scale(0.85); }
+  }
+  .live-label {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .live-label.online { color: var(--success); }
+  .live-label.offline { color: var(--danger); }
+
   .cam-del {
     background: rgba(239,68,68,0.1); border: none;
     color: var(--danger); width: 40px; height: 40px;
@@ -632,14 +670,13 @@
 </head>
 <body>
 
-<!-- SVG-фильтр для эффекта желе -->
 <svg id="gooeyFilter" aria-hidden="true">
   <defs>
     <filter id="gooeyFilterDef">
       <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/>
       <feColorMatrix in="blur" mode="matrix"
         values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="goo"/>
-      <feBlend in="SourceGraphic" in2="goo"/>
+      <feBlend in <="SourceGraphic" in2="goo"/>
     </filter>
   </defs>
 </svg>
@@ -697,7 +734,7 @@
   </div>
 </div>
 
-<!-- ==================== МОДАЛКА ВЫБОРА СТРАНЫ ==================== -->
+<!-- ==================== ВЫБОР СТРАНЫ ==================== -->
 <div id="countryModal">
   <div class="country-sheet">
     <div class="sheet-handle"></div>
@@ -715,7 +752,7 @@
   </div>
 </div>
 
-<!-- ==================== ЭКРАН OTP ==================== -->
+<!-- ==================== OTP ==================== -->
 <div id="otpScreen">
   <button class="otp-back" id="otpBack">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -741,7 +778,7 @@
       <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="1">
       <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="2">
       <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="3">
-      <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
+     input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="4">
       <input class="otp-input" type="tel" inputmode="numeric" maxlength="1" data-i="5">
     </div>
 
@@ -1079,7 +1116,7 @@ phoneInput.addEventListener('keydown', (e) => {
 });
 
 /* ============================================================
-   ЭФФЕКТ ЖЕЛЕ НА КНОПКЕ
+   ЭФФЕКТ ЖЕЛЕ
    ============================================================ */
 function createGooeyBlob(e) {
   const rect = authBtn.getBoundingClientRect();
@@ -1311,6 +1348,7 @@ authBtn.addEventListener('click', () => {
 let userPhone = null;
 let cameras = [];
 let realtimeChannel = null;
+let liveStatusTimer = null;
 
 async function enterApp() {
   userPhone = getFullPhone();
@@ -1323,18 +1361,16 @@ async function enterApp() {
 }
 
 /* ============================================================
-   ЗАГРУЗКА КАМЕР ИЗ SUPABASE + REALTIME
+   ЗАГРУЗКА КАМЕР + REALTIME + ПЕРИОДИЧЕСКОЕ ОБНОВЛЕНИЕ СТАТУСА
    ============================================================ */
 async function loadCamerasForPhone() {
   await fetchCameras();
 
-  // Отписываемся от старой подписки, если была
   if (realtimeChannel) {
     try { sb.removeChannel(realtimeChannel); } catch {}
     realtimeChannel = null;
   }
 
-  // Подписываемся на изменения таблицы cameras в реальном времени
   realtimeChannel = sb
     .channel('cameras-changes')
     .on(
@@ -1343,6 +1379,10 @@ async function loadCamerasForPhone() {
       () => { fetchCameras(); }
     )
     .subscribe();
+
+  // Периодическое обновление статуса (чтобы Live/Offline переключался без realtime)
+  clearInterval(liveStatusTimer);
+  liveStatusTimer = setInterval(fetchCameras, 20000);
 }
 
 async function fetchCameras() {
@@ -1350,21 +1390,37 @@ async function fetchCameras() {
   try {
     const { data, error } = await sb
       .from('cameras')
-      .select('id, name, user_phone, created_at')
+      .select('id, name, user_phone, created_at, is_live, last_seen')
       .eq('user_phone', userPhone)
       .order('created_at', { ascending: false });
 
     if (error) {
       console.error('[Supabase fetch]', error);
+      showToast('❌ ' + (error.message || 'Ошибка загрузки'));
       cameras = [];
     } else {
       cameras = data || [];
+      // Показываем статус только для отладки — потом можно убрать
+      console.log('[Supabase] Камер:', cameras.length, cameras);
     }
   } catch (e) {
     console.error('[Supabase fetch exception]', e);
+    showToast('💥 ' + (e.message || 'Ошибка сети'));
     cameras = [];
   }
   renderList();
+}
+
+/* ============================================================
+   ОПРЕДЕЛЕНИЕ LIVE-СТАТУСА
+   ============================================================ */
+function isCameraLive(cam) {
+  if (!cam.is_live) return false;
+  if (!cam.last_seen) return false;
+  const lastSeen = new Date(cam.last_seen).getTime();
+  const now = Date.now();
+  // Считаем "живой", если heartbeat приходил в последние 35 секунд
+  return (now - lastSeen) < 35000;
 }
 
 /* ============================================================
@@ -1380,16 +1436,20 @@ function renderList() {
     : 'Нет подключённых камер';
 
   cameras.forEach((cam, idx) => {
+    const live = isCameraLive(cam);
+
     const card = document.createElement('div');
     card.className = 'cam-card';
     card.style.animationDelay = (idx * 50) + 'ms';
     card.innerHTML = `
-      <div class="cam-thumb">${VIDEO_ICON}</div>
+      <div class="cam-thumb${live ? ' live' : ''}">${VIDEO_ICON}</div>
       <div class="cam-info">
         <div class="cam-name">${escapeHtml(cam.name)}</div>
         <div class="cam-meta">
-          <span class="status-dot"></span>
-          <span>Готово к подключению</span>
+          <span class="status-dot ${live ? 'online' : 'offline'}"></span>
+          <span class="live-label ${live ? 'online' : 'offline'}">
+            ${live ? 'Live' : 'Не в сети'}
+          </span>
         </div>
       </div>
       <button class="cam-del" aria-label="Удалить">${X_ICON}</button>
@@ -1419,7 +1479,6 @@ async function removeCamera(cam) {
       return;
     }
     showToast('Камера удалена');
-    // Обновление списка придёт через realtime, но на всякий случай:
     await fetchCameras();
   } catch (e) {
     console.error(e);
@@ -1446,11 +1505,11 @@ function escapeHtml(s) {
 logoutBtn.addEventListener('click', async () => {
   if (!confirm('Выйти из аккаунта?')) return;
 
-  // Отписываемся от realtime
   if (realtimeChannel) {
     try { sb.removeChannel(realtimeChannel); } catch {}
     realtimeChannel = null;
   }
+  clearInterval(liveStatusTimer);
 
   localStorage.removeItem('my_phone');
   localStorage.removeItem('my_country');
@@ -1633,6 +1692,7 @@ window.addEventListener('beforeunload', () => {
   try { peer?.destroy(); } catch {}
   try { if (realtimeChannel) sb.removeChannel(realtimeChannel); } catch {}
   clearInterval(resendInterval);
+  clearInterval(liveStatusTimer);
 });
 </script>
 </body>
