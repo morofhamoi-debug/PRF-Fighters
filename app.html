@@ -2,224 +2,549 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Мои камеры</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>Камеры</title>
 <style>
+  :root {
+    --bg: #08080c;
+    --surface: #12121a;
+    --surface-2: #1a1a24;
+    --border: #232330;
+    --text: #f4f4f8;
+    --text-dim: #8a8a9a;
+    --accent: #3b82f6;
+    --accent-2: #8b5cf6;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --radius: 16px;
+    --radius-lg: 24px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; font-family: system-ui, sans-serif; background: #0e1116; color: #fff; overflow: hidden; }
 
-  /* ---------- Экран списка камер ---------- */
-  #listScreen { padding: 20px; height: 100%; overflow-y: auto; }
-  .header { font-size: 26px; font-weight: 700; margin-bottom: 20px; }
-  .cam-list { display: grid; gap: 12px; }
+  html, body {
+    height: 100%; width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* ==================== LIST SCREEN ==================== */
+  #listScreen {
+    height: 100%; overflow-y: auto;
+    padding: calc(env(safe-area-inset-top) + 24px) 20px 120px;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(59,130,246,0.12), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(139,92,246,0.1), transparent 50%),
+      var(--bg);
+  }
+
+  .page-header { margin-bottom: 24px; }
+  .page-title {
+    font-size: 32px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .page-subtitle {
+    color: var(--text-dim); font-size: 14px; margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .cam-list { display: flex; flex-direction: column; gap: 12px; }
+
   .cam-card {
-    background: #1a1f28; border-radius: 14px; padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
     display: flex; align-items: center; gap: 14px;
-    cursor: pointer; transition: background .15s;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s, border-color .2s;
+    position: relative;
+    overflow: hidden;
+    animation: slideIn .3s ease backwards;
   }
-  .cam-card:active { background: #232935; }
-  .cam-icon {
-    width: 46px; height: 46px; border-radius: 10px;
-    background: #2563eb; display: grid; place-items: center;
-    font-size: 22px;
+  .cam-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent 60%);
+    opacity: 0; transition: opacity .2s; pointer-events: none;
   }
-  .cam-info { flex: 1; }
-  .cam-name { font-size: 16px; font-weight: 600; }
-  .cam-id   { font-size: 12px; color: #8b94a3; margin-top: 2px; }
-  .cam-del {
-    background: transparent; border: none; color: #ef4444;
-    font-size: 20px; padding: 8px; cursor: pointer;
-  }
-  .empty {
-    text-align: center; color: #6b7280;
-    padding: 60px 20px; font-size: 15px;
-  }
-  .add-btn {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%);
-    background: #2563eb; color: #fff; border: none;
-    padding: 14px 28px; border-radius: 30px;
-    font-size: 16px; font-weight: 600; cursor: pointer;
-    box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+  .cam-card:active { transform: scale(0.98); background: var(--surface-2); border-color: #2f2f40; }
+  .cam-card:active::before { opacity: 1; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ---------- Экран просмотра ---------- */
+  .cam-thumb {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-size: 24px; flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+  }
+  .cam-info { flex: 1; min-width: 0; }
+  .cam-name {
+    font-size: 16px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cam-meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-dim); margin-top: 4px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+  .cam-del {
+    background: rgba(239,68,68,0.1); border: none;
+    color: var(--danger); width: 36px; height: 36px;
+    border-radius: 12px; font-size: 16px;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .15s;
+  }
+  .cam-del:active { background: rgba(239,68,68,0.25); }
+
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-dim);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .empty-icon {
+    width: 80px; height: 80px; border-radius: 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: grid; place-items: center; font-size: 36px;
+    opacity: 0.7;
+  }
+  .empty-title { color: var(--text); font-size: 17px; font-weight: 600; }
+  .empty-text { font-size: 14px; max-width: 260px; line-height: 1.5; }
+
+  /* ==================== FAB ==================== */
+  .fab {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 24px);
+    left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff; border: none;
+    height: 56px; padding: 0 28px;
+    border-radius: 28px;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.01em;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(59,130,246,0.5);
+    transition: transform .15s ease;
+    z-index: 50;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.95); }
+  .fab svg { width: 20px; height: 20px; }
+
+  /* ==================== VIEWER ==================== */
   #viewerScreen {
-    position: fixed; inset: 0; background: #000;
-    display: none; flex-direction: column;
+    position: fixed; inset: 0;
+    background: #000;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
   }
-  #viewerScreen.active { display: flex; }
-  #remoteVideo { flex: 1; width: 100%; object-fit: contain; background: #000; }
-  .controls {
-    position: absolute; left: 0; right: 0; bottom: 0;
-    padding: 20px 20px 30px;
-    background: linear-gradient(transparent, rgba(0,0,0,0.85));
-    display: flex; flex-direction: column; gap: 16px;
+  #viewerScreen.active { display: flex; animation: fadeIn .25s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  #remoteVideo {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    background: #000;
   }
-  .zoom-row { display: flex; align-items: center; gap: 12px; }
-  .zoom-row input { flex: 1; accent-color: #2563eb; }
-  .zoom-row button {
-    background: rgba(255,255,255,0.15); color: #fff;
-    border: none; width: 36px; height: 36px; border-radius: 50%;
-    font-size: 20px; cursor: pointer;
-  }
-  .btn-row { display: flex; justify-content: space-around; }
-  .ctrl-btn {
-    background: rgba(255,255,255,0.12); color: #fff;
-    border: none; padding: 12px 18px; border-radius: 12px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-  }
-  .ctrl-btn:active { background: rgba(255,255,255,0.25); }
-  .ctrl-btn .ico { font-size: 22px; }
-  .topbar {
-    position: absolute; top: 0; left: 0; right: 0;
-    padding: 16px 20px;
-    background: linear-gradient(rgba(0,0,0,0.7), transparent);
+
+  .viewer-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: calc(env(safe-area-inset-top) + 14px) 16px 14px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, transparent 100%);
     display: flex; align-items: center; gap: 12px;
     z-index: 5;
   }
-  .back-btn {
-    background: rgba(255,255,255,0.15); color: #fff;
-    border: none; width: 40px; height: 40px; border-radius: 50%;
-    font-size: 20px; cursor: pointer;
+  .icon-btn {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff; font-size: 20px;
+    display: grid; place-items: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .15s, transform .1s;
   }
-  .viewer-title { font-size: 16px; font-weight: 600; }
-  .conn-status { font-size: 12px; color: #9ca3af; margin-left: auto; }
+  .icon-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.94); }
 
-  /* ---------- Модалка добавления ---------- */
-  #addModal {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    display: none; align-items: center; justify-content: center; padding: 20px;
-    z-index: 100;
+  .viewer-title {
+    flex: 1; min-width: 0;
+    color: #fff; font-size: 16px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  #addModal.active { display: flex; }
-  .modal-box {
-    background: #1a1f28; border-radius: 16px; padding: 24px;
-    width: 100%; max-width: 380px;
+  .viewer-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
-  .modal-box h3 { margin-bottom: 16px; font-size: 18px; }
-  .modal-box input {
-    width: 100%; background: #0e1116; border: 1px solid #2d3441;
-    color: #fff; padding: 12px 14px; border-radius: 10px;
-    font-size: 15px; margin-bottom: 14px;
+  .viewer-status .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--danger);
+    animation: pulse 1.5s infinite;
   }
-  .modal-box input:focus { outline: none; border-color: #2563eb; }
-  .modal-actions { display: flex; gap: 10px; }
-  .modal-actions button {
-    flex: 1; padding: 12px; border-radius: 10px; border: none;
-    font-size: 15px; font-weight: 600; cursor: pointer;
+  .viewer-status.online .dot {
+    background: var(--success); animation: none;
+    box-shadow: 0 0 8px var(--success);
   }
-  .btn-cancel { background: #2d3441; color: #fff; }
-  .btn-ok     { background: #2563eb; color: #fff; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  .viewer-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 20px 16px calc(env(safe-area-inset-bottom) + 20px);
+    background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+    display: flex; flex-direction: column; gap: 16px;
+    z-index: 5;
+  }
+
+  .zoom-wrap {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22px;
+    padding: 8px 12px;
+  }
+  .zoom-value {
+    font-size: 13px; font-weight: 700; color: #fff;
+    min-width: 40px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: none; color: #fff; font-size: 18px;
+    cursor: pointer; display: grid; place-items: center;
+    transition: background .15s;
+  }
+  .zoom-btn:active { background: rgba(255,255,255,0.3); }
+
+  .zoom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    outline: none;
+  }
+  .zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  .zoom-slider::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .action-btn {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 14px 8px;
+    border-radius: 18px;
+    font-size: 11px; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+  }
+  .action-btn:active { background: rgba(255,255,255,0.22); transform: scale(0.96); }
+  .action-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.5);
+  }
+  .action-btn .ico { font-size: 22px; }
+
+  /* ==================== QR MODAL ==================== */
+  #qrModal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: none;
+    z-index: 200;
+    padding: 20px;
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+  }
+  #qrModal.active { display: flex; flex-direction: column; animation: fadeIn .2s ease; }
+
+  .qr-header {
+    text-align: center; margin-bottom: 24px;
+  }
+  .qr-title { font-size: 22px; font-weight: 700; color: #fff; }
+  .qr-desc {
+    color: var(--text-dim); font-size: 14px;
+    margin-top: 6px; line-height: 1.5;
+  }
+
+  .qr-viewport {
+    flex: 1;
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: #000;
+    max-height: 520px;
+  }
+  #qrReader { width: 100%; height: 100%; }
+  #qrReader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+
+  .qr-frame {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(70%, 260px); aspect-ratio: 1;
+    pointer-events: none;
+  }
+  .qr-frame::before,
+  .qr-frame::after,
+  .qr-frame > span::before,
+  .qr-frame > span::after {
+    content: ''; position: absolute;
+    width: 32px; height: 32px;
+    border: 3px solid #fff;
+  }
+  .qr-frame::before    { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+  .qr-frame::after     { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+  .qr-frame > span::before { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+  .qr-frame > span::after  { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+
+  .qr-hint {
+    text-align: center;
+    color: var(--text-dim); font-size: 13px;
+    margin-top: 20px;
+  }
+  .qr-cancel {
+    margin-top: 16px;
+    width: 100%; height: 54px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: #fff; font-size: 15px; font-weight: 600;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .qr-cancel:active { background: var(--surface); }
 </style>
 </head>
 <body>
 
-<!-- СПИСОК КАМЕР -->
+<!-- ==================== LIST ==================== -->
 <div id="listScreen">
-  <div class="header">Мои камеры</div>
+  <div class="page-header">
+    <div class="page-title">Мои камеры</div>
+    <div class="page-subtitle" id="pageSubtitle">Нет подключённых камер</div>
+  </div>
+
   <div class="cam-list" id="camList"></div>
-  <div class="empty" id="emptyHint">Камер пока нет.<br>Нажмите «Добавить камеру».</div>
-  <button class="add-btn" id="addBtn">+ Добавить камеру</button>
+
+  <div class="empty" id="emptyState">
+    <div class="empty-icon">📷</div>
+    <div class="empty-title">Камер пока нет</div>
+    <div class="empty-text">
+      Отсканируйте QR-код на устройстве-камере, чтобы начать.
+    </div>
+  </div>
 </div>
 
-<!-- ПРОСМОТР -->
+<button class="fab" id="addBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/>
+  </svg>
+  Сканировать QR
+</button>
+
+<!-- ==================== VIEWER ==================== -->
 <div id="viewerScreen">
   <video id="remoteVideo" autoplay playsinline></video>
-  <div class="topbar">
-    <button class="back-btn" id="backBtn">←</button>
+
+  <div class="viewer-top">
+    <button class="icon-btn" id="backBtn">←</button>
     <div class="viewer-title" id="viewerTitle">Камера</div>
-    <div class="conn-status" id="connStatus">Подключение…</div>
-  </div>
-  <div class="controls">
-    <div class="zoom-row">
-      <button id="zoomOut">−</button>
-      <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
-      <button id="zoomIn">+</button>
+    <div class="viewer-status" id="viewerStatus">
+      <div class="dot"></div>
+      <span id="statusText">Подключение</span>
     </div>
-    <div class="btn-row">
-      <button class="ctrl-btn" id="switchBtn"><span class="ico">🔄</span>Камера</button>
-      <button class="ctrl-btn" id="snapBtn"><span class="ico">📸</span>Снимок</button>
-      <button class="ctrl-btn" id="muteBtn"><span class="ico">🔊</span>Звук</button>
-      <button class="ctrl-btn" id="torchBtn"><span class="ico">🔦</span>Фонарь</button>
+  </div>
+
+  <div class="viewer-bottom">
+    <div class="zoom-wrap">
+      <button class="zoom-btn" id="zoomOutBtn">−</button>
+      <input type="range" class="zoom-slider" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+      <button class="zoom-btn" id="zoomInBtn">+</button>
+      <div class="zoom-value" id="zoomValue">1.0×</div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn" id="switchBtn">
+        <span class="ico">🔄</span>
+        <span>Перевернуть</span>
+      </button>
+      <button class="action-btn" id="snapBtn">
+        <span class="ico">📸</span>
+        <span>Снимок</span>
+      </button>
+      <button class="action-btn active" id="muteBtn">
+        <span class="ico" id="muteIco">🔇</span>
+        <span>Звук</span>
+      </button>
+      <button class="action-btn" id="torchBtn">
+        <span class="ico">🔦</span>
+        <span>Фонарь</span>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- МОДАЛКА -->
-<div id="addModal">
-  <div class="modal-box">
-    <h3>Добавить камеру</h3>
-    <input type="text" id="camIdInput" placeholder="ID камеры (напр. cam-default-7f3a9b2c)">
-    <input type="text" id="camNameInput" placeholder="Название (напр. Кухня)">
-    <div class="modal-actions">
-      <button class="btn-cancel" id="cancelAdd">Отмена</button>
-      <button class="btn-ok" id="confirmAdd">Добавить</button>
-    </div>
+<!-- ==================== QR MODAL ==================== -->
+<div id="qrModal">
+  <div class="qr-header">
+    <div class="qr-title">Сканирование QR</div>
+    <div class="qr-desc">Наведите камеру на QR-код,<br>открытый на устройстве-камере</div>
   </div>
+
+  <div class="qr-viewport">
+    <div id="qrReader"></div>
+    <div class="qr-frame"><span></span></div>
+  </div>
+
+  <div class="qr-hint" id="qrHint">Поиск QR-кода…</div>
+  <button class="qr-cancel" id="qrCancelBtn">Отмена</button>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// ====== ХРАНИЛИЩЕ КАМЕР ======
-const STORAGE_KEY = 'my_cameras';
-let cameras = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+/* ============================================================
+   ДАННЫЕ
+   ============================================================ */
+const STORAGE_KEY = 'my_cameras_v2';
+let cameras = loadCameras();
 
-const camList   = document.getElementById('camList');
-const emptyHint = document.getElementById('emptyHint');
-const addBtn    = document.getElementById('addBtn');
-const addModal  = document.getElementById('addModal');
-const camIdInput   = document.getElementById('camIdInput');
-const camNameInput = document.getElementById('camNameInput');
-const cancelAdd = document.getElementById('cancelAdd');
-const confirmAdd= document.getElementById('confirmAdd');
+function loadCameras() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCameras() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cameras));
+}
 
-const viewerScreen = document.getElementById('viewerScreen');
-const remoteVideo  = document.getElementById('remoteVideo');
-const viewerTitle  = document.getElementById('viewerTitle');
-const connStatus   = document.getElementById('connStatus');
-const backBtn      = document.getElementById('backBtn');
-const zoomSlider   = document.getElementById('zoomSlider');
-const zoomIn       = document.getElementById('zoomIn');
-const zoomOut      = document.getElementById('zoomOut');
-const switchBtn    = document.getElementById('switchBtn');
-const snapBtn      = document.getElementById('snapBtn');
-const muteBtn      = document.getElementById('muteBtn');
-const torchBtn     = document.getElementById('torchBtn');
+/* ============================================================
+   DOM
+   ============================================================ */
+const camList       = document.getElementById('camList');
+const emptyState    = document.getElementById('emptyState');
+const pageSubtitle  = document.getElementById('pageSubtitle');
+const addBtn        = document.getElementById('addBtn');
 
-// ====== ОТРИСОВКА СПИСКА ======
+const viewerScreen  = document.getElementById('viewerScreen');
+const remoteVideo   = document.getElementById('remoteVideo');
+const viewerTitle   = document.getElementById('viewerTitle');
+const viewerStatus  = document.getElementById('viewerStatus');
+const statusText    = document.getElementById('statusText');
+const backBtn       = document.getElementById('backBtn');
+
+const zoomSlider    = document.getElementById('zoomSlider');
+const zoomInBtn     = document.getElementById('zoomInBtn');
+const zoomOutBtn    = document.getElementById('zoomOutBtn');
+const zoomValue     = document.getElementById('zoomValue');
+
+const switchBtn     = document.getElementById('switchBtn');
+const snapBtn       = document.getElementById('snapBtn');
+const muteBtn       = document.getElementById('muteBtn');
+const muteIco       = document.getElementById('muteIco');
+const torchBtn      = document.getElementById('torchBtn');
+
+const qrModal       = document.getElementById('qrModal');
+const qrHint        = document.getElementById('qrHint');
+const qrCancelBtn   = document.getElementById('qrCancelBtn');
+
+/* ============================================================
+   СПИСОК КАМЕР
+   ============================================================ */
 function renderList() {
   camList.innerHTML = '';
-  emptyHint.style.display = cameras.length ? 'none' : 'block';
+  const has = cameras.length > 0;
+  emptyState.style.display = has ? 'none' : 'flex';
+  pageSubtitle.textContent = has
+    ? `${cameras.length} ${plural(cameras.length, 'камера', 'камеры', 'камер')}`
+    : 'Нет подключённых камер';
 
   cameras.forEach((cam, idx) => {
     const card = document.createElement('div');
     card.className = 'cam-card';
+    card.style.animationDelay = (idx * 40) + 'ms';
     card.innerHTML = `
-      <div class="cam-icon">📹</div>
+      <div class="cam-thumb">📹</div>
       <div class="cam-info">
         <div class="cam-name">${escapeHtml(cam.name)}</div>
-        <div class="cam-id">${escapeHtml(cam.id)}</div>
+        <div class="cam-meta">
+          <span class="status-dot"></span>
+          <span>Готово к подключению</span>
+        </div>
       </div>
-      <button class="cam-del" title="Удалить">✕</button>
+      <button class="cam-del" aria-label="Удалить">✕</button>
     `;
     card.addEventListener('click', (e) => {
-      if (e.target.classList.contains('cam-del')) return;
+      if (e.target.closest('.cam-del')) return;
       openViewer(cam);
     });
     card.querySelector('.cam-del').addEventListener('click', (e) => {
       e.stopPropagation();
-      cameras.splice(idx, 1);
-      save();
-      renderList();
+      removeCamera(idx);
     });
     camList.appendChild(card);
   });
 }
 
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cameras));
+function removeCamera(idx) {
+  const cam = cameras[idx];
+  if (!confirm(`Удалить «${cam.name}»?`)) return;
+  cameras.splice(idx, 1);
+  saveCameras();
+  renderList();
+}
+
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
 }
 
 function escapeHtml(s) {
@@ -228,132 +553,256 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// ====== ДОБАВЛЕНИЕ КАМЕРЫ ======
-addBtn.addEventListener('click', () => {
-  camIdInput.value = '';
-  camNameInput.value = '';
-  addModal.classList.add('active');
-  camIdInput.focus();
-});
+/* ============================================================
+   QR-СКАНЕР
+   ============================================================ */
+let qrScanner = null;
 
-cancelAdd.addEventListener('click', () => addModal.classList.remove('active'));
+async function openQrScanner() {
+  qrHint.textContent = 'Поиск QR-кода…';
+  qrModal.classList.add('active');
 
-confirmAdd.addEventListener('click', () => {
-  const id = camIdInput.value.trim();
-  const name = camNameInput.value.trim() || 'Камера';
-  if (!id) { alert('Введите ID камеры'); return; }
-  cameras.push({ id, name });
-  save();
+  try {
+    qrScanner = new Html5Qrcode('qrReader', { verbose: false });
+    await qrScanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: (vw, vh) => {
+          const m = Math.min(vw, vh);
+          const size = Math.floor(m * 0.7);
+          return { width: size, height: size };
+        },
+        aspectRatio: 1.0
+      },
+      onQrScanned,
+      () => {} // игнорируем промежуточные ошибки распознавания
+    );
+  } catch (e) {
+    console.error(e);
+    qrHint.textContent = 'Ошибка доступа к камере';
+    setTimeout(closeQrScanner, 1500);
+  }
+}
+
+async function closeQrScanner() {
+  if (qrScanner) {
+    try { await qrScanner.stop(); } catch {}
+    try { qrScanner.clear(); } catch {}
+    qrScanner = null;
+  }
+  qrModal.classList.remove('active');
+}
+
+let scanCooldown = false;
+function onQrScanned(text) {
+  if (scanCooldown) return;
+
+  let data;
+  try { data = JSON.parse(text); }
+  catch { return; } // это не наш QR — продолжаем сканировать
+
+  if (!data || typeof data.id !== 'string' || !data.id) return;
+
+  // Проверка дубликата
+  if (cameras.some(c => c.id === data.id)) {
+    qrHint.textContent = 'Эта камера уже добавлена';
+    scanCooldown = true;
+    setTimeout(() => { scanCooldown = false; qrHint.textContent = 'Поиск QR-кода…'; }, 1500);
+    return;
+  }
+
+  // Наш QR — добавляем
+  scanCooldown = true;
+  qrHint.textContent = '✓ Камера добавлена';
+
+  cameras.push({
+    id: data.id,
+    name: typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Камера'
+  });
+  saveCameras();
   renderList();
-  addModal.classList.remove('active');
-});
 
-// ====== ПРОСМОТР КАМЕРЫ ======
+  // Вибрация если поддерживается
+  if (navigator.vibrate) navigator.vibrate(60);
+
+  setTimeout(closeQrScanner, 500);
+}
+
+addBtn.addEventListener('click', openQrScanner);
+qrCancelBtn.addEventListener('click', closeQrScanner);
+
+/* ============================================================
+   ПРОСМОТР КАМЕРЫ
+   ============================================================ */
 let peer = null;
 let dataConn = null;
 let mediaCall = null;
 let currentCam = null;
-let muted = true;
+let isMuted = true;
+let torchOn = false;
 
 function openViewer(cam) {
   currentCam = cam;
   viewerTitle.textContent = cam.name;
-  connStatus.textContent = 'Подключение…';
+  setStatus('Подключение…', false);
+  resetControls();
   viewerScreen.classList.add('active');
 
   peer = new Peer({ debug: 1 });
 
   peer.on('open', () => {
-    // 1. DataConnection — для команд
-    dataConn = peer.connect(cam.id);
+    // 1. DataConnection — команды
+    dataConn = peer.connect(cam.id, { reliable: true });
     dataConn.on('open', () => {
-      connStatus.textContent = 'Онлайн';
-      dataConn.send({ type: 'info' });   // запрос данных о камере
+      setStatus('Онлайн', true);
+      dataConn.send({ type: 'info' }); // запрос возможностей камеры
     });
     dataConn.on('data', handleCameraMessage);
-    dataConn.on('close', () => connStatus.textContent = 'Отключено');
+    dataConn.on('close', () => setStatus('Отключено', false));
+    dataConn.on('error', (e) => console.warn('DataConn error:', e));
 
     // 2. Медиазвонок — получаем видео+аудио
-    mediaCall = peer.call(cam.id, new MediaStream()); // пустой stream — мы только получаем
+    mediaCall = peer.call(cam.id, new MediaStream());
     mediaCall.on('stream', (remoteStream) => {
       remoteVideo.srcObject = remoteStream;
-      remoteVideo.muted = muted;
+      remoteVideo.muted = isMuted;
+      setStatus('Онлайн', true);
     });
-    mediaCall.on('close', () => connStatus.textContent = 'Поток закрыт');
+    mediaCall.on('close', () => setStatus('Поток закрыт', false));
+    mediaCall.on('error', (e) => console.warn('Call error:', e));
   });
 
   peer.on('error', (e) => {
     console.error(e);
-    connStatus.textContent = 'Ошибка: ' + e.type;
+    setStatus('Ошибка: ' + (e.type || 'unknown'), false);
   });
 }
 
 function closeViewer() {
   viewerScreen.classList.remove('active');
   remoteVideo.srcObject = null;
-  dataConn?.close();
-  mediaCall?.close();
-  peer?.destroy();
+  try { dataConn?.close(); } catch {}
+  try { mediaCall?.close(); } catch {}
+  try { peer?.destroy(); } catch {}
   dataConn = mediaCall = peer = null;
   currentCam = null;
+  torchOn = false;
+}
+
+function setStatus(text, online) {
+  statusText.textContent = text;
+  viewerStatus.classList.toggle('online', !!online);
+}
+
+function resetControls() {
+  isMuted = true;
+  remoteVideo.muted = true;
+  muteIco.textContent = '🔇';
+  muteBtn.classList.add('active');
+  zoomSlider.value = 1;
+  zoomValue.textContent = '1.0×';
+  torchOn = false;
+  torchBtn.classList.remove('active');
+  switchBtn.querySelector('.ico').textContent = '🔄';
 }
 
 backBtn.addEventListener('click', closeViewer);
 
-// ====== КОМАНДЫ НА КАМЕРУ ======
+/* ============================================================
+   КОМАНДЫ
+   ============================================================ */
 function sendCmd(cmd) {
   if (dataConn?.open) dataConn.send(cmd);
 }
 
-zoomSlider.addEventListener('input', () => {
-  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
+function updateZoom(value) {
+  value = Math.max(parseFloat(zoomSlider.min), Math.min(parseFloat(zoomSlider.max), value));
+  zoomSlider.value = value;
+  zoomValue.textContent = value.toFixed(1) + '×';
+  sendCmd({ type: 'zoom', value });
+}
+
+zoomSlider.addEventListener('input', (e) => {
+  const v = parseFloat(e.target.value);
+  zoomValue.textContent = v.toFixed(1) + '×';
+  sendCmd({ type: 'zoom', value: v });
 });
-zoomIn.addEventListener('click', () => {
-  zoomSlider.value = Math.min(parseFloat(zoomSlider.max), parseFloat(zoomSlider.value) + 0.5);
-  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
-});
-zoomOut.addEventListener('click', () => {
-  zoomSlider.value = Math.max(parseFloat(zoomSlider.min), parseFloat(zoomSlider.value) - 0.5);
-  sendCmd({ type: 'zoom', value: parseFloat(zoomSlider.value) });
-});
+zoomInBtn.addEventListener('click', () => updateZoom(parseFloat(zoomSlider.value) + 0.5));
+zoomOutBtn.addEventListener('click', () => updateZoom(parseFloat(zoomSlider.value) - 0.5));
 
 switchBtn.addEventListener('click', () => sendCmd({ type: 'switchCamera' }));
-torchBtn.addEventListener('click', () => sendCmd({ type: 'torch', value: true }));
 
-muteBtn.addEventListener('click', () => {
-  muted = !muted;
-  remoteVideo.muted = muted;
-  muteBtn.querySelector('.ico').textContent = muted ? '🔇' : '🔊';
+torchBtn.addEventListener('click', () => {
+  torchOn = !torchOn;
+  torchBtn.classList.toggle('active', torchOn);
+  sendCmd({ type: 'torch', value: torchOn });
 });
 
-// Снимок — сохраняется как PNG
+muteBtn.addEventListener('click', () => {
+  isMuted = !isMuted;
+  remoteVideo.muted = isMuted;
+  muteIco.textContent = isMuted ? '🔇' : '🔊';
+  muteBtn.classList.toggle('active', isMuted);
+});
+
 snapBtn.addEventListener('click', () => {
+  if (!remoteVideo.videoWidth) {
+    flashButton(snapBtn);
+    return;
+  }
   const canvas = document.createElement('canvas');
   canvas.width  = remoteVideo.videoWidth;
   canvas.height = remoteVideo.videoHeight;
   canvas.getContext('2d').drawImage(remoteVideo, 0, 0);
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
-  a.download = `${currentCam.name}_${Date.now()}.png`;
-  a.click();
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentCam.name}_${Date.now()}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    flashButton(snapBtn);
+  }, 'image/png');
 });
 
-// Ответы от камеры (например, диапазон зума)
+function flashButton(el) {
+  el.animate(
+    [{ transform: 'scale(1)' }, { transform: 'scale(0.85)' }, { transform: 'scale(1)' }],
+    { duration: 200, easing: 'ease' }
+  );
+}
+
+/* ============================================================
+   СООБЩЕНИЯ ОТ КАМЕРЫ
+   ============================================================ */
 function handleCameraMessage(msg) {
-  if (!msg || msg.type !== 'info') return;
-  if (msg.zoom) {
-    zoomSlider.min = msg.zoom.min;
-    zoomSlider.max = msg.zoom.max;
-    zoomSlider.step = msg.zoom.step || 0.1;
-    zoomSlider.value = msg.zoom.min;
-  }
-  if (msg.front !== undefined) {
-    switchBtn.querySelector('.ico').textContent = msg.front ? '🤳' : '🔄';
+  if (!msg || typeof msg !== 'object') return;
+
+  if (msg.type === 'info') {
+    if (msg.zoom && typeof msg.zoom.min === 'number') {
+      zoomSlider.min = msg.zoom.min;
+      zoomSlider.max = msg.zoom.max;
+      zoomSlider.step = msg.zoom.step || 0.1;
+      const start = Math.max(msg.zoom.min, Math.min(msg.zoom.max, 1));
+      zoomSlider.value = start;
+      zoomValue.textContent = start.toFixed(1) + '×';
+    }
+    if (typeof msg.front === 'boolean') {
+      switchBtn.querySelector('.ico').textContent = msg.front ? '🤳' : '🔄';
+    }
   }
 }
 
-// ====== СТАРТ ======
+/* ============================================================
+   INIT
+   ============================================================ */
 renderList();
+
+window.addEventListener('beforeunload', () => {
+  try { peer?.destroy(); } catch {}
+  closeQrScanner();
+});
 </script>
 </body>
 </html>
