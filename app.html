@@ -34,6 +34,7 @@
 
   svg { display: block; }
   .icon { width: 22px; height: 22px; }
+  .icon-sm { width: 18px; height: 18px; }
 
   #authScreen {
     position: fixed; inset: 0;
@@ -108,8 +109,8 @@
     animation: fadeUp .6s ease backwards; animation-delay: .28s;
   }
   @keyframes fadeUp {
-    from { opacity: -filter0; transform: translateY(12px:); }
-    blur to   { opacity: 1; transform(20px: translateY(0); }
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .phone-field {
@@ -195,13 +196,10 @@
     display: flex; align-items: center; justify-content: center; gap: 10px;
     transition: transform .15s ease, box-shadow .25s, opacity .25s;
     z-index: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    touch-action: manipulation;
   }
   .gooey-btn:active:not(:disabled) { transform: scale(0.97); box-shadow: 0 6px 20px rgba(59,130,246,0.5); }
   .gooey-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .gooey-btn svg { width: 20px; height: 20px; pointer-events: none; }
+  .gooey-btn svg { width: 20px; height: 20px; }
   .gooey-btn .spinner {
     width: 20px; height: 20px;
     border: 2.5px solid rgba(255,255,255,0.3);
@@ -238,7 +236,7 @@
   #countryModal {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.7);
-    backdrop);
+    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     display: none;
     z-index: 400;
@@ -700,17 +698,16 @@
         <input
           type="tel"
           id="phoneInput"
-          placeholder="(000) 000-00-00"
+          placeholder="918 000-00-00"
           inputmode="numeric"
-          autocomplete="tel"
-          pattern="[0-9 \(\)\-]*">
+          autocomplete="tel">
       </div>
     </div>
 
     <div class="gooey-wrap">
       <div class="gooey-layer" id="gooeyLayer"></div>
-      <button type="button" class="gooey-btn" id="authBtn">
-        <span id="authBtnContent" style="display:flex;align-items:center;gap:10px;pointer-events:none;">
+      <button class="gooey-btn" id="authBtn">
+        <span id="authBtnContent" style="display:flex;align-items:center;gap:10px">
           Продолжить
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -905,24 +902,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PEER_HOST = 'peerjs-server-tbi8.onrender.com';
 
 /* ============================================================
-   DEBUG-ПАНЕЛЬ
-   ============================================================ */
-let debugLines = [];
-function dbg(text) {
-  const t = new Date().toLocaleTimeString();
-  debugLines.push(t + '  ' + text);
-  if (debugLines.length > 14) debugLines.shift();
-  let el = document.getElementById('debugPanel');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'debugPanel';
-    el.style.cssText = 'position:fixed;top:80px;left:8px;right:8px;background:rgba(0,0,0,0.88);color:#0f0;font:11px monospace;padding:8px;border-radius:8px;z-index:99999;white-space:pre-wrap;max-height:45vh;overflow:auto;line-height:1.35;';
-    document.body.appendChild(el);
-  }
-  el.textContent = debugLines.join('\n');
-}
-
-/* ============================================================
    БАЗА СТРАН
    ============================================================ */
 const COUNTRIES = [
@@ -1112,48 +1091,64 @@ countryModal.addEventListener('click', (e) => {
 countrySearch.addEventListener('input', (e) => renderCountryList(e.target.value));
 
 /* ============================================================
-   ПОЛЕ ВВОДА — формат в реальном времени
+   ПОЛЕ ВВОДА
    ============================================================ */
 phoneInput.addEventListener('focus', () => phoneField.classList.add('focused'));
 phoneInput.addEventListener('blur', () => phoneField.classList.remove('focused'));
 
-function onPhoneInput() {
-  const before = phoneInput.value;
+phoneInput.addEventListener('input', () => {
   authError.textContent = '';
   phoneField.classList.remove('error');
   applyMask();
-  // Ставим курсор в конец, чтобы не прыгал
-  try { phoneInput.setSelectionRange(phoneInput.value.length, phoneInput.value.length); } catch {}
-  console.log('[phone] введено:', before, '→', phoneInput.value, '| digits:', getRawDigits().length + '/' + selectedCountry.digits);
-}
-
-phoneInput.addEventListener('input', onPhoneInput);
-phoneInput.addEventListener('change', onPhoneInput);
-phoneInput.addEventListener('keyup', onPhoneInput);
+});
 
 phoneInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') doContinue();
+  if (e.key === 'Enter') authBtn.click();
 });
 
 /* ============================================================
-   ЭФФЕКТ ЖЕЛЕ — упрощённый
+   ЭФФЕКТ ЖЕЛЕ
    ============================================================ */
-function createGooeyBlob(x, y) {
+function createGooeyBlob(e) {
   const rect = authBtn.getBoundingClientRect();
-  const relX = (x != null ? x : rect.width / 2) - rect.left;
-  const relY = (y != null ? y : rect.height / 2) - rect.top;
+  let x, y;
+
+  if (e && (e.touches || e.changedTouches)) {
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+    x = t.clientX - rect.left;
+    y = t.clientY - rect.top;
+  } else if (e && e.clientX !== undefined) {
+    x = e.clientX - rect.left;
+    y = e.clientY - rect.top;
+  } else {
+    x = rect.width / 2;
+    y = rect.height / 2;
+  }
 
   const blob = document.createElement('div');
   blob.className = 'gooey-blob';
-  blob.style.left = relX + 'px';
-  blob.style.top  = relY + 'px';
+  blob.style.left = x + 'px';
+  blob.style.top  = y + 'px';
+  blob.style.filter = 'url(#gooeyFilterDef)';
   gooeyLayer.appendChild(blob);
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => blob.classList.add('expand'));
   });
+
   setTimeout(() => blob.remove(), 700);
 }
+
+let gooeyHandled = false;
+authBtn.addEventListener('pointerdown', (e) => {
+  gooeyHandled = false;
+  createGooeyBlob(e);
+  gooeyHandled = true;
+});
+authBtn.addEventListener('touchstart', (e) => {
+  if (gooeyHandled) return;
+  createGooeyBlob(e);
+}, { passive: true });
 
 /* ============================================================
    ВАЛИДАЦИЯ
@@ -1274,7 +1269,9 @@ otpInputs.forEach((inp, i) => {
 
 function checkOtpComplete() {
   const code = Array.from(otpInputs).map(i => i.value).join('');
-  if (code.length === 6) verifyOtp(code);
+  if (code.length === 6) {
+    verifyOtp(code);
+  }
 }
 
 async function verifyOtp(code) {
@@ -1282,7 +1279,10 @@ async function verifyOtp(code) {
 
   if (code !== generatedOtp) {
     otpError.textContent = 'Неверный код. Попробуйте ещё раз.';
-    otpInputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    otpInputs.forEach(i => {
+      i.value = '';
+      i.classList.remove('filled');
+    });
     otpInputs[0].focus();
     if (navigator.vibrate) navigator.vibrate(80);
     return;
@@ -1313,17 +1313,14 @@ otpResend.addEventListener('click', () => {
 });
 
 /* ============================================================
-   ОБРАБОТЧИК КНОПКИ "ПРОДОЛЖИТЬ" — простой onclick
+   ОСНОВНАЯ КНОПКА
    ============================================================ */
-function doContinue() {
-  console.log('[continue] нажата, digits:', getRawDigits().length, '/', selectedCountry.digits);
-
+authBtn.addEventListener('click', () => {
   authError.textContent = '';
   phoneField.classList.remove('error');
 
   if (!isPhoneValid()) {
-    const need = selectedCountry.digits - getRawDigits().length;
-    authError.textContent = `Введите ещё ${need} ${need === 1 ? 'цифру' : 'цифр'}`;
+    authError.textContent = `Введите ${selectedCountry.digits} цифр после ${selectedCountry.dial}`;
     phoneField.classList.add('error');
     if (navigator.vibrate) navigator.vibrate(40);
     return;
@@ -1334,14 +1331,7 @@ function doContinue() {
     setAuthLoading(false);
     openOtpScreen();
   }, 500);
-}
-
-authBtn.onclick = (e) => {
-  if (e && e.clientX !== undefined) {
-    createGooeyBlob(e.clientX, e.clientY);
-  }
-  doContinue();
-};
+});
 
 /* ============================================================
    ВХОД В ПРИЛОЖЕНИЕ
@@ -1400,7 +1390,7 @@ async function fetchCameras() {
       cameras = [];
     } else {
       cameras = data || [];
-      console.log('[Supabase] Камер:', cameras.length);
+      console.log('[Supabase] Камер:', cameras.length, cameras);
     }
   } catch (e) {
     console.error('[Supabase fetch exception]', e);
@@ -1467,11 +1457,21 @@ function renderList() {
 async function removeCamera(cam) {
   if (!confirm(`Удалить «${cam.name}»?`)) return;
   try {
-    const { error } = await sb.from('cameras').delete().eq('id', cam.id);
-    if (error) { showToast('Не удалось удалить'); return; }
+    const { error } = await sb
+      .from('cameras')
+      .delete()
+      .eq('id', cam.id);
+    if (error) {
+      console.error('[Supabase delete]', error);
+      showToast('Не удалось удалить');
+      return;
+    }
     showToast('Камера удалена');
     await fetchCameras();
-  } catch (e) { showToast('Ошибка'); }
+  } catch (e) {
+    console.error(e);
+    showToast('Ошибка');
+  }
 }
 
 function plural(n, one, few, many) {
@@ -1493,7 +1493,10 @@ function escapeHtml(s) {
 logoutBtn.addEventListener('click', async () => {
   if (!confirm('Выйти из аккаунта?')) return;
 
-  if (realtimeChannel) { try { sb.removeChannel(realtimeChannel); } catch {} realtimeChannel = null; }
+  if (realtimeChannel) {
+    try { sb.removeChannel(realtimeChannel); } catch {}
+    realtimeChannel = null;
+  }
   clearInterval(liveStatusTimer);
 
   localStorage.removeItem('my_phone');
@@ -1515,13 +1518,12 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   ПРОСМОТР КАМЕРЫ
+   ПРОСМОТР КАМЕРЫ — ИСПРАВЛЕНО
    ============================================================ */
 let peer = null, dataConn = null, mediaCall = null, currentCam = null;
 let isMuted = true, torchOn = false;
 
 function openViewer(cam) {
-  dbg('▶ openViewer: ' + cam.name);
   currentCam = cam;
   viewerTitle.textContent = cam.name;
   setStatus('Подключение…', false);
@@ -1537,99 +1539,126 @@ function openViewer(cam) {
   });
 
   peer.on('open', () => {
-    dbg('✔ Peer открыт');
-
+    // DataConnection для команд
     dataConn = peer.connect(cam.id, { reliable: true });
     dataConn.on('open', () => {
-      dbg('✔ DataConn открыт');
       setStatus('Онлайн', true);
       dataConn.send({ type: 'info' });
     });
     dataConn.on('data', handleCameraMessage);
-    dataConn.on('close', () => { dbg('✖ DataConn закрыт'); setStatus('Отключено', false); });
+    dataConn.on('close', () => setStatus('Отключено', false));
 
-    dbg('→ Вызов ' + cam.id);
+    // === ЗВОНОК: получаем видео+звук ===
+    console.log('[WebRTC] peer.call →', cam.id);
     mediaCall = peer.call(cam.id, new MediaStream());
 
+    // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+    // Ставим ontrack СРАЗУ (синхронно) через интервал,
+    // чтобы не пропустить событие, пока peerConnection создаётся.
+    installTrackHandler(mediaCall);
+
+    // onstream — на случай, если сработает (Chrome/Android)
     mediaCall.on('stream', (rs) => {
-      dbg('✔ onstream: v=' + rs.getVideoTracks().length + ' a=' + rs.getAudioTracks().length);
-      attachStream(rs);
+      console.log('[WebRTC] onstream: v=' + rs.getVideoTracks().length + ' a=' + rs.getAudioTracks().length);
+      if (rs.getVideoTracks().length || rs.getAudioTracks().length) {
+        attachStream(rs);
+      }
     });
 
-    mediaCall.on('close', () => { dbg('✖ mediaCall closed'); setStatus('Поток закрыт', false); });
-    mediaCall.on('error', (e) => { dbg('✖ mediaCall error: ' + (e.type || e.message)); });
-
-    let attempts = 0;
-    const attachTimer = setInterval(() => {
-      attempts++;
-      const pc = mediaCall && mediaCall.peerConnection;
-      if (!pc) {
-        dbg('… ждём pc (' + attempts + ')');
-        if (attempts > 20) clearInterval(attachTimer);
-        return;
-      }
-
-      dbg('✔ pc найден');
-      pc.ontrack = (event) => {
-        dbg('✔ ontrack: ' + event.track.kind + ' streams=' + event.streams.length);
-        if (event.streams && event.streams[0]) attachStream(event.streams[0]);
-        else if (event.track) attachStream(new MediaStream([event.track]));
-      };
-
-      pc.oniceconnectionstatechange = () => dbg('ICE: ' + pc.iceConnectionState);
-      pc.onconnectionstatechange = () => dbg('CONN: ' + pc.connectionState);
-
-      clearInterval(attachTimer);
-    }, 200);
+    mediaCall.on('close', () => { console.log('[WebRTC] mediaCall closed'); setStatus('Поток закрыт', false); });
+    mediaCall.on('error', (e) => { console.error('[WebRTC] mediaCall error:', e); });
   });
 
-  peer.on('error', (e) => {
-    dbg('✖ peer error: ' + (e.type || e.message));
-    setStatus('Ошибка: ' + (e.type || 'unknown'), false);
-  });
+  peer.on('error', (e) => setStatus('Ошибка: ' + (e.type || 'unknown'), false));
 }
 
+/* Устанавливаем ontrack как только peerConnection появится */
+function installTrackHandler(call) {
+  let attempts = 0;
+  const timer = setInterval(() => {
+    attempts++;
+    const pc = call.peerConnection;
+
+    if (!pc) {
+      if (attempts > 50) {  // ~5 сек
+        console.warn('[WebRTC] pc так и не появился');
+        clearInterval(timer);
+      }
+      return;
+    }
+    if (pc.__handlersInstalled) { clearInterval(timer); return; }
+    pc.__handlersInstalled = true;
+
+    console.log('[WebRTC] peerConnection готов, ставим ontrack');
+    const manualStream = new MediaStream();
+
+    pc.ontrack = (event) => {
+      console.log('[WebRTC] ontrack:', event.track.kind, 'streams:', event.streams.length);
+
+      if (event.streams && event.streams[0]) {
+        // Chrome/Android — сразу есть stream
+        attachStream(event.streams[0]);
+      } else if (event.track) {
+        // Safari иногда не прикладывает streams — собираем сами
+        manualStream.addTrack(event.track);
+        attachStream(manualStream);
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('[WebRTC] ICE:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') setStatus('Сеть недоступна', false);
+    };
+
+    clearInterval(timer);
+  }, 100);
+}
+
+/* Привязка потока к <video> с обходом Safari-блокировок */
 function attachStream(stream) {
-  if (!stream) { dbg('attachStream: null'); return; }
+  if (!stream) return;
 
   const vTracks = stream.getVideoTracks();
   const aTracks = stream.getAudioTracks();
-  dbg('attach v=' + vTracks.length + ' a=' + aTracks.length);
+  console.log('[attachStream] video:', vTracks.length, 'audio:', aTracks.length);
 
-  if (vTracks.length === 0) {
-    dbg('⚠ НЕТ ВИДЕО-ТРЕКОВ');
-  } else {
-    const s = vTracks[0].getSettings ? vTracks[0].getSettings() : {};
-    dbg('  video: ' + s.width + 'x' + s.height + ' ' + (s.frameRate || '?') + 'fps');
+  // Не перезаписываем если уже тот же поток
+  if (remoteVideo.srcObject !== stream) {
+    remoteVideo.srcObject = stream;
   }
 
-  remoteVideo.srcObject = stream;
-  remoteVideo.muted = isMuted;
+  // iOS: всегда muted при play, потом размутим
+  remoteVideo.muted = true;
   remoteVideo.setAttribute('playsinline', '');
   remoteVideo.setAttribute('webkit-playsinline', '');
   remoteVideo.setAttribute('autoplay', '');
 
-  const p = remoteVideo.play();
-  if (p && p.then) {
-    p.then(() => {
-      dbg('✔ play() OK');
+  const playPromise = remoteVideo.play();
+  if (playPromise && playPromise.then) {
+    playPromise.then(() => {
+      console.log('[attachStream] ✅ play OK');
+      // Теперь можно применить актуальное состояние mute
+      remoteVideo.muted = isMuted;
       setStatus('Онлайн', true);
     }).catch((err) => {
-      dbg('⚠ play() fail: ' + err.name);
-      setStatus('Тапни по экрану', false);
+      console.warn('[attachStream] play fail:', err.name);
+      setStatus('Нажмите на экран', false);
 
-      const startOnTap = () => {
+      const unlock = () => {
+        remoteVideo.muted = true;
         remoteVideo.play().then(() => {
-          dbg('✔ play после тапа');
+          remoteVideo.muted = isMuted;
           setStatus('Онлайн', true);
-        }).catch(e => dbg('✖ play еще раз: ' + e.name));
-        viewerScreen.removeEventListener('touchstart', startOnTap);
-        viewerScreen.removeEventListener('click', startOnTap);
+          console.log('[attachStream] ✅ play после тапа');
+        }).catch(e => console.error(e));
+        viewerScreen.removeEventListener('touchstart', unlock);
+        viewerScreen.removeEventListener('click', unlock);
       };
-      viewerScreen.addEventListener('touchstart', startOnTap, { once: true });
-      viewerScreen.addEventListener('click', startOnTap, { once: true });
+      viewerScreen.addEventListener('touchstart', unlock, { once: true });
+      viewerScreen.addEventListener('click', unlock, { once: true });
     });
   } else {
+    remoteVideo.muted = isMuted;
     setStatus('Онлайн', true);
   }
 }
@@ -1643,10 +1672,6 @@ function closeViewer() {
   dataConn = mediaCall = peer = null;
   currentCam = null;
   torchOn = false;
-
-  const el = document.getElementById('debugPanel');
-  if (el) el.remove();
-  debugLines = [];
 }
 
 function setStatus(text, online) {
@@ -1692,12 +1717,30 @@ torchBtn.addEventListener('click', () => {
   sendCmd({ type: 'torch', value: torchOn });
 });
 
+/* Включаем звук — на iOS важно, чтобы video уже играло */
 muteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
-  remoteVideo.muted = isMuted;
-  muteIconOn.style.display  = isMuted ? '' : 'none';
-  muteIconOff.style.display = isMuted ? 'none' : '';
-  muteBtn.classList.toggle('active', isMuted);
+
+  if (!isMuted) {
+    // Хотим включить звук. Сначала играем (muted), потом размутим
+    remoteVideo.muted = true;
+    const p = remoteVideo.play();
+    const applyUnmute = () => {
+      remoteVideo.muted = false;
+      muteIconOn.style.display = 'none';
+      muteIconOff.style.display = '';
+      muteBtn.classList.add('active');
+      console.log('[mute] звук включён');
+    };
+    if (p && p.then) p.then(applyUnmute).catch(applyUnmute);
+    else applyUnmute();
+  } else {
+    remoteVideo.muted = true;
+    muteIconOn.style.display = '';
+    muteIconOff.style.display = 'none';
+    muteBtn.classList.add('active');
+    console.log('[mute] звук выключен');
+  }
 });
 
 snapBtn.addEventListener('click', () => {
@@ -1746,8 +1789,6 @@ function handleCameraMessage(msg) {
   }
 
   if (!saved) {
-    // Инициализируем формат сразу
-    phoneInput.placeholder = selectedCountry.format.replace(/#/g, '0');
     setTimeout(() => phoneInput.focus(), 500);
     return;
   }
@@ -1771,12 +1812,6 @@ window.addEventListener('beforeunload', () => {
   clearInterval(resendInterval);
   clearInterval(liveStatusTimer);
 });
-
-/* ============================================================
-   ПРИНУДИТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ФОРМАТА
-   ============================================================ */
-phoneInput.placeholder = selectedCountry.format.replace(/#/g, '0');
-console.log('[init] placeholder:', phoneInput.placeholder, '| format:', selectedCountry.format, '| digits:', selectedCountry.digits);
 </script>
 </body>
 </html>
