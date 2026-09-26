@@ -907,6 +907,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PEER_HOST = 'peerjs-server-tbi8.onrender.com';
 
 /* ============================================================
+   DEBUG-ПАНЕЛЬ (видна на экране iPhone)
+   ============================================================ */
+let debugLines = [];
+function dbg(text) {
+  const t = new Date().toLocaleTimeString();
+  debugLines.push(t + '  ' + text);
+  if (debugLines.length > 12) debugLines.shift();
+  let el = document.getElementById('debugPanel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'debugPanel';
+    el.style.cssText = 'position:fixed;top:80px;left:8px;right:8px;background:rgba(0,0,0,0.88);color:#0f0;font:11px monospace;padding:8px;border-radius:8px;z-index:99999;white-space:pre-wrap;max-height:45vh;overflow:auto;line-height:1.35;';
+    document.body.appendChild(el);
+  }
+  el.textContent = debugLines.join('\n');
+}
+
+/* ============================================================
    БАЗА СТРАН
    ============================================================ */
 const COUNTRIES = [
@@ -1529,6 +1547,7 @@ let peer = null, dataConn = null, mediaCall = null, currentCam = null;
 let isMuted = true, torchOn = false;
 
 function openViewer(cam) {
+  dbg('▶ openViewer: ' + cam.name);
   currentCam = cam;
   viewerTitle.textContent = cam.name;
   setStatus('Подключение…', false);
@@ -1544,55 +1563,79 @@ function openViewer(cam) {
   });
 
   peer.on('open', () => {
+    dbg('✔ Peer открыт');
+
     dataConn = peer.connect(cam.id, { reliable: true });
     dataConn.on('open', () => {
+      dbg('✔ DataConnection открыт');
       setStatus('Онлайн', true);
       dataConn.send({ type: 'info' });
     });
     dataConn.on('data', handleCameraMessage);
-    dataConn.on('close', () => setStatus('Отключено', false));
+    dataConn.on('close', () => { dbg('✖ DataConn закрыт'); setStatus('Отключено', false); });
 
-    // === WebRTC звонок (получаем видео+аудио) ===
+    dbg('→ Вызов ' + cam.id);
     mediaCall = peer.call(cam.id, new MediaStream());
 
-    // Основной обработчик
     mediaCall.on('stream', (rs) => {
-      console.log('[WebRTC] onstream получен:', rs);
+      dbg('✔ onstream: v=' + rs.getVideoTracks().length + ' a=' + rs.getAudioTracks().length);
       attachStream(rs);
     });
 
-    mediaCall.on('close', () => setStatus('Поток закрыт', false));
-    mediaCall.on('error', (e) => {
-      console.error('[mediaCall error]', e);
-      setStatus('Ошибка потока', false);
-    });
+    mediaCall.on('close', () => { dbg('✖ mediaCall closed'); setStatus('Поток закрыт', false); });
+    mediaCall.on('error', (e) => { dbg('✖ mediaCall error: ' + (e.type || e.message)); });
 
-    // Резервный обработчик — ontrack напрямую через peerConnection
-    setTimeout(() => {
-      const pc = mediaCall?.peerConnection;
-      if (!pc) { console.warn('[WebRTC] peerConnection ещё нет'); return; }
+    // Прямая подписка на ontrack — работает даже когда onstream не срабатывает
+    let attempts = 0;
+    const attachTimer = setInterval(() => {
+      attempts++;
+      const pc = mediaCall && mediaCall.peerConnection;
+      if (!pc) {
+        dbg('… ждём peerConnection (' + attempts + ')');
+        if (attempts > 20) clearInterval(attachTimer);
+        return;
+      }
+
+      dbg('✔ pc найден, tracking');
       pc.ontrack = (event) => {
-        console.log('[WebRTC] ontrack сработал:', event.streams);
-        if (event.streams && event.streams[0]) attachStream(event.streams[0]);
+        dbg('✔ ontrack: ' + event.track.kind + ' streams=' + event.streams.length);
+        if (event.streams && event.streams[0]) {
+          attachStream(event.streams[0]);
+        } else if (event.track) {
+          const s = new MediaStream([event.track]);
+          attachStream(s);
+        }
       };
-      console.log('[WebRTC] ontrack установлен');
-    }, 500);
+
+      pc.oniceconnectionstatechange = () => {
+        dbg('ICE: ' + pc.iceConnectionState);
+      };
+      pc.onconnectionstatechange = () => {
+        dbg('CONN: ' + pc.connectionState);
+      };
+
+      clearInterval(attachTimer);
+    }, 200);
   });
 
-  peer.on('error', (e) => setStatus('Ошибка: ' + (e.type || 'unknown'), false));
+  peer.on('error', (e) => {
+    dbg('✖ peer error: ' + (e.type || e.message));
+    setStatus('Ошибка: ' + (e.type || 'unknown'), false);
+  });
 }
 
-/* ============================================================
-   ПОДКЛЮЧЕНИЕ ПОТОКА К <video> (с обходом Safari-блокировок)
-   ============================================================ */
 function attachStream(stream) {
-  if (!stream) return;
+  if (!stream) { dbg('attachStream: null'); return; }
 
   const vTracks = stream.getVideoTracks();
   const aTracks = stream.getAudioTracks();
-  console.log('[attachStream] video:', vTracks.length, 'audio:', aTracks.length);
-  if (vTracks[0]) {
-    try { console.log('[attachStream] video settings:', vTracks[0].getSettings()); } catch {}
+  dbg('attach v=' + vTracks.length + ' a=' + aTracks.length);
+
+  if (vTracks.length === 0) {
+    dbg('⚠ НЕТ ВИДЕО-ТРЕКОВ');
+  } else {
+    const s = vTracks[0].getSettings ? vTracks[0].getSettings() : {};
+    dbg('  video: ' + s.width + 'x' + s.height + ' ' + (s.frameRate || '?') + 'fps');
   }
 
   remoteVideo.srcObject = stream;
@@ -1600,19 +1643,22 @@ function attachStream(stream) {
   remoteVideo.setAttribute('playsinline', '');
   remoteVideo.setAttribute('webkit-playsinline', '');
   remoteVideo.setAttribute('autoplay', '');
+  try { remoteVideo.load(); } catch {}
 
   const p = remoteVideo.play();
   if (p && p.then) {
     p.then(() => {
-      setStatus('Онлайн', true);
-      console.log('[attachStream] ✅ видео играет');
+      dbg('✔ play() OK');
+()      setStatus('Онлайн', true);
     }).catch((err) => {
-      console.warn('[attachStream] play() отклонён:', err);
-      setStatus('Нажмите на экран', false);
+      db failg('⚠ play: ' + err.name);
+      setStatus('Тапни по экрану', false);
 
       const startOnTap = () => {
-        remoteVideo.play().then(() => setStatus('Онлайн', true))
-          .catch(e => console.error(e));
+        remoteVideo.play().then(() => {
+          dbg('✔ play после тапа');
+          setStatus('Онлайн', true);
+        }).catch(e => dbg('✖ play еще раз fail: ' + e.name));
         viewerScreen.removeEventListener('touchstart', startOnTap);
         viewerScreen.removeEventListener('click', startOnTap);
       };
@@ -1620,6 +1666,7 @@ function attachStream(stream) {
       viewerScreen.addEventListener('click', startOnTap, { once: true });
     });
   } else {
+    dbg('play() без promise');
     setStatus('Онлайн', true);
   }
 }
@@ -1633,6 +1680,11 @@ function closeViewer() {
   dataConn = mediaCall = peer = null;
   currentCam = null;
   torchOn = false;
+
+  // Убираем debug-панель
+  const el = document.getElementById('debugPanel');
+  if (el) el.remove();
+  debugLines = [];
 }
 
 function setStatus(text, online) {
