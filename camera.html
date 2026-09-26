@@ -583,7 +583,6 @@
   </defs>
 </svg>
 
-<!-- ==================== АВТОРИЗАЦИЯ ==================== -->
 <div id="authScreen">
   <div class="auth-inner">
     <div class="auth-logo">
@@ -631,7 +630,6 @@
   </div>
 </div>
 
-<!-- ==================== ВЫБОР СТРАНЫ ==================== -->
 <div id="countryModal">
   <div class="country-sheet">
     <div class="sheet-handle"></div>
@@ -649,7 +647,6 @@
   </div>
 </div>
 
-<!-- ==================== OTP ==================== -->
 <div id="otpScreen">
   <button class="otp-back" id="otpBack">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -687,7 +684,6 @@
   </div>
 </div>
 
-<!-- ==================== ЭКРАН "НАЧАТЬ ТРАНСЛЯЦИЮ" ==================== -->
 <div id="readyScreen">
   <div class="ready-header">
     <div class="ready-account">
@@ -752,7 +748,6 @@
   </div>
 </div>
 
-<!-- ==================== ЭКРАН РАЗРЕШЕНИЙ ==================== -->
 <div id="permScreen">
   <div class="perm-icon">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -766,7 +761,6 @@
   <div class="perm-error" id="permError"></div>
 </div>
 
-<!-- ==================== АКТИВНАЯ КАМЕРА ==================== -->
 <div id="cameraScreen">
   <video id="preview" autoplay muted playsinline></video>
 
@@ -800,6 +794,29 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    PEERJS — СВОЙ СЕРВЕР НА RENDER
    ============================================================ */
 const PEER_HOST = 'peerjs-server-tbi8.onrender.com';
+
+/* ============================================================
+   ICE SERVERS (STUN + TURN) — правка 1
+   ============================================================ */
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  }
+];
 
 /* ============================================================
    БАЗА СТРАН
@@ -1360,7 +1377,7 @@ async function requestPermissionsAndStart() {
 permBtn.addEventListener('click', requestPermissionsAndStart);
 
 /* ============================================================
-   КАМЕРА — ИЗМЕНЕНО: явные параметры для iPad Safari
+   КАМЕРА — явные параметры для iPad Safari
    ============================================================ */
 async function startCamera(front) {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
@@ -1431,7 +1448,7 @@ function preferH264(pc) {
 }
 
 /* ============================================================
-   PEERJS — используем СВОЙ сервер на Render
+   PEERJS — правка 2: добавлен config с ICE_SERVERS
    ============================================================ */
 function startPeer() {
   if (peer) peer.destroy();
@@ -1440,7 +1457,11 @@ function startPeer() {
     host: PEER_HOST,
     port: 443,
     secure: true,
-    path: '/'
+    path: '/',
+    config: {
+      iceServers: ICE_SERVERS,
+      sdpSemantics: 'unified-plan'
+    }
   });
 
   peer.on('open', () => {
@@ -1470,17 +1491,15 @@ function startPeer() {
     });
   });
 
-  // ОТВЕТ НА ЗВОНОК — ИЗМЕНЕНО: H264 ставим ПОСЛЕ answer
+  // ОТВЕТ НА ЗВОНОК — H264 ставим ПОСЛЕ answer
   peer.on('call', (call) => {
     console.log('[peer] Входящий call, отвечаем с потоком');
     console.log('[peer] в потоке: video:', stream.getVideoTracks().length, 'audio:', stream.getAudioTracks().length);
 
     activeCall = call;
 
-    // Сначала отвечаем — PeerJS создаёт peerConnection здесь
     call.answer(stream);
 
-    // Теперь ждём появления peerConnection и ставим H264
     let attempts = 0;
     const codecTimer = setInterval(() => {
       attempts++;
