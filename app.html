@@ -1518,7 +1518,7 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   ПРОСМОТР КАМЕРЫ — ИСПРАВЛЕНО
+   ПРОСМОТР КАМЕРЫ
    ============================================================ */
 let peer = null, dataConn = null, mediaCall = null, currentCam = null;
 let isMuted = true, torchOn = false;
@@ -1552,12 +1552,8 @@ function openViewer(cam) {
     console.log('[WebRTC] peer.call →', cam.id);
     mediaCall = peer.call(cam.id, new MediaStream());
 
-    // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
-    // Ставим ontrack СРАЗУ (синхронно) через интервал,
-    // чтобы не пропустить событие, пока peerConnection создаётся.
     installTrackHandler(mediaCall);
 
-    // onstream — на случай, если сработает (Chrome/Android)
     mediaCall.on('stream', (rs) => {
       console.log('[WebRTC] onstream: v=' + rs.getVideoTracks().length + ' a=' + rs.getAudioTracks().length);
       if (rs.getVideoTracks().length || rs.getAudioTracks().length) {
@@ -1580,7 +1576,7 @@ function installTrackHandler(call) {
     const pc = call.peerConnection;
 
     if (!pc) {
-      if (attempts > 50) {  // ~5 сек
+      if (attempts > 50) {
         console.warn('[WebRTC] pc так и не появился');
         clearInterval(timer);
       }
@@ -1596,10 +1592,8 @@ function installTrackHandler(call) {
       console.log('[WebRTC] ontrack:', event.track.kind, 'streams:', event.streams.length);
 
       if (event.streams && event.streams[0]) {
-        // Chrome/Android — сразу есть stream
         attachStream(event.streams[0]);
       } else if (event.track) {
-        // Safari иногда не прикладывает streams — собираем сами
         manualStream.addTrack(event.track);
         attachStream(manualStream);
       }
@@ -1622,7 +1616,6 @@ function attachStream(stream) {
   const aTracks = stream.getAudioTracks();
   console.log('[attachStream] video:', vTracks.length, 'audio:', aTracks.length);
 
-  // Не перезаписываем если уже тот же поток
   if (remoteVideo.srcObject !== stream) {
     remoteVideo.srcObject = stream;
   }
@@ -1637,7 +1630,6 @@ function attachStream(stream) {
   if (playPromise && playPromise.then) {
     playPromise.then(() => {
       console.log('[attachStream] ✅ play OK');
-      // Теперь можно применить актуальное состояние mute
       remoteVideo.muted = isMuted;
       setStatus('Онлайн', true);
     }).catch((err) => {
@@ -1717,29 +1709,41 @@ torchBtn.addEventListener('click', () => {
   sendCmd({ type: 'torch', value: torchOn });
 });
 
-/* Включаем звук — на iOS важно, чтобы video уже играло */
+/* ============================================================
+   КНОПКА "ЗВУК" — ИСПРАВЛЕНО ДЛЯ iOS
+   Всё происходит СИНХРОННО внутри user gesture,
+   иначе Safari блокирует размьют.
+   ============================================================ */
 muteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
 
   if (!isMuted) {
-    // Хотим включить звук. Сначала играем (muted), потом размутим
-    remoteVideo.muted = true;
-    const p = remoteVideo.play();
-    const applyUnmute = () => {
-      remoteVideo.muted = false;
-      muteIconOn.style.display = 'none';
-      muteIconOff.style.display = '';
-      muteBtn.classList.add('active');
-      console.log('[mute] звук включён');
-    };
-    if (p && p.then) p.then(applyUnmute).catch(applyUnmute);
-    else applyUnmute();
+    // ВКЛЮЧАЕМ ЗВУК — синхронно, без .then()
+    remoteVideo.muted = false;
+    remoteVideo.volume = 1.0;
+    remoteVideo.removeAttribute('muted');
+
+    // Обновляем иконки
+    muteIconOn.style.display  = 'none';
+    muteIconOff.style.display = '';
+    muteBtn.classList.remove('active');
+
+    // На всякий случай re-play (внутри жеста это разрешено)
+    try {
+      const p = remoteVideo.play();
+      if (p && p.catch) p.catch(e => console.warn('[mute] play err:', e));
+    } catch (e) {}
+
+    console.log('[mute] 🔊 звук включён, muted =', remoteVideo.muted);
   } else {
+    // ВЫКЛЮЧАЕМ ЗВУК
     remoteVideo.muted = true;
-    muteIconOn.style.display = '';
+
+    muteIconOn.style.display  = '';
     muteIconOff.style.display = 'none';
     muteBtn.classList.add('active');
-    console.log('[mute] звук выключен');
+
+    console.log('[mute] 🔇 звук выключен');
   }
 });
 
