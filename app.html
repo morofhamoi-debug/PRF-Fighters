@@ -902,6 +902,29 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PEER_HOST = 'peerjs-server-tbi8.onrender.com';
 
 /* ============================================================
+   ICE SERVERS (STUN + TURN) — правка 1
+   ============================================================ */
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject'
+  }
+];
+
+/* ============================================================
    БАЗА СТРАН
    ============================================================ */
 const COUNTRIES = [
@@ -1518,12 +1541,72 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 /* ============================================================
-   ПРОСМОТР КАМЕРЫ
+   DEBUG-ПАНЕЛЬ — правка 2 (часть 1)
+   ============================================================ */
+let debugLines = [];
+function dbg(text) {
+  const t = new Date().toLocaleTimeString();
+  debugLines.push(t + '  ' + text);
+  if (debugLines.length > 16) debugLines.shift();
+  let el = document.getElementById('debugPanel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'debugPanel';
+    el.style.cssText = 'position:fixed;top:80px;left:6px;right:6px;background:rgba(0,0,0,0.9);color:#0f0;font:10px monospace;padding:6px;border-radius:8px;z-index:99999;white-space:pre-wrap;max-height:55vh;overflow:auto;line-height:1.3;';
+    document.body.appendChild(el);
+  }
+  el.textContent = debugLines.join('\n');
+}
+
+/* ============================================================
+   STUB-STREAM — правка 2 (часть 2)
+   Заставляет PeerJS создать transceivers в SDP.
+   Без него iPad не может положить свои треки в offer.
+   ============================================================ */
+function createStubStream() {
+  const stream = new MediaStream();
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 2;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 2, 2);
+    const vTrack = canvas.captureStream(1).getVideoTracks()[0];
+    if (vTrack) stream.addTrack(vTrack);
+    dbg('stub video OK');
+  } catch (e) {
+    dbg('stub video err: ' + e.message);
+  }
+
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const dest = ac.createMediaStreamDestination();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start();
+    const aTrack = dest.stream.getAudioTracks()[0];
+    if (aTrack) stream.addTrack(aTrack);
+    dbg('stub audio OK');
+  } catch (e) {
+    dbg('stub audio err: ' + e.message);
+  }
+
+  return stream;
+}
+
+/* ============================================================
+   ПРОСМОТР КАМЕРЫ — правка 3
    ============================================================ */
 let peer = null, dataConn = null, mediaCall = null, currentCam = null;
 let isMuted = true, torchOn = false;
 
 function openViewer(cam) {
+  dbg('▶ openViewer: ' + cam.name);
   currentCam = cam;
   viewerTitle.textContent = cam.name;
   setStatus('Подключение…', false);
@@ -1535,37 +1618,59 @@ function openViewer(cam) {
     host: PEER_HOST,
     port: 443,
     secure: true,
-    path: '/'
+    path: '/',
+    config: {
+      iceServers: ICE_SERVERS,
+      sdpSemantics: 'unified-plan'
+    }
   });
 
   peer.on('open', () => {
-    // DataConnection для команд
+    dbg('✔ Peer open');
+
     dataConn = peer.connect(cam.id, { reliable: true });
-    dataConn.on('open', () => {
-      setStatus('Онлайн', true);
-      dataConn.send({ type: 'info' });
-    });
+    dataConn.on('open', () => { dbg('✔ DataConn open'); setStatus('Онлайн', true); dataConn.send({ type: 'info' }); });
     dataConn.on('data', handleCameraMessage);
-    dataConn.on('close', () => setStatus('Отключено', false));
+    dataConn.on('close', () => { dbg('✖ DataConn close'); setStatus('Отключено', false); });
 
-    // === ЗВОНОК: получаем видео+звук ===
-    console.log('[WebRTC] peer.call →', cam.id);
-    mediaCall = peer.call(cam.id, new MediaStream());
+    const stub = createStubStream();
+    dbg('→ call ' + cam.id + ' (stub v=' + stub.getVideoTracks().length + ' a=' + stub.getAudioTracks().length + ')');
 
+    mediaCall = peer.call(cam.id, stub);
     installTrackHandler(mediaCall);
 
     mediaCall.on('stream', (rs) => {
-      console.log('[WebRTC] onstream: v=' + rs.getVideoTracks().length + ' a=' + rs.getAudioTracks().length);
-      if (rs.getVideoTracks().length || rs.getAudioTracks().length) {
+      const v = rs.getVideoTracks().length;
+      const a = rs.getAudioTracks().length;
+      dbg('✔ onstream v=' + v + ' a=' + a);
+      if (v || a) {
         attachStream(rs);
+        try { stub.getTracks().forEach(t => t.stop()); } catch {}
       }
     });
 
-    mediaCall.on('close', () => { console.log('[WebRTC] mediaCall closed'); setStatus('Поток закрыт', false); });
-    mediaCall.on('error', (e) => { console.error('[WebRTC] mediaCall error:', e); });
+    mediaCall.on('close', () => { dbg('✖ mediaCall close'); setStatus('Поток закрыт', false); });
+    mediaCall.on('error', (e) => { dbg('✖ mediaCall err: ' + (e.type || e.message)); });
+
+    let statsAttempts = 0;
+    const statsTimer = setInterval(async () => {
+      statsAttempts++;
+      const pc = mediaCall && mediaCall.peerConnection;
+      if (!pc) { if (statsAttempts > 50) clearInterval(statsTimer); return; }
+      try {
+        const stats = await pc.getStats();
+        let vBytes = 0, aBytes = 0, vPkts = 0;
+        stats.forEach(r => {
+          if (r.type === 'inbound-rtp' && r.kind === 'video') { vBytes = r.bytesReceived || 0; vPkts = r.packetsReceived || 0; }
+          if (r.type === 'inbound-rtp' && r.kind === 'audio') { aBytes = r.bytesReceived || 0; }
+        });
+        dbg('stats v=' + vBytes + 'B p=' + vPkts + ' a=' + aBytes + 'B');
+      } catch (e) {}
+      if (statsAttempts > 8) clearInterval(statsTimer);
+    }, 2000);
   });
 
-  peer.on('error', (e) => setStatus('Ошибка: ' + (e.type || 'unknown'), false));
+  peer.on('error', (e) => { dbg('✖ peer error: ' + (e.type || e.message)); setStatus('Ошибка: ' + (e.type || 'unknown'), false); });
 }
 
 /* Устанавливаем ontrack как только peerConnection появится */
@@ -1577,7 +1682,7 @@ function installTrackHandler(call) {
 
     if (!pc) {
       if (attempts > 50) {
-        console.warn('[WebRTC] pc так и не появился');
+        dbg('✖ pc не появился');
         clearInterval(timer);
       }
       return;
@@ -1585,11 +1690,11 @@ function installTrackHandler(call) {
     if (pc.__handlersInstalled) { clearInterval(timer); return; }
     pc.__handlersInstalled = true;
 
-    console.log('[WebRTC] peerConnection готов, ставим ontrack');
+    dbg('✔ pc готов, ставим ontrack');
     const manualStream = new MediaStream();
 
     pc.ontrack = (event) => {
-      console.log('[WebRTC] ontrack:', event.track.kind, 'streams:', event.streams.length);
+      dbg('✔ ontrack: ' + event.track.kind + ' streams=' + event.streams.length);
 
       if (event.streams && event.streams[0]) {
         attachStream(event.streams[0]);
@@ -1600,7 +1705,7 @@ function installTrackHandler(call) {
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log('[WebRTC] ICE:', pc.iceConnectionState);
+      dbg('ICE: ' + pc.iceConnectionState);
       if (pc.iceConnectionState === 'failed') setStatus('Сеть недоступна', false);
     };
 
@@ -1608,19 +1713,18 @@ function installTrackHandler(call) {
   }, 100);
 }
 
-/* Привязка потока к <video> с обходом Safari-блокировок */
+/* Привязка потока к <video> */
 function attachStream(stream) {
   if (!stream) return;
 
   const vTracks = stream.getVideoTracks();
   const aTracks = stream.getAudioTracks();
-  console.log('[attachStream] video:', vTracks.length, 'audio:', aTracks.length);
+  dbg('attach v=' + vTracks.length + ' a=' + aTracks.length);
 
   if (remoteVideo.srcObject !== stream) {
     remoteVideo.srcObject = stream;
   }
 
-  // iOS: всегда muted при play, потом размутим
   remoteVideo.muted = true;
   remoteVideo.setAttribute('playsinline', '');
   remoteVideo.setAttribute('webkit-playsinline', '');
@@ -1629,11 +1733,11 @@ function attachStream(stream) {
   const playPromise = remoteVideo.play();
   if (playPromise && playPromise.then) {
     playPromise.then(() => {
-      console.log('[attachStream] ✅ play OK');
+      dbg('✔ play OK');
       remoteVideo.muted = isMuted;
       setStatus('Онлайн', true);
     }).catch((err) => {
-      console.warn('[attachStream] play fail:', err.name);
+      dbg('⚠ play fail: ' + err.name);
       setStatus('Нажмите на экран', false);
 
       const unlock = () => {
@@ -1641,8 +1745,8 @@ function attachStream(stream) {
         remoteVideo.play().then(() => {
           remoteVideo.muted = isMuted;
           setStatus('Онлайн', true);
-          console.log('[attachStream] ✅ play после тапа');
-        }).catch(e => console.error(e));
+          dbg('✔ play после тапа');
+        }).catch(e => dbg('✖ play 2: ' + e.name));
         viewerScreen.removeEventListener('touchstart', unlock);
         viewerScreen.removeEventListener('click', unlock);
       };
@@ -1655,6 +1759,9 @@ function attachStream(stream) {
   }
 }
 
+/* ============================================================
+   ЗАКРЫТИЕ ПРОСМОТРА — правка 4
+   ============================================================ */
 function closeViewer() {
   viewerScreen.classList.remove('active');
   remoteVideo.srcObject = null;
@@ -1664,6 +1771,10 @@ function closeViewer() {
   dataConn = mediaCall = peer = null;
   currentCam = null;
   torchOn = false;
+
+  const el = document.getElementById('debugPanel');
+  if (el) el.remove();
+  debugLines = [];
 }
 
 function setStatus(text, online) {
@@ -1710,25 +1821,20 @@ torchBtn.addEventListener('click', () => {
 });
 
 /* ============================================================
-   КНОПКА "ЗВУК" — ИСПРАВЛЕНО ДЛЯ iOS
-   Всё происходит СИНХРОННО внутри user gesture,
-   иначе Safari блокирует размьют.
+   КНОПКА "ЗВУК" — синхронно внутри жеста
    ============================================================ */
 muteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
 
   if (!isMuted) {
-    // ВКЛЮЧАЕМ ЗВУК — синхронно, без .then()
     remoteVideo.muted = false;
     remoteVideo.volume = 1.0;
     remoteVideo.removeAttribute('muted');
 
-    // Обновляем иконки
     muteIconOn.style.display  = 'none';
     muteIconOff.style.display = '';
     muteBtn.classList.remove('active');
 
-    // На всякий случай re-play (внутри жеста это разрешено)
     try {
       const p = remoteVideo.play();
       if (p && p.catch) p.catch(e => console.warn('[mute] play err:', e));
@@ -1736,7 +1842,6 @@ muteBtn.addEventListener('click', () => {
 
     console.log('[mute] 🔊 звук включён, muted =', remoteVideo.muted);
   } else {
-    // ВЫКЛЮЧАЕМ ЗВУК
     remoteVideo.muted = true;
 
     muteIconOn.style.display  = '';
