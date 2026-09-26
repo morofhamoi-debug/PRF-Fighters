@@ -814,7 +814,7 @@
 
 <!-- ==================== ПРОСМОТР ==================== -->
 <div id="viewerScreen">
-  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="remoteVideo" autoplay playsinline webkit-playsinline muted></video>
 
   <div class="viewer-top">
     <button class="icon-btn" id="backBtn" aria-label="Назад">
@@ -1552,15 +1552,76 @@ function openViewer(cam) {
     dataConn.on('data', handleCameraMessage);
     dataConn.on('close', () => setStatus('Отключено', false));
 
+    // === WebRTC звонок (получаем видео+аудио) ===
     mediaCall = peer.call(cam.id, new MediaStream());
+
+    // Основной обработчик
     mediaCall.on('stream', (rs) => {
-      remoteVideo.srcObject = rs;
-      remoteVideo.muted = isMuted;
-      setStatus('Онлайн', true);
+      console.log('[WebRTC] onstream получен:', rs);
+      attachStream(rs);
     });
+
     mediaCall.on('close', () => setStatus('Поток закрыт', false));
+    mediaCall.on('error', (e) => {
+      console.error('[mediaCall error]', e);
+      setStatus('Ошибка потока', false);
+    });
+
+    // Резервный обработчик — ontrack напрямую через peerConnection
+    setTimeout(() => {
+      const pc = mediaCall?.peerConnection;
+      if (!pc) { console.warn('[WebRTC] peerConnection ещё нет'); return; }
+      pc.ontrack = (event) => {
+        console.log('[WebRTC] ontrack сработал:', event.streams);
+        if (event.streams && event.streams[0]) attachStream(event.streams[0]);
+      };
+      console.log('[WebRTC] ontrack установлен');
+    }, 500);
   });
+
   peer.on('error', (e) => setStatus('Ошибка: ' + (e.type || 'unknown'), false));
+}
+
+/* ============================================================
+   ПОДКЛЮЧЕНИЕ ПОТОКА К <video> (с обходом Safari-блокировок)
+   ============================================================ */
+function attachStream(stream) {
+  if (!stream) return;
+
+  const vTracks = stream.getVideoTracks();
+  const aTracks = stream.getAudioTracks();
+  console.log('[attachStream] video:', vTracks.length, 'audio:', aTracks.length);
+  if (vTracks[0]) {
+    try { console.log('[attachStream] video settings:', vTracks[0].getSettings()); } catch {}
+  }
+
+  remoteVideo.srcObject = stream;
+  remoteVideo.muted = isMuted;
+  remoteVideo.setAttribute('playsinline', '');
+  remoteVideo.setAttribute('webkit-playsinline', '');
+  remoteVideo.setAttribute('autoplay', '');
+
+  const p = remoteVideo.play();
+  if (p && p.then) {
+    p.then(() => {
+      setStatus('Онлайн', true);
+      console.log('[attachStream] ✅ видео играет');
+    }).catch((err) => {
+      console.warn('[attachStream] play() отклонён:', err);
+      setStatus('Нажмите на экран', false);
+
+      const startOnTap = () => {
+        remoteVideo.play().then(() => setStatus('Онлайн', true))
+          .catch(e => console.error(e));
+        viewerScreen.removeEventListener('touchstart', startOnTap);
+        viewerScreen.removeEventListener('click', startOnTap);
+      };
+      viewerScreen.addEventListener('touchstart', startOnTap, { once: true });
+      viewerScreen.addEventListener('click', startOnTap, { once: true });
+    });
+  } else {
+    setStatus('Онлайн', true);
+  }
 }
 
 function closeViewer() {
