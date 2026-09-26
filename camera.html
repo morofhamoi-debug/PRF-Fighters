@@ -1360,7 +1360,7 @@ async function requestPermissionsAndStart() {
 permBtn.addEventListener('click', requestPermissionsAndStart);
 
 /* ============================================================
-   КАМЕРА
+   КАМЕРА — ИЗМЕНЕНО: явные параметры для iPad Safari
    ============================================================ */
 async function startCamera(front) {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
@@ -1368,19 +1368,28 @@ async function startCamera(front) {
   stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: front ? 'user' : 'environment',
-      width:  { ideal: 1280 },
-      height: { ideal: 720 }
+      width:  { ideal: 1280, max: 1280 },
+      height: { ideal: 720,  max: 720 },
+      frameRate: { ideal: 24, max: 30 }
     },
-    audio: true
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
   });
 
   preview.srcObject = stream;
+  preview.muted = true;
+  preview.setAttribute('playsinline', '');
+
   track = stream.getVideoTracks()[0];
 
-  // Логируем что реально отдаёт Android
-  const settings = track.getSettings ? track.getSettings() : {};
-  console.log('[Camera] video settings:', settings);
-  console.log('[Camera] video tracks:', stream.getVideoTracks().length, 'audio:', stream.getAudioTracks().length);
+  const v = stream.getVideoTracks().length;
+  const a = stream.getAudioTracks().length;
+  console.log('[Camera] video:', v, 'audio:', a);
+  if (track) console.log('[Camera] video settings:', track.getSettings());
+  if (stream.getAudioTracks()[0]) console.log('[Camera] audio settings:', stream.getAudioTracks()[0].getSettings());
 
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   zoomCaps = caps.zoom || null;
@@ -1401,7 +1410,6 @@ function preferH264(pc) {
       const caps = RTCRtpSender.getCapabilities('video');
       if (!caps || !caps.codecs) return;
 
-      // Ставим H264 в начало списка, остальное — после
       const h264 = caps.codecs.filter(c =>
         c.mimeType && c.mimeType.toLowerCase() === 'video/h264'
       );
@@ -1462,33 +1470,40 @@ function startPeer() {
     });
   });
 
-  // ОТВЕТ НА ЗВОНОК — самое важное для iOS
+  // ОТВЕТ НА ЗВОНОК — ИЗМЕНЕНО: H264 ставим ПОСЛЕ answer
   peer.on('call', (call) => {
     console.log('[peer] Входящий call, отвечаем с потоком');
     console.log('[peer] в потоке: video:', stream.getVideoTracks().length, 'audio:', stream.getAudioTracks().length);
 
     activeCall = call;
 
-    // Пытаемся выставить H264 ДО answer, как только peerConnection появится
-    try {
-      const pc = call.peerConnection;
-      if (pc) preferH264(pc);
-      else {
-        // если pc ещё не готов, подождём немного
-        setTimeout(() => {
-          if (call.peerConnection) preferH264(call.peerConnection);
-        }, 200);
-      }
-    } catch (e) { console.warn('[call] preferH264:', e); }
-
+    // Сначала отвечаем — PeerJS создаёт peerConnection здесь
     call.answer(stream);
+
+    // Теперь ждём появления peerConnection и ставим H264
+    let attempts = 0;
+    const codecTimer = setInterval(() => {
+      attempts++;
+      const pc = call.peerConnection;
+      if (!pc) {
+        if (attempts > 20) {
+          console.warn('[peer] peerConnection не появился за 2 сек');
+          clearInterval(codecTimer);
+        }
+        return;
+      }
+      preferH264(pc);
+      clearInterval(codecTimer);
+    }, 100);
 
     call.on('close', () => {
       console.log('[peer] call закрыт');
       activeCall = null;
+      clearInterval(codecTimer);
     });
     call.on('error', (e) => {
       console.error('[peer] call error:', e);
+      clearInterval(codecTimer);
     });
   });
 }
