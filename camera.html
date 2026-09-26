@@ -35,7 +35,6 @@
   svg { display: block; }
   .icon { width: 22px; height: 22px; }
 
-  /* ==================== ЭКРАН АВТОРИЗАЦИИ ==================== */
   #authScreen {
     position: fixed; inset: 0;
     background:
@@ -785,7 +784,6 @@
   </div>
 </div>
 
-<!-- ==================== TOAST ==================== -->
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1370,8 +1368,8 @@ async function startCamera(front) {
   stream = await navigator.mediaDevices.getUserMedia({
     video: {
       facingMode: front ? 'user' : 'environment',
-      width:  { ideal: 1920 },
-      height: { ideal: 1080 }
+      width:  { ideal: 1280 },
+      height: { ideal: 720 }
     },
     audio: true
   });
@@ -1379,9 +1377,49 @@ async function startCamera(front) {
   preview.srcObject = stream;
   track = stream.getVideoTracks()[0];
 
+  // Логируем что реально отдаёт Android
+  const settings = track.getSettings ? track.getSettings() : {};
+  console.log('[Camera] video settings:', settings);
+  console.log('[Camera] video tracks:', stream.getVideoTracks().length, 'audio:', stream.getAudioTracks().length);
+
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   zoomCaps = caps.zoom || null;
   return caps;
+}
+
+/* ============================================================
+   ВЫБОР КОДЕКА H264 (чтобы iPhone Safari видел видео)
+   ============================================================ */
+function preferH264(pc) {
+  try {
+    const transceivers = pc.getTransceivers();
+    transceivers.forEach(t => {
+      if (!t.sender || !t.sender.track) return;
+      if (t.sender.track.kind !== 'video') return;
+      if (typeof RTCRtpSender.getCapabilities !== 'function') return;
+
+      const caps = RTCRtpSender.getCapabilities('video');
+      if (!caps || !caps.codecs) return;
+
+      // Ставим H264 в начало списка, остальное — после
+      const h264 = caps.codecs.filter(c =>
+        c.mimeType && c.mimeType.toLowerCase() === 'video/h264'
+      );
+      const rest = caps.codecs.filter(c =>
+        !c.mimeType || c.mimeType.toLowerCase() !== 'video/h264'
+      );
+      const ordered = [...h264, ...rest];
+
+      try {
+        t.setCodecPreferences(ordered);
+        console.log('[Codec] H264 выставлен в приоритет для трека', t.sender.track.kind);
+      } catch (err) {
+        console.warn('[Codec] setCodecPreferences не сработал:', err);
+      }
+    });
+  } catch (e) {
+    console.warn('[preferH264] error:', e);
+  }
 }
 
 /* ============================================================
@@ -1424,10 +1462,34 @@ function startPeer() {
     });
   });
 
+  // ОТВЕТ НА ЗВОНОК — самое важное для iOS
   peer.on('call', (call) => {
+    console.log('[peer] Входящий call, отвечаем с потоком');
+    console.log('[peer] в потоке: video:', stream.getVideoTracks().length, 'audio:', stream.getAudioTracks().length);
+
     activeCall = call;
+
+    // Пытаемся выставить H264 ДО answer, как только peerConnection появится
+    try {
+      const pc = call.peerConnection;
+      if (pc) preferH264(pc);
+      else {
+        // если pc ещё не готов, подождём немного
+        setTimeout(() => {
+          if (call.peerConnection) preferH264(call.peerConnection);
+        }, 200);
+      }
+    } catch (e) { console.warn('[call] preferH264:', e); }
+
     call.answer(stream);
-    call.on('close', () => activeCall = null);
+
+    call.on('close', () => {
+      console.log('[peer] call закрыт');
+      activeCall = null;
+    });
+    call.on('error', (e) => {
+      console.error('[peer] call error:', e);
+    });
   });
 }
 
