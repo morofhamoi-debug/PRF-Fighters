@@ -1405,17 +1405,17 @@ addWindow(HX0 - 0.02, 5.8, -25, 'left');
 addWindow(HX1 + 0.02, 2.0, -25, 'right');
 addWindow(HX1 + 0.02, 5.8, -25, 'right');
 
-/* ---- Front door (dark wood, ajar) ---- */
+/* ---- Front door (dark wood, wide open) ---- */
 {
   const doorGeo = new THREE.BoxGeometry(2.4, 2.4, 0.12);
   const door = new THREE.Mesh(doorGeo, matDoorWood);
-  // Place door ajar (rotated on hinge)
+  // Place door ajar (rotated on hinge) — now fully open outward
   door.position.set(-1.2, FLOOR_Y + 1.2, HZ1 + 0.05);
   const pivot = new THREE.Group();
   pivot.position.set(-1.2, FLOOR_Y + 1.2, HZ1 + 0.05);
   door.position.set(0, 0, 0);
   pivot.add(door);
-  pivot.rotation.y = -0.5;
+  pivot.rotation.y = -1.4;  // wide open (was -0.5)
   houseGroup.add(pivot);
   // door handle
   const handle = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), matRust);
@@ -1539,6 +1539,152 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
 
   houseGroup.add(roofGroup);
 }
+
+/* ============================================================
+   ===================== WALL LAMPS (БРА) =====================
+   ============================================================
+   Настенные кованые лампы с тёплым светом, размещённые вокруг
+   всего особняка: по обе стороны от входной двери, на втором
+   этаже фасада, на боках и на задней стене. Некоторые мигают
+   (эффект неисправной проводки — жуть).
+   ============================================================ */
+const flickerLights = [];
+
+function createWallLamp(x, y, z, facing, opts = {}) {
+  const lit = opts.lit !== false;   // по умолчанию горит
+  const group = new THREE.Group();
+
+  // Материалы
+  const bracketMat = new THREE.MeshStandardMaterial({
+    color: 0x241610, roughness: 0.85, metalness: 0.55
+  });
+  const shadeMat = new THREE.MeshStandardMaterial({
+    color: 0x2a1c10, roughness: 0.9,
+    side: THREE.DoubleSide,
+    emissive: lit ? 0xff8844 : 0x000000,
+    emissiveIntensity: lit ? 0.22 : 0
+  });
+  const bulbMat = new THREE.MeshBasicMaterial({
+    color: lit ? 0xffcf9a : 0x201410
+  });
+
+  // 1) Монтажная пластина на стене
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.24, 0.04), bracketMat);
+  plate.position.set(0, 0.02, 0.02);
+  group.add(plate);
+
+  // 2) Кованая дуга (грубая аппроксимация двумя брусками)
+  const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.055, 0.18), bracketMat);
+  arm1.position.set(0, 0.10, 0.11);
+  group.add(arm1);
+
+  const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.10, 0.055), bracketMat);
+  arm2.position.set(0, 0.05, 0.19);
+  group.add(arm2);
+
+  // Небольшая кованая завитушка-декор
+  const swirl = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI * 1.2), bracketMat);
+  swirl.position.set(0, 0.14, 0.14);
+  swirl.rotation.z = -0.4;
+  group.add(swirl);
+
+  // 3) Абажур — открытый снизу конус
+  const shade = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.20, 12, 1, true), shadeMat);
+  shade.position.set(0, -0.10, 0.19);
+  group.add(shade);
+
+  // Кольцо-обод абажура
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.008, 6, 16), bracketMat);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(0, -0.20, 0.19);
+  group.add(rim);
+
+  // 4) Лампочка
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), bulbMat);
+  bulb.position.set(0, -0.12, 0.19);
+  group.add(bulb);
+
+  // 5) Точечный источник света
+  if (lit) {
+    const light = new THREE.PointLight(
+      opts.color || 0xffb070,
+      opts.intensity || 0.9,
+      opts.distance || 8,
+      2
+    );
+    light.position.set(0, -0.16, 0.19);
+    group.add(light);
+
+    if (opts.flicker) {
+      flickerLights.push({
+        light,
+        baseIntensity: opts.intensity || 0.9,
+        phase: Math.random() * 100,
+        speed: 6 + Math.random() * 8,
+        depth: 0.35 + Math.random() * 0.4
+      });
+    }
+  }
+
+  // 6) Ориентация относительно стены
+  group.position.set(x, y, z);
+  if (facing === 'front') {
+    group.rotation.y = 0;                     // +Z наружу
+  } else if (facing === 'back') {
+    group.rotation.y = Math.PI;               // -Z наружу
+  } else if (facing === 'left') {
+    group.rotation.y = -Math.PI / 2;          // -X наружу
+  } else if (facing === 'right') {
+    group.rotation.y = Math.PI / 2;           // +X наружу
+  }
+
+  houseGroup.add(group);
+  return group;
+}
+
+/* Смещение от центра стены к её наружной поверхности */
+const WALL_OUT = WALL_T / 2 + 0.005;
+
+/* ---- Фронтальные (лицом на +Z) ---- */
+// По бокам от входной двери — самые яркие, атмосферные
+createWallLamp(-2.6, FLOOR_Y + 2.6, HZ1 + WALL_OUT, 'front', {
+  flicker: true, intensity: 1.35, color: 0xffa860, distance: 9
+});
+createWallLamp( 2.6, FLOOR_Y + 2.6, HZ1 + WALL_OUT, 'front', {
+  flicker: false, intensity: 1.15, color: 0xffb878, distance: 9
+});
+
+// По углам фасада (второй этаж, между окнами)
+createWallLamp(-9.5, CEIL1_Y + 1.6, HZ1 + WALL_OUT, 'front', {
+  flicker: true, intensity: 0.95, color: 0xffa060, distance: 7
+});
+createWallLamp( 9.5, CEIL1_Y + 1.6, HZ1 + WALL_OUT, 'front', {
+  flicker: false, intensity: 0.95, color: 0xffa060, distance: 7
+});
+
+/* ---- Задняя стена (лицом на -Z) ---- */
+createWallLamp(-8.0, FLOOR_Y + 2.6, HZ0 - WALL_OUT, 'back', {
+  flicker: false, intensity: 0.85, color: 0xffb070, distance: 8
+});
+createWallLamp( 8.0, FLOOR_Y + 2.6, HZ0 - WALL_OUT, 'back', {
+  flicker: true, intensity: 0.95, color: 0xff9a55, distance: 8
+});
+
+/* ---- Левая стена (лицом на -X) ---- */
+createWallLamp(HX0 - WALL_OUT, FLOOR_Y + 2.6, -25, 'left', {
+  flicker: false, intensity: 0.9, color: 0xffb070, distance: 8
+});
+createWallLamp(HX0 - WALL_OUT, CEIL1_Y + 1.6, -20, 'left', {
+  flicker: true, intensity: 0.85, color: 0xffa060, distance: 7
+});
+
+/* ---- Правая стена (лицом на +X) ---- */
+createWallLamp(HX1 + WALL_OUT, FLOOR_Y + 2.6, -25, 'right', {
+  flicker: false, intensity: 0.9, color: 0xffb070, distance: 8
+});
+createWallLamp(HX1 + WALL_OUT, CEIL1_Y + 1.6, -20, 'right', {
+  flicker: true, intensity: 0.85, color: 0xffa060, distance: 7
+});
 
 /* ============================================================
    ==================== INTERIOR FURNITURE ====================
@@ -2284,6 +2430,18 @@ function animate(now) {
     const f = 0.6 + 0.4 * Math.sin(clockT.t * 22 + Math.sin(clockT.t * 3.7) * 4)
                    + 0.2 * Math.sin(clockT.t * 41);
     window.__childLight.intensity = Math.max(0.15, f) * 1.1;
+  }
+
+  // ---- Wall lamp flicker (БРА вокруг дома) ----
+  for (let i = 0; i < flickerLights.length; i++) {
+    const fl = flickerLights[i];
+    const t = clockT.t * fl.speed + fl.phase;
+    const pulse = 0.55
+                + 0.45 * Math.sin(t)
+                + 0.15 * Math.sin(t * 3.1 + 1.7)
+                + 0.08 * Math.sin(t * 7.3 + 0.4);
+    const v = Math.max(0.05, Math.min(1.25, pulse));
+    fl.light.intensity = fl.baseIntensity * (1 - fl.depth + fl.depth * v);
   }
 
   renderer.render(scene, camera);
