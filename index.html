@@ -227,9 +227,11 @@
     backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,0,0,0.5);
   }
+  /* ИСПРАВЛЕНО: убран margin, центрирование через transform */
   #knob {
     position: absolute; top: 50%; left: 50%;
-    width: 56px; height: 56px; margin: -28px 0 0 -28px;
+    width: 56px; height: 56px;
+    transform: translate(-50%, -50%);
     background: radial-gradient(circle at 35% 30%, rgba(140,100,65,0.55), rgba(30,20,12,0.85));
     border: 1.5px solid rgba(180,130,80,0.45);
     border-radius: 50%;
@@ -341,7 +343,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.9;
+renderer.toneMappingExposure = 0.95;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x05060a);
@@ -413,7 +415,6 @@ const woodSidingTex = makeCanvasTexture(512, (ctx, s) => {
       }
       ctx.stroke();
     }
-    // peeling paint patches
     const patches = 3 + Math.floor(Math.random() * 5);
     for (let p = 0; p < patches; p++) {
       ctx.fillStyle = `rgba(150,140,120,${Math.random() * 0.15})`;
@@ -426,7 +427,6 @@ const woodSidingTex = makeCanvasTexture(512, (ctx, s) => {
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fillRect(0, y + plankH - 2, s, 2);
   }
-  // grime
   for (let i = 0; i < 4000; i++) {
     ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.3})`;
     ctx.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 2, 1 + Math.random() * 2);
@@ -450,14 +450,12 @@ const brickTex = makeCanvasTexture(512, (ctx, s) => {
       const bb = Math.floor(35 * v);
       ctx.fillStyle = `rgb(${rr},${gg},${bb})`;
       ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2);
-      // specks
       for (let k = 0; k < 8; k++) {
         ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.4})`;
         ctx.fillRect(x + Math.random() * bw, y + Math.random() * bh, 1, 1);
       }
     }
   }
-  // dark mortar
   ctx.strokeStyle = 'rgba(0,0,0,0.6)';
   ctx.lineWidth = 1;
   for (let r = 0; r <= rows; r++) {
@@ -490,7 +488,6 @@ const shingleTex = makeCanvasTexture(512, (ctx, s) => {
 const wallpaperTex = makeCanvasTexture(512, (ctx, s) => {
   ctx.fillStyle = '#3a2a1e';
   ctx.fillRect(0, 0, s, s);
-  // faded floral pattern
   for (let i = 0; i < 60; i++) {
     const x = Math.random() * s;
     const y = Math.random() * s;
@@ -503,7 +500,6 @@ const wallpaperTex = makeCanvasTexture(512, (ctx, s) => {
     ctx.arc(x + 3, y + 3, 2 + Math.random() * 4, 0, Math.PI * 2);
     ctx.fill();
   }
-  // water stains
   for (let i = 0; i < 25; i++) {
     const x = Math.random() * s;
     const y = Math.random() * s;
@@ -515,7 +511,6 @@ const wallpaperTex = makeCanvasTexture(512, (ctx, s) => {
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.fill();
   }
-  // peeling
   for (let i = 0; i < 40; i++) {
     ctx.strokeStyle = `rgba(0,0,0,${0.3 + Math.random() * 0.4})`;
     ctx.lineWidth = 0.5 + Math.random() * 1.5;
@@ -549,7 +544,6 @@ const woodFloorTex = makeCanvasTexture(512, (ctx, s) => {
       ctx.stroke();
     }
   }
-  // blood stains (very dark red)
   for (let i = 0; i < 12; i++) {
     const x = Math.random() * s;
     const y = Math.random() * s;
@@ -569,7 +563,6 @@ const woodFloorTex = makeCanvasTexture(512, (ctx, s) => {
 const MOON_DIR = new THREE.Vector3(0.42, 0.58, -0.70).normalize();
 const MOON_COLOR = new THREE.Color(0x9db4d6);
 
-/* Sky dome — deep evening gradient */
 const skyGeo = new THREE.SphereGeometry(500, 40, 24);
 const skyMat = new THREE.ShaderMaterial({
   side: THREE.BackSide,
@@ -601,16 +594,11 @@ const skyMat = new THREE.ShaderMaterial({
       float y = max(d.y, 0.0);
       vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.35, y));
       col = mix(col, uZenith, smoothstep(0.28, 0.95, y));
-
-      // subtle moon glow
       float md = max(dot(d, uMoonDir), 0.0);
       col += vec3(0.55, 0.62, 0.80) * pow(md, 200.0) * 0.55;
       col += vec3(0.35, 0.42, 0.60) * pow(md, 12.0) * 0.12;
-
-      // subtle horizon haze
       float hz = exp(-y * 8.0);
       col += vec3(0.06, 0.05, 0.09) * hz;
-
       gl_FragColor = vec4(col, 1.0);
     }
   `
@@ -620,7 +608,6 @@ skyMesh.frustumCulled = false;
 skyMesh.renderOrder = -1000;
 scene.add(skyMesh);
 
-/* Stars — 3600 twinkling points */
 const STAR_COUNT = 3600;
 const starGeo = new THREE.BufferGeometry();
 {
@@ -630,7 +617,6 @@ const starGeo = new THREE.BufferGeometry();
   const tint = new Float32Array(STAR_COUNT * 3);
   const R = 420;
   for (let i = 0; i < STAR_COUNT; i++) {
-    // Sample on upper hemisphere, biased away from horizon
     const u = Math.random();
     const phi = Math.acos(0.05 + 0.95 * Math.pow(u, 0.6));
     const theta = Math.random() * Math.PI * 2;
@@ -638,11 +624,9 @@ const starGeo = new THREE.BufferGeometry();
     const y = R * Math.cos(phi) + 40;
     const z = R * Math.sin(phi) * Math.sin(theta);
     pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
-    // brightness distribution — mostly faint
     const r = Math.random();
     size[i] = r < 0.85 ? 0.6 + Math.random() * 0.8 : 1.4 + Math.random() * 2.2;
     phase[i] = Math.random() * Math.PI * 2;
-    // subtle color tints
     const t = Math.random();
     if (t < 0.72) { tint[i*3]=1.0; tint[i*3+1]=0.98; tint[i*3+2]=0.95; }
     else if (t < 0.88) { tint[i*3]=0.85; tint[i*3+1]=0.92; tint[i*3+2]=1.0; }
@@ -700,7 +684,6 @@ starPoints.frustumCulled = false;
 starPoints.renderOrder = -999;
 scene.add(starPoints);
 
-/* Moon — sphere with emissive glow */
 const moonGroup = new THREE.Group();
 {
   const moonSphereGeo = new THREE.SphereGeometry(9, 24, 18);
@@ -708,7 +691,6 @@ const moonGroup = new THREE.Group();
   const moonSphere = new THREE.Mesh(moonSphereGeo, moonSphereMat);
   moonGroup.add(moonSphere);
 
-  // crater texture overlay
   const craterTex = makeCanvasTexture(256, (ctx, s) => {
     ctx.fillStyle = '#e8ecf0';
     ctx.fillRect(0, 0, s, s);
@@ -729,7 +711,6 @@ const moonGroup = new THREE.Group();
   );
   moonGroup.add(craterMesh);
 
-  // glow sprite
   const glowC = document.createElement('canvas');
   glowC.width = glowC.height = 256;
   const gctx = glowC.getContext('2d');
@@ -754,10 +735,10 @@ scene.add(moonGroup);
 /* ============================================================
    ======================= LIGHTING ===========================
    ============================================================ */
-const ambientLight = new THREE.AmbientLight(0x1a2230, 0.28);
+const ambientLight = new THREE.AmbientLight(0x1a2230, 0.35);
 scene.add(ambientLight);
 
-const hemiLight = new THREE.HemisphereLight(0x2a3550, 0x08060a, 0.25);
+const hemiLight = new THREE.HemisphereLight(0x2a3550, 0x08060a, 0.3);
 scene.add(hemiLight);
 
 const moonLight = new THREE.DirectionalLight(0x8fa8cc, 0.55);
@@ -766,14 +747,42 @@ moonLight.castShadow = false;
 scene.add(moonLight);
 scene.add(moonLight.target);
 
-/* Flashlight (SpotLight attached to camera) */
-const flashlight = new THREE.SpotLight(0xffe8c8, 0.0, 32, Math.PI / 7, 0.45, 1.4);
-flashlight.position.set(0.15, -0.15, 0.1);
+/* ------------------------------------------------------------
+   FLASHLIGHT — как в PUBG / GTA5
+   Широкий мягкий конус, яркий центр, плавные края, дальний
+   пробой. Attached to camera, движется с обзором.
+   ------------------------------------------------------------ */
+const flashlight = new THREE.SpotLight(
+  0xffe4c0,          // цвет — тёплый бело-жёлтый
+  0.0,               // выключен по умолчанию
+  60,                // дистанция — теперь добивает далеко
+  Math.PI / 6,       // угол конуса 30° (в PUBG/GTA около этого)
+  0.6,               // penumbra — очень мягкие края
+  1.2                // decay — не такой агрессивный, чтобы свет "доставал"
+);
+flashlight.position.set(0.15, -0.12, 0.05);
 camera.add(flashlight);
 const flashTarget = new THREE.Object3D();
 flashTarget.position.set(0, 0, -1);
 camera.add(flashTarget);
 flashlight.target = flashTarget;
+
+/* Вторичный мягкий конус — периферийное зрение (halo) */
+const flashHalo = new THREE.SpotLight(
+  0xffe8cc,
+  0.0,
+  30,
+  Math.PI / 3,       // 60° — широкое мягкое свечение вокруг
+  0.95,
+  1.3
+);
+flashHalo.position.set(0.15, -0.12, 0.05);
+camera.add(flashHalo);
+const flashHaloTarget = new THREE.Object3D();
+flashHaloTarget.position.set(0, 0, -1);
+camera.add(flashHaloTarget);
+flashHalo.target = flashHaloTarget;
+
 let flashlightOn = false;
 
 /* ============================================================
@@ -811,7 +820,6 @@ function terrainHeight(x, z) {
   h += (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.12;
   return h;
 }
-// flatten ground around the house footprint
 function flattenAroundHouse(x, z) {
   const houseX = 0, houseZ = -25;
   const dx = Math.abs(x - houseX);
@@ -847,7 +855,6 @@ const groundMesh = new THREE.Mesh(groundGeo, groundMat);
 groundMesh.receiveShadow = false;
 scene.add(groundMesh);
 
-/* Grass — instanced blades, dark dry variation */
 let grassMesh = null;
 const grassUniforms = {
   uTime:       { value: 0 },
@@ -979,7 +986,6 @@ const grassMat = new THREE.ShaderMaterial({
       vec3 lit = col * (uSunColor * ndl * 0.9 + ambient * 1.1);
       lit *= mix(0.55, 1.0, smoothstep(0.0, 0.35, vHeight));
 
-      // exponential squared fog
       float d = vDist;
       float fogF = 1.0 - exp(-uFogDensity * uFogDensity * d * d);
       lit = mix(lit, uFogColor, fogF);
@@ -1014,7 +1020,6 @@ function buildGrass() {
   const tilts = new Float32Array(count * 2);
   const tmp = new THREE.Color();
 
-  // House footprint — keep grass out of the house
   const HX0 = -11, HX1 = 11, HZ0 = -33, HZ1 = -17;
 
   let placed = 0;
@@ -1027,7 +1032,6 @@ function buildGrass() {
     const x = Math.cos(theta) * r;
     const z = Math.sin(theta) * r;
 
-    // Skip if inside house footprint
     if (x > HX0 - 1 && x < HX1 + 1 && z > HZ0 - 1 && z < HZ1 + 1) continue;
 
     const i = placed++;
@@ -1045,9 +1049,7 @@ function buildGrass() {
     scales[i * 2] = w;
     scales[i * 2 + 1] = h;
 
-    // Dry, dead, dark grass palette
     const patchHue = fbm2(x * 0.12 - 8.2, z * 0.12 + 5.6);
-    // Hue: 0.10 - 0.18 (yellow-brown to olive)
     const hue = 0.10 + patchHue * 0.09 + (Math.random() - 0.5) * 0.015;
     const sat = 0.18 + Math.random() * 0.30;
     const lig = 0.08 + Math.random() * 0.12;
@@ -1084,7 +1086,7 @@ buildGrass();
 /* ============================================================
    ===================== COLLISION SYSTEM =====================
    ============================================================ */
-const colliders = []; // array of THREE.Box3
+const colliders = [];
 
 function addCollider(mesh) {
   mesh.updateMatrixWorld(true);
@@ -1106,7 +1108,6 @@ function addColliderBox(minX, minY, minZ, maxX, maxY, maxZ) {
 const houseGroup = new THREE.Group();
 scene.add(houseGroup);
 
-/* Materials */
 const matWoodDark = new THREE.MeshStandardMaterial({ map: woodSidingTex, color: 0x6b5240, roughness: 0.95 });
 const matWoodFloor = new THREE.MeshStandardMaterial({ map: woodFloorTex, color: 0x8a6a48, roughness: 0.95 });
 const matBrick = new THREE.MeshStandardMaterial({ map: brickTex, color: 0x7a5540, roughness: 0.98 });
@@ -1139,7 +1140,6 @@ const matMirror = new THREE.MeshStandardMaterial({
   transparent: true, opacity: 0.85
 });
 
-/* Helper to create a box mesh at world coords */
 function box(w, h, d, x, y, z, mat, parent = houseGroup, collide = true) {
   const g = new THREE.BoxGeometry(w, h, d);
   const m = new THREE.Mesh(g, mat);
@@ -1151,14 +1151,12 @@ function box(w, h, d, x, y, z, mat, parent = houseGroup, collide = true) {
   return m;
 }
 
-/* --- HOUSE GEOMETRY --- */
 const HX0 = -11, HX1 = 11, HZ0 = -33, HZ1 = -17;
 const FLOOR_Y = 0.15;
 const CEIL1_Y = 4.0;
 const CEIL2_Y = 7.8;
 const WALL_T = 0.35;
 
-/* Foundation (brick) */
 {
   const w = (HX1 - HX0) + 1.2;
   const d = (HZ1 - HZ0) + 1.2;
@@ -1170,7 +1168,6 @@ const WALL_T = 0.35;
   addColliderBox(cx - w/2, -1, cz - d/2, cx + w/2, 0.5, cz + d/2);
 }
 
-/* Ground floor slab */
 {
   const w = (HX1 - HX0);
   const d = (HZ1 - HZ0);
@@ -1181,26 +1178,16 @@ const WALL_T = 0.35;
   houseGroup.add(slab);
 }
 
-/* Ceiling of floor 1 = floor of floor 2 (with stairs hole) */
 {
   const Y = CEIL1_Y;
-  // Left panel: X -11 to -2, full depth
   box(9, 0.2, 16, -6.5, Y, -25, matCeiling, houseGroup, false);
-  // Right panel: X 2 to 11
   box(9, 0.2, 16, 6.5, Y, -25, matCeiling, houseGroup, false);
-  // Middle front: X -2 to 2, Z -25 to -17
   box(4, 0.2, 8, 0, Y, -21, matCeiling, houseGroup, false);
-  // Middle back: X -2 to 2, Z -33 to -29 (behind stairs)
   box(4, 0.2, 4, 0, Y, -31, matCeiling, houseGroup, false);
-  // Stairs hole: X -2 to 2, Z -29 to -25 (empty)
 }
 
-/* Roof of floor 2 (ceiling) */
 box(22, 0.3, 16, 0, CEIL2_Y, -25, matCeiling, houseGroup, false);
 
-/* ---- Exterior Walls ---- */
-
-/* Front wall (Z = HZ1 = -17), door at X -1.2 to 1.2 */
 function wallSegmentX(parent, x1, x2, z, y0, y1, thickness, mat, collide = true) {
   if (x2 <= x1) return;
   const w = x2 - x1;
@@ -1226,63 +1213,46 @@ function wallSegmentZ(parent, z1, z2, x, y0, y1, thickness, mat, collide = true)
   return m;
 }
 
-/* Front wall (Z=-17), door at X -1.2 to 1.2 */
 wallSegmentX(houseGroup, HX0, -1.2, HZ1, FLOOR_Y, CEIL2_Y, WALL_T, matWoodDark);
 wallSegmentX(houseGroup, 1.2, HX1, HZ1, FLOOR_Y, CEIL2_Y, WALL_T, matWoodDark);
 wallSegmentX(houseGroup, -1.2, 1.2, HZ1, FLOOR_Y + 2.4, CEIL2_Y, WALL_T, matWoodDark);
 
-/* Back wall (Z=-33) */
 wallSegmentX(houseGroup, HX0, HX1, HZ0, FLOOR_Y, CEIL2_Y, WALL_T, matWoodDark);
 
-/* Left wall (X=-11) */
 wallSegmentZ(houseGroup, HZ0, HZ1, HX0, FLOOR_Y, CEIL2_Y, WALL_T, matWoodDark);
 
-/* Right wall (X=11) */
 wallSegmentZ(houseGroup, HZ0, HZ1, HX1, FLOOR_Y, CEIL2_Y, WALL_T, matWoodDark);
 
-/* ---- Interior Walls ---- */
-
-/* Wall at Z=-22 splitting front rooms from back area */
 wallSegmentX(houseGroup, HX0, -3.5, -22, FLOOR_Y, CEIL2_Y, 0.25, matWallpaper);
-wallSegmentX(houseGroup, -3.5, -1.0, -22, FLOOR_Y, FLOOR_Y + 2.4, 0.25, matWallpaper); // door left
+wallSegmentX(houseGroup, -3.5, -1.0, -22, FLOOR_Y, FLOOR_Y + 2.4, 0.25, matWallpaper);
 wallSegmentX(houseGroup, -3.5, -1.0, -22, FLOOR_Y + 2.4, CEIL2_Y, 0.25, matWallpaper);
-wallSegmentX(houseGroup, -1.0, 1.0, -22, FLOOR_Y + 2.4, CEIL2_Y, 0.25, matWallpaper); // above middle door
+wallSegmentX(houseGroup, -1.0, 1.0, -22, FLOOR_Y + 2.4, CEIL2_Y, 0.25, matWallpaper);
 wallSegmentX(houseGroup, 1.0, 3.5, -22, FLOOR_Y, FLOOR_Y + 2.4, 0.25, matWallpaper);
 wallSegmentX(houseGroup, 1.0, 3.5, -22, FLOOR_Y + 2.4, CEIL2_Y, 0.25, matWallpaper);
 wallSegmentX(houseGroup, 3.5, HX1, -22, FLOOR_Y, CEIL2_Y, 0.25, matWallpaper);
 
-/* Wall between living room and hallway at X=-2 (floor 1 only) */
 wallSegmentZ(houseGroup, -22, -25.5, -2, FLOOR_Y, CEIL1_Y, 0.2, matWallpaper2);
-wallSegmentZ(houseGroup, -25.5, -26.5, -2, FLOOR_Y + 2.2, CEIL1_Y, 0.2, matWallpaper2); // door top
-wallSegmentZ(houseGroup, -26.5, -22, -2, FLOOR_Y, FLOOR_Y + 0.0, 0.2, matWallpaper2); // placeholder (skip)
-/* Redo: living room / hallway wall from Z=-22 to Z=-26 with door at -24 to -25 */
-{
-  // clear previously added unnecessary colliders issue — just add segments properly
-}
+wallSegmentZ(houseGroup, -25.5, -26.5, -2, FLOOR_Y + 2.2, CEIL1_Y, 0.2, matWallpaper2);
+wallSegmentZ(houseGroup, -26.5, -22, -2, FLOOR_Y, FLOOR_Y + 0.0, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -26, -22, -2, FLOOR_Y, CEIL1_Y, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -22, -24, -2, FLOOR_Y, FLOOR_Y + 2.2, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -25, -22, -2, FLOOR_Y, FLOOR_Y + 2.2, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -24, -25, -2, FLOOR_Y + 2.2, CEIL1_Y, 0.2, matWallpaper2);
 
-/* Wall between hallway and kitchen at X=2 */
 wallSegmentZ(houseGroup, -26, -22, 2, FLOOR_Y, CEIL1_Y, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -22, -24, 2, FLOOR_Y, FLOOR_Y + 2.2, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -25, -22, 2, FLOOR_Y, FLOOR_Y + 2.2, 0.2, matWallpaper2);
 wallSegmentZ(houseGroup, -24, -25, 2, FLOOR_Y + 2.2, CEIL1_Y, 0.2, matWallpaper2);
 
-/* Floor 2 walls (Z=-22 to -17 rooms divided) */
 wallSegmentX(houseGroup, HX0, -2, -22, CEIL1_Y, CEIL2_Y, 0.25, matWallpaper2);
 wallSegmentX(houseGroup, 2, HX1, -22, CEIL1_Y, CEIL2_Y, 0.25, matWallpaper2);
 wallSegmentX(houseGroup, -2, 2, -22, CEIL1_Y + 2.2, CEIL2_Y, 0.25, matWallpaper2);
-/* Left room door from corridor */
 wallSegmentZ(houseGroup, -17, -22, -2, CEIL1_Y, CEIL2_Y, 0.2, matWallpaper2);
-/* Right room door from corridor */
 wallSegmentZ(houseGroup, -17, -22, 2, CEIL1_Y, CEIL2_Y, 0.2, matWallpaper2);
 
-/* Stairs (going up from Z=-29 to Z=-25, X -2 to 2) */
 {
   const steps = 20;
-  const totalRise = CEIL1_Y - FLOOR_Y + 0.1; // 3.95
+  const totalRise = CEIL1_Y - FLOOR_Y + 0.1;
   const stepH = totalRise / steps;
   const z0 = -29, z1 = -25;
   const stepD = (z1 - z0) / steps;
@@ -1295,14 +1265,11 @@ wallSegmentZ(houseGroup, -17, -22, 2, CEIL1_Y, CEIL2_Y, 0.2, matWallpaper2);
     m.position.set(0, y - stepH / 2, z);
     houseGroup.add(m);
   }
-  // invisible side rails so player can't enter stairs from the side
   addColliderBox(-2.15, FLOOR_Y, z0, -2, CEIL1_Y, z1);
   addColliderBox(2, FLOOR_Y, z0, 2.15, CEIL1_Y, z1);
 }
 
-/* Second floor railing around stairs hole */
 {
-  // railings on left and right of hole
   const railY = CEIL1_Y + 0.5;
   const railGeo = new THREE.BoxGeometry(0.08, 1.0, 4);
   const railL = new THREE.Mesh(railGeo, matRust);
@@ -1311,20 +1278,15 @@ wallSegmentZ(houseGroup, -17, -22, 2, CEIL1_Y, CEIL2_Y, 0.2, matWallpaper2);
   const railR = new THREE.Mesh(railGeo, matRust);
   railR.position.set(2.05, railY, -27);
   houseGroup.add(railR);
-  // top railing (against back wall of hall)
   const railBack = new THREE.Mesh(new THREE.BoxGeometry(4, 1.0, 0.08), matRust);
   railBack.position.set(0, railY, -24.95);
   houseGroup.add(railBack);
-  // colliders for railings
   addColliderBox(-2.1, CEIL1_Y, -29, -2, CEIL2_Y, -25);
   addColliderBox(2, CEIL1_Y, -29, 2.1, CEIL2_Y, -25);
   addColliderBox(-2, CEIL1_Y, -25, 2, CEIL2_Y, -24.9);
 }
 
-/* ---- Windows (both floors) ---- */
 function addWindow(x, y, z, side, width = 1.4, height = 1.6) {
-  // side: 'front' (facing +Z), 'back' (facing -Z), 'left' (facing -X), 'right'
-  // We'll create a dark recessed frame, plus boarded or broken panes
   const frameThickness = 0.15;
   const depth = 0.12;
   let frame;
@@ -1334,7 +1296,6 @@ function addWindow(x, y, z, side, width = 1.4, height = 1.6) {
 
   if (side === 'front' || side === 'back') {
     zOff = side === 'front' ? 1 : -1;
-    // Frame
     frame = new THREE.Group();
     const top = new THREE.Mesh(new THREE.BoxGeometry(width, frameThickness, depth), matWindow);
     top.position.set(x, y + height/2 + frameThickness/2, z + zOff * 0.05);
@@ -1346,12 +1307,10 @@ function addWindow(x, y, z, side, width = 1.4, height = 1.6) {
     frame.add(leftF);
     const rightF = leftF.clone(); rightF.position.x = x + width/2 + frameThickness/2;
     frame.add(rightF);
-    // Glass (broken)
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(width, height), matGlassBroken);
     glass.position.set(x, y, z + zOff * 0.02);
     if (side === 'front') glass.rotation.y = Math.PI;
     frame.add(glass);
-    // Some boarded windows
     if (Math.random() < 0.5) {
       for (let i = 0; i < 2; i++) {
         const b = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.18, 0.06), matBoard);
@@ -1386,7 +1345,6 @@ function addWindow(x, y, z, side, width = 1.4, height = 1.6) {
       }
     }
   }
-
   houseGroup.add(frame);
 }
 
@@ -1394,46 +1352,38 @@ addWindow(-7, 2.0, HZ1 + 0.02, 'front');
 addWindow(7, 2.0, HZ1 + 0.02, 'front');
 addWindow(-7, 5.8, HZ1 + 0.02, 'front');
 addWindow(7, 5.8, HZ1 + 0.02, 'front');
-
 addWindow(-7, 2.0, HZ0 - 0.02, 'back');
 addWindow(7, 2.0, HZ0 - 0.02, 'back');
 addWindow(-7, 5.8, HZ0 - 0.02, 'back');
 addWindow(7, 5.8, HZ0 - 0.02, 'back');
-
 addWindow(HX0 - 0.02, 2.0, -25, 'left');
 addWindow(HX0 - 0.02, 5.8, -25, 'left');
 addWindow(HX1 + 0.02, 2.0, -25, 'right');
 addWindow(HX1 + 0.02, 5.8, -25, 'right');
 
-/* ---- Front door (dark wood, wide open) ---- */
 {
   const doorGeo = new THREE.BoxGeometry(2.4, 2.4, 0.12);
   const door = new THREE.Mesh(doorGeo, matDoorWood);
-  // Place door ajar (rotated on hinge) — now fully open outward
   door.position.set(-1.2, FLOOR_Y + 1.2, HZ1 + 0.05);
   const pivot = new THREE.Group();
   pivot.position.set(-1.2, FLOOR_Y + 1.2, HZ1 + 0.05);
   door.position.set(0, 0, 0);
   pivot.add(door);
-  pivot.rotation.y = -1.4;  // wide open (was -0.5)
+  pivot.rotation.y = -1.4;
   houseGroup.add(pivot);
-  // door handle
   const handle = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), matRust);
   handle.position.set(1.05, 0.1, 0.08);
   door.add(handle);
 }
 
-/* ---- Porch: steps, columns, roof ---- */
 {
   const porchZ = HZ1 + 2.0;
   const porchW = 6;
-  // porch floor
   const pf = new THREE.Mesh(new THREE.BoxGeometry(porchW, 0.15, 2.5), matWoodFloor);
   pf.position.set(0, FLOOR_Y - 0.1, porchZ - 0.5);
   houseGroup.add(pf);
   addColliderBox(-porchW/2, FLOOR_Y - 0.2, porchZ - 1.75, porchW/2, FLOOR_Y, porchZ + 0.75);
 
-  // Steps (3 down to ground)
   for (let i = 0; i < 3; i++) {
     const stepY = FLOOR_Y - 0.1 - i * 0.18;
     const stepZ = porchZ + 0.75 + i * 0.3;
@@ -1444,7 +1394,6 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
     addColliderBox(-porchW/2, stepY - 0.1, stepZ - 0.15, porchW/2, stepY + 0.1, stepZ + 0.15);
   }
 
-  // Columns (leaning)
   for (let i = 0; i < 2; i++) {
     const cx = (i === 0) ? -2.6 : 2.6;
     const col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 3.2, 10), matWoodDark);
@@ -1455,18 +1404,14 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
     addColliderBox(cx - 0.2, FLOOR_Y, porchZ - 0.4, cx + 0.2, FLOOR_Y + 3.2, porchZ);
   }
 
-  // Porch roof
   const pr = new THREE.Mesh(new THREE.BoxGeometry(porchW + 0.6, 0.15, 3.0), matShingle);
   pr.position.set(0, FLOOR_Y + 3.2, porchZ - 0.6);
   houseGroup.add(pr);
 }
 
-/* ---- Balconies (floor 2, front) ---- */
 {
-  // balcony railing
   const rY = CEIL1_Y + 1.0;
   const bZ = HZ1 - 0.05;
-  // floor of balcony
   const bf = new THREE.Mesh(new THREE.BoxGeometry(5, 0.15, 1.5), matWoodDark);
   bf.position.set(-6, CEIL1_Y + 0.1, bZ + 0.75);
   houseGroup.add(bf);
@@ -1476,7 +1421,6 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
   houseGroup.add(bf2);
   addColliderBox(3.5, CEIL1_Y, bZ, 8.5, CEIL1_Y + 0.2, bZ + 1.5);
 
-  // railings
   function railing(x, y, z, w) {
     const g = new THREE.Group();
     const topRail = new THREE.Mesh(new THREE.BoxGeometry(w, 0.06, 0.06), matRust);
@@ -1484,7 +1428,6 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
     g.add(topRail);
     const botRail = topRail.clone(); botRail.position.y = y + 0.15;
     g.add(botRail);
-    // balusters
     const n = Math.floor(w / 0.25);
     for (let i = 0; i <= n; i++) {
       const bx = x - w/2 + (w * i / n);
@@ -1497,11 +1440,9 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
   railing(-6, CEIL1_Y + 0.1, bZ + 1.5, 5);
   railing(6, CEIL1_Y + 0.1, bZ + 1.5, 5);
   railing(-8.5, CEIL1_Y + 0.1, bZ + 0.75, 1.5);
-  // note: side railings use different axis - skip detailed
   railing(3.5, CEIL1_Y + 0.1, bZ + 0.75, 1.5);
 }
 
-/* ---- Roof (gabled, dark) ---- */
 {
   const roofGroup = new THREE.Group();
   const roofY = CEIL2_Y + 0.15;
@@ -1511,18 +1452,15 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
   const slopeLen = Math.sqrt(roofHalfW * roofHalfW + (ridgeY - roofY) * (ridgeY - roofY));
   const angle = Math.atan2(ridgeY - roofY, roofHalfW);
 
-  // left slope
   const sl = new THREE.Mesh(new THREE.BoxGeometry(slopeLen, 0.18, roofLen), matShingle);
   sl.position.set(-roofHalfW/2, (roofY + ridgeY)/2, (HZ0 + HZ1)/2);
   sl.rotation.z = angle;
   roofGroup.add(sl);
-  // right slope
   const sr = new THREE.Mesh(new THREE.BoxGeometry(slopeLen, 0.18, roofLen), matShingle);
   sr.position.set(roofHalfW/2, (roofY + ridgeY)/2, (HZ0 + HZ1)/2);
   sr.rotation.z = -angle;
   roofGroup.add(sr);
 
-  // front and back gable faces (triangle walls)
   const gableShapeL = new THREE.Shape();
   gableShapeL.moveTo(-roofHalfW, 0);
   gableShapeL.lineTo(roofHalfW, 0);
@@ -1543,37 +1481,33 @@ addWindow(HX1 + 0.02, 5.8, -25, 'right');
 /* ============================================================
    ===================== WALL LAMPS (БРА) =====================
    ============================================================
-   Настенные кованые лампы с тёплым светом, размещённые вокруг
-   всего особняка: по обе стороны от входной двери, на втором
-   этаже фасада, на боках и на задней стене. Некоторые мигают
-   (эффект неисправной проводки — жуть).
+   ИСПРАВЛЕНО: интенсивности увеличены в ~30-40 раз (физические
+   канделы в r155+), дистанция 14-18 м, decay 1.7 — теперь свет
+   реально ложится на стены, землю и траву вокруг дома.
    ============================================================ */
 const flickerLights = [];
 
 function createWallLamp(x, y, z, facing, opts = {}) {
-  const lit = opts.lit !== false;   // по умолчанию горит
+  const lit = opts.lit !== false;
   const group = new THREE.Group();
 
-  // Материалы
   const bracketMat = new THREE.MeshStandardMaterial({
     color: 0x241610, roughness: 0.85, metalness: 0.55
   });
   const shadeMat = new THREE.MeshStandardMaterial({
     color: 0x2a1c10, roughness: 0.9,
     side: THREE.DoubleSide,
-    emissive: lit ? 0xff8844 : 0x000000,
-    emissiveIntensity: lit ? 0.22 : 0
+    emissive: lit ? 0xff9a55 : 0x000000,
+    emissiveIntensity: lit ? 0.75 : 0
   });
   const bulbMat = new THREE.MeshBasicMaterial({
-    color: lit ? 0xffcf9a : 0x201410
+    color: lit ? 0xffd8a8 : 0x201410
   });
 
-  // 1) Монтажная пластина на стене
   const plate = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.24, 0.04), bracketMat);
   plate.position.set(0, 0.02, 0.02);
   group.add(plate);
 
-  // 2) Кованая дуга (грубая аппроксимация двумя брусками)
   const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.055, 0.18), bracketMat);
   arm1.position.set(0, 0.10, 0.11);
   group.add(arm1);
@@ -1582,43 +1516,39 @@ function createWallLamp(x, y, z, facing, opts = {}) {
   arm2.position.set(0, 0.05, 0.19);
   group.add(arm2);
 
-  // Небольшая кованая завитушка-декор
   const swirl = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI * 1.2), bracketMat);
   swirl.position.set(0, 0.14, 0.14);
   swirl.rotation.z = -0.4;
   group.add(swirl);
 
-  // 3) Абажур — открытый снизу конус
   const shade = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.20, 12, 1, true), shadeMat);
   shade.position.set(0, -0.10, 0.19);
   group.add(shade);
 
-  // Кольцо-обод абажура
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.008, 6, 16), bracketMat);
   rim.rotation.x = Math.PI / 2;
   rim.position.set(0, -0.20, 0.19);
   group.add(rim);
 
-  // 4) Лампочка
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), bulbMat);
   bulb.position.set(0, -0.12, 0.19);
   group.add(bulb);
 
-  // 5) Точечный источник света
   if (lit) {
+    // ИСПРАВЛЕНО: интенсивность ~30-40x больше, дистанция 14-18м, decay 1.7
     const light = new THREE.PointLight(
       opts.color || 0xffb070,
-      opts.intensity || 0.9,
-      opts.distance || 8,
-      2
+      opts.intensity || 40,
+      opts.distance || 16,
+      1.7
     );
-    light.position.set(0, -0.16, 0.19);
+    light.position.set(0, -0.16, 0.22);
     group.add(light);
 
     if (opts.flicker) {
       flickerLights.push({
         light,
-        baseIntensity: opts.intensity || 0.9,
+        baseIntensity: opts.intensity || 40,
         phase: Math.random() * 100,
         speed: 6 + Math.random() * 8,
         depth: 0.35 + Math.random() * 0.4
@@ -1626,72 +1556,66 @@ function createWallLamp(x, y, z, facing, opts = {}) {
     }
   }
 
-  // 6) Ориентация относительно стены
   group.position.set(x, y, z);
   if (facing === 'front') {
-    group.rotation.y = 0;                     // +Z наружу
+    group.rotation.y = 0;
   } else if (facing === 'back') {
-    group.rotation.y = Math.PI;               // -Z наружу
+    group.rotation.y = Math.PI;
   } else if (facing === 'left') {
-    group.rotation.y = -Math.PI / 2;          // -X наружу
+    group.rotation.y = -Math.PI / 2;
   } else if (facing === 'right') {
-    group.rotation.y = Math.PI / 2;           // +X наружу
+    group.rotation.y = Math.PI / 2;
   }
 
   houseGroup.add(group);
   return group;
 }
 
-/* Смещение от центра стены к её наружной поверхности */
 const WALL_OUT = WALL_T / 2 + 0.005;
 
 /* ---- Фронтальные (лицом на +Z) ---- */
-// По бокам от входной двери — самые яркие, атмосферные
 createWallLamp(-2.6, FLOOR_Y + 2.6, HZ1 + WALL_OUT, 'front', {
-  flicker: true, intensity: 1.35, color: 0xffa860, distance: 9
+  flicker: true, intensity: 60, color: 0xffa860, distance: 18
 });
 createWallLamp( 2.6, FLOOR_Y + 2.6, HZ1 + WALL_OUT, 'front', {
-  flicker: false, intensity: 1.15, color: 0xffb878, distance: 9
+  flicker: false, intensity: 50, color: 0xffb878, distance: 17
 });
 
-// По углам фасада (второй этаж, между окнами)
 createWallLamp(-9.5, CEIL1_Y + 1.6, HZ1 + WALL_OUT, 'front', {
-  flicker: true, intensity: 0.95, color: 0xffa060, distance: 7
+  flicker: true, intensity: 42, color: 0xffa060, distance: 15
 });
 createWallLamp( 9.5, CEIL1_Y + 1.6, HZ1 + WALL_OUT, 'front', {
-  flicker: false, intensity: 0.95, color: 0xffa060, distance: 7
+  flicker: false, intensity: 42, color: 0xffa060, distance: 15
 });
 
 /* ---- Задняя стена (лицом на -Z) ---- */
 createWallLamp(-8.0, FLOOR_Y + 2.6, HZ0 - WALL_OUT, 'back', {
-  flicker: false, intensity: 0.85, color: 0xffb070, distance: 8
+  flicker: false, intensity: 38, color: 0xffb070, distance: 15
 });
 createWallLamp( 8.0, FLOOR_Y + 2.6, HZ0 - WALL_OUT, 'back', {
-  flicker: true, intensity: 0.95, color: 0xff9a55, distance: 8
+  flicker: true, intensity: 42, color: 0xff9a55, distance: 15
 });
 
 /* ---- Левая стена (лицом на -X) ---- */
 createWallLamp(HX0 - WALL_OUT, FLOOR_Y + 2.6, -25, 'left', {
-  flicker: false, intensity: 0.9, color: 0xffb070, distance: 8
+  flicker: false, intensity: 38, color: 0xffb070, distance: 15
 });
 createWallLamp(HX0 - WALL_OUT, CEIL1_Y + 1.6, -20, 'left', {
-  flicker: true, intensity: 0.85, color: 0xffa060, distance: 7
+  flicker: true, intensity: 35, color: 0xffa060, distance: 14
 });
 
 /* ---- Правая стена (лицом на +X) ---- */
 createWallLamp(HX1 + WALL_OUT, FLOOR_Y + 2.6, -25, 'right', {
-  flicker: false, intensity: 0.9, color: 0xffb070, distance: 8
+  flicker: false, intensity: 38, color: 0xffb070, distance: 15
 });
 createWallLamp(HX1 + WALL_OUT, CEIL1_Y + 1.6, -20, 'right', {
-  flicker: true, intensity: 0.85, color: 0xffa060, distance: 7
+  flicker: true, intensity: 35, color: 0xffa060, distance: 14
 });
 
 /* ============================================================
    ==================== INTERIOR FURNITURE ====================
    ============================================================ */
 
-/* ---- HALLWAY (front, ground floor) ---- */
-// Blood-stained wooden floor already there. Add portrait frames lying around.
 for (let i = 0; i < 6; i++) {
   const frame = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.05), matDoorWood);
   frame.position.set(
@@ -1702,7 +1626,6 @@ for (let i = 0; i < 6; i++) {
   frame.rotation.x = Math.PI / 2;
   frame.rotation.z = Math.random() * Math.PI;
   houseGroup.add(frame);
-  // dark "portrait" inside
   const inner = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1.0), new THREE.MeshStandardMaterial({ color: 0x1a1208, roughness: 1 }));
   inner.position.copy(frame.position);
   inner.position.y += 0.001;
@@ -1710,26 +1633,21 @@ for (let i = 0; i < 6; i++) {
   houseGroup.add(inner);
 }
 
-/* ---- LIVING ROOM (left front) ---- */
 {
-  // Black stone fireplace
   const fx = -6, fz = -20;
   const fpBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.6, 1.0), matBlackStone);
   fpBody.position.set(fx, FLOOR_Y + 1.3, fz);
   houseGroup.add(fpBody);
   addColliderBox(fx - 1.2, FLOOR_Y, fz - 0.5, fx + 1.2, FLOOR_Y + 2.6, fz + 0.5);
 
-  // firebox opening (dark)
   const fbInner = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.8), new THREE.MeshStandardMaterial({ color: 0x020202, roughness: 1 }));
   fbInner.position.set(fx, FLOOR_Y + 0.7, fz + 0.3);
   houseGroup.add(fbInner);
 
-  // mantle
   const mantle = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.15, 0.5), matBlackStone);
   mantle.position.set(fx, FLOOR_Y + 2.2, fz + 0.55);
   houseGroup.add(mantle);
 
-  // Burnt sofa (against back wall of living room)
   const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.7, 1.4), matFabric);
   sofaBase.position.set(-6, FLOOR_Y + 0.35, -26);
   houseGroup.add(sofaBase);
@@ -1738,7 +1656,6 @@ for (let i = 0; i < 6; i++) {
   sofaBack.position.set(-6, FLOOR_Y + 0.9, -26.5);
   houseGroup.add(sofaBack);
 
-  // Scattered newspapers (yellowed)
   for (let i = 0; i < 12; i++) {
     const news = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.55), matPaper);
     news.position.set(
@@ -1751,7 +1668,6 @@ for (let i = 0; i < 6; i++) {
     houseGroup.add(news);
   }
 
-  // Old CRT TV (cracked screen)
   const tv = new THREE.Group();
   const tvBody = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.9, 0.9), matTVCase);
   tvBody.position.set(0, 0.45, 0);
@@ -1759,7 +1675,6 @@ for (let i = 0; i < 6; i++) {
   const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.65), matTVScreen);
   tvScreen.position.set(0, 0.45, 0.455);
   tv.add(tvScreen);
-  // cracks
   for (let i = 0; i < 5; i++) {
     const crack = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.01), new THREE.MeshBasicMaterial({ color: 0x000000 }));
     crack.position.set(0, 0.45, 0.456);
@@ -1772,20 +1687,16 @@ for (let i = 0; i < 6; i++) {
   addColliderBox(-9.6, FLOOR_Y, -20.6, -8.4, FLOOR_Y + 0.9, -19.4);
 }
 
-/* ---- KITCHEN (right front) ---- */
 {
-  // Rusty sink counter
   const counter = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.9, 0.7), matWoodDark);
   counter.position.set(7, FLOOR_Y + 0.45, -22.3);
   houseGroup.add(counter);
   addColliderBox(5, FLOOR_Y, -22.65, 9, FLOOR_Y + 0.9, -21.95);
 
-  // rusty sink (indent)
   const sink = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.15, 0.5), matRust);
   sink.position.set(7.5, FLOOR_Y + 0.85, -22.3);
   houseGroup.add(sink);
 
-  // Crooked cabinets above
   const cabMat = matWoodDark;
   for (let i = 0; i < 3; i++) {
     const cx = 5.4 + i * 1.3;
@@ -1793,14 +1704,12 @@ for (let i = 0; i < 6; i++) {
     cab.position.set(cx, FLOOR_Y + 2.4, -22.4);
     cab.rotation.z = (Math.random() - 0.5) * 0.15;
     houseGroup.add(cab);
-    // open door
     const door = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.8, 0.03), cabMat);
     door.position.set(cx - 0.6, FLOOR_Y + 2.4, -22.15);
     door.rotation.y = 1.2;
     houseGroup.add(door);
   }
 
-  // Broken plates on floor
   for (let i = 0; i < 15; i++) {
     const piece = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.1), matPorcelain);
     piece.position.set(
@@ -1812,7 +1721,6 @@ for (let i = 0; i < 6; i++) {
     houseGroup.add(piece);
   }
 
-  // Claw marks on walls (thin dark lines)
   for (let i = 0; i < 8; i++) {
     const claw = new THREE.Mesh(new THREE.PlaneGeometry(0.02, 0.5), new THREE.MeshBasicMaterial({ color: 0x1a0505 }));
     claw.position.set(3.5, FLOOR_Y + 1.2 + Math.random() * 0.5, -17.1);
@@ -1821,7 +1729,6 @@ for (let i = 0; i < 6; i++) {
     houseGroup.add(claw);
   }
 
-  // Old table with broken chair
   const tbl = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.08, 1.0), matWoodDark);
   tbl.position.set(6, FLOOR_Y + 0.75, -19);
   houseGroup.add(tbl);
@@ -1833,9 +1740,7 @@ for (let i = 0; i < 6; i++) {
   addColliderBox(5.3, FLOOR_Y, -19.5, 6.7, FLOOR_Y + 0.8, -18.5);
 }
 
-/* ---- BACK ROOM (stairs area) ---- */
 {
-  // Broken crates, cobwebs
   for (let i = 0; i < 4; i++) {
     const cr = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), matWoodDark);
     cr.position.set(
@@ -1848,9 +1753,6 @@ for (let i = 0; i < 6; i++) {
   }
 }
 
-/* ---- SECOND FLOOR ---- */
-
-/* Corridor — one door ajar */
 {
   const door = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.0, 0.08), matDoorWood);
   const pivot = new THREE.Group();
@@ -1861,26 +1763,21 @@ for (let i = 0; i < 6; i++) {
   houseGroup.add(pivot);
 }
 
-/* Child's room (left, floor 2) */
 {
-  // Flickering light source (point light)
-  const childLight = new THREE.PointLight(0xffd8a0, 0.8, 6, 2);
+  const childLight = new THREE.PointLight(0xffd8a0, 20, 8, 1.7);
   childLight.position.set(-6, CEIL1_Y + 2.4, -20);
   houseGroup.add(childLight);
   window.__childLight = childLight;
 
-  // Wooden cradle
   const cradleBase = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.7), matCrib);
   cradleBase.position.set(-7, CEIL1_Y + 0.4, -20);
   houseGroup.add(cradleBase);
-  // curved rockers
   for (let i = 0; i < 2; i++) {
     const rock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.9), matCrib);
     rock.position.set(-7 + (i === 0 ? -0.55 : 0.55), CEIL1_Y + 0.1, -20);
     rock.rotation.x = 0.15;
     houseGroup.add(rock);
   }
-  // sides
   const cribSide1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.08), matCrib);
   cribSide1.position.set(-7, CEIL1_Y + 0.65, -20.35);
   houseGroup.add(cribSide1);
@@ -1888,12 +1785,10 @@ for (let i = 0; i < 6; i++) {
   houseGroup.add(cribSide2);
   addColliderBox(-7.6, CEIL1_Y, -20.5, -6.4, CEIL1_Y + 0.9, -19.5);
 
-  // Dark silhouette inside (a black shape)
   const silhouette = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.35), new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 1 }));
   silhouette.position.set(-7, CEIL1_Y + 0.5, -20);
   houseGroup.add(silhouette);
 
-  // Broken porcelain dolls scattered
   for (let i = 0; i < 6; i++) {
     const doll = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 0.25, 8), matPorcelain);
@@ -1902,11 +1797,9 @@ for (let i = 0; i < 6; i++) {
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), matPorcelain);
     head.position.y = 0.35;
     doll.add(head);
-    // crack on head
     const crack = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.14, 0.01), new THREE.MeshBasicMaterial({ color: 0x000 }));
     crack.position.set(0.04, 0.35, 0);
     doll.add(crack);
-    // hair
     const hair = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6, 0, Math.PI*2, 0, Math.PI/2), matDollHair);
     hair.position.y = 0.38;
     doll.add(hair);
@@ -1921,7 +1814,6 @@ for (let i = 0; i < 6; i++) {
     houseGroup.add(doll);
   }
 
-  // Upside-down rocking horse
   const horse = new THREE.Group();
   const hBody = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.2), matWoodDark);
   hBody.position.y = 0.25;
@@ -1940,31 +1832,26 @@ for (let i = 0; i < 6; i++) {
   horse.add(rocker);
 
   horse.position.set(-4, CEIL1_Y + 0.2, -19);
-  horse.rotation.x = Math.PI; // upside down
+  horse.rotation.x = Math.PI;
   houseGroup.add(horse);
   addColliderBox(-4.6, CEIL1_Y, -19.4, -3.4, CEIL1_Y + 0.6, -18.6);
 }
 
-/* Bedroom (right, floor 2) */
 {
-  // Crooked bed
   const bedFrame = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.35, 2.4), matWoodDark);
   bedFrame.position.set(7, CEIL1_Y + 0.2, -20);
   bedFrame.rotation.z = 0.12;
   houseGroup.add(bedFrame);
-  // mattress (torn)
   const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.25, 2.2), matMattress);
   mattress.position.set(7, CEIL1_Y + 0.5, -20);
   mattress.rotation.z = 0.12;
   houseGroup.add(mattress);
   addColliderBox(6, CEIL1_Y, -21.3, 8, CEIL1_Y + 0.8, -18.7);
 
-  // Wardrobe
   const ward = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.5, 0.7), matDoorWood);
   ward.position.set(9.5, CEIL1_Y + 1.25, -22);
   houseGroup.add(ward);
   addColliderBox(8.8, CEIL1_Y, -22.4, 10.2, CEIL1_Y + 2.5, -21.6);
-  // one door open
   const wdoor = new THREE.Mesh(new THREE.BoxGeometry(0.68, 2.4, 0.05), matDoorWood);
   wdoor.position.set(0, 0, 0);
   const wpivot = new THREE.Group();
@@ -1973,12 +1860,10 @@ for (let i = 0; i < 6; i++) {
   wpivot.rotation.y = -1.1;
   houseGroup.add(wpivot);
 
-  // Mirror with spiderweb cracks
   const mirror = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.4), matMirror);
   mirror.position.set(10.8, CEIL1_Y + 1.8, -20);
   mirror.rotation.y = -Math.PI / 2;
   houseGroup.add(mirror);
-  // crack overlay
   for (let i = 0; i < 5; i++) {
     const crack = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.01), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }));
     crack.position.set(10.79, CEIL1_Y + 1.8, -20);
@@ -2005,14 +1890,12 @@ function insideHouse(x, z) {
 
 function computeFloorY(x, z, feetY) {
   if (!insideHouse(x, z)) {
-    // check porch
     if (x > -3 && x < 3 && z > HZ1 && z < HZ1 + 3) {
       return FLOOR_Y;
     }
     return flattenAroundHouse(x, z);
   }
 
-  // Inside house
   if (x > STAIRS_BOUNDS.x0 && x < STAIRS_BOUNDS.x1 &&
       z > STAIRS_BOUNDS.z0 && z < STAIRS_BOUNDS.z1) {
     const t = (z - STAIRS_BOUNDS.z0) / (STAIRS_BOUNDS.z1 - STAIRS_BOUNDS.z0);
@@ -2045,7 +1928,6 @@ const isTouchDevice = ('ontouchstart' in window) ||
                       (navigator.maxTouchPoints > 0) ||
                       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
-/* Collision check for the player capsule */
 function playerCollides(x, y, z) {
   const r = 0.28;
   const feetY = y - player.eyeHeight;
@@ -2061,7 +1943,6 @@ function playerCollides(x, y, z) {
   return false;
 }
 
-/* ---- MENU ---- */
 const menuBtn = document.getElementById('menu-btn');
 const menuPanel = document.getElementById('menu-panel');
 
@@ -2094,7 +1975,9 @@ document.addEventListener('pointerdown', (e) => {
 const flashBtn = document.getElementById('flashlight-btn');
 function toggleFlashlight() {
   flashlightOn = !flashlightOn;
-  flashlight.intensity = flashlightOn ? 3.2 : 0.0;
+  /* ИСПРАВЛЕНО: интенсивность в канделах как в PUBG/GTA5 */
+  flashlight.intensity = flashlightOn ? 100.0 : 0.0;
+  flashHalo.intensity  = flashlightOn ? 25.0 : 0.0;
   flashBtn.classList.toggle('on', flashlightOn);
 }
 flashBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlashlight(); });
@@ -2275,24 +2158,20 @@ function updatePlayer(dt) {
     player.onGround = false;
   }
 
-  // X movement with collision
   const nx = player.pos.x + player.vel.x * dt;
   if (!playerCollides(nx, player.pos.y, player.pos.z)) {
     player.pos.x = nx;
   } else {
     player.vel.x = 0;
   }
-  // Z movement
   const nz = player.pos.z + player.vel.z * dt;
   if (!playerCollides(player.pos.x, player.pos.y, nz)) {
     player.pos.z = nz;
   } else {
     player.vel.z = 0;
   }
-  // Y movement (vertical)
   player.pos.y += player.vel.y * dt;
 
-  // Floor height
   const floorY = computeFloorY(player.pos.x, player.pos.z, player.pos.y - player.eyeHeight);
   const targetEyeY = floorY + player.eyeHeight;
   if (player.pos.y <= targetEyeY) {
@@ -2303,12 +2182,10 @@ function updatePlayer(dt) {
     player.onGround = false;
   }
 
-  // Prevent falling outside world
   const WORLD_LIMIT = 130;
   if (Math.abs(player.pos.x) > WORLD_LIMIT) player.pos.x = Math.sign(player.pos.x) * WORLD_LIMIT;
   if (Math.abs(player.pos.z) > WORLD_LIMIT) player.pos.z = Math.sign(player.pos.z) * WORLD_LIMIT;
 
-  // Head bob
   const hspeed = Math.hypot(player.vel.x, player.vel.z);
   if (player.onGround && hspeed > 0.4) {
     player.bobPhase += dt * (running ? 11 : 8);
@@ -2360,7 +2237,6 @@ qualitySelect.addEventListener('change', () => {
   applyQuality(qualitySelect.value);
 });
 
-/* ---- FPS target ---- */
 let targetFPS = 60;
 let targetFrameInterval = 1000 / 60;
 const fpsValueEl = document.getElementById('fps-value');
@@ -2406,7 +2282,6 @@ function animate(now) {
 
   updatePlayer(dt);
 
-  // Uniforms
   grassUniforms.uTime.value = clockT.t;
   grassUniforms.uCameraPos.value.copy(camera.position);
   starMat.uniforms.uTime.value = clockT.t;
@@ -2415,24 +2290,21 @@ function animate(now) {
   const gust = 0.85 + 0.4 * Math.sin(clockT.t * 0.22) + 0.15 * Math.sin(clockT.t * 0.7 + 1.4);
   grassUniforms.uWindStrength.value = Math.max(0.4, gust);
 
-  // Sky follows camera
   skyMesh.position.copy(camera.position);
   starPoints.position.copy(camera.position);
   moonGroup.position.copy(camera.position).add(MOON_DIR.clone().multiplyScalar(400));
 
-  // Moonlight follows
   moonLight.position.copy(camera.position).add(MOON_DIR.clone().multiplyScalar(60));
   moonLight.target.position.copy(camera.position);
   moonLight.target.updateMatrixWorld();
 
-  // Child room light flicker
   if (window.__childLight) {
     const f = 0.6 + 0.4 * Math.sin(clockT.t * 22 + Math.sin(clockT.t * 3.7) * 4)
                    + 0.2 * Math.sin(clockT.t * 41);
-    window.__childLight.intensity = Math.max(0.15, f) * 1.1;
+    window.__childLight.intensity = Math.max(0.15, f) * 20;
   }
 
-  // ---- Wall lamp flicker (БРА вокруг дома) ----
+  /* ---- Wall lamp flicker ---- */
   for (let i = 0; i < flickerLights.length; i++) {
     const fl = flickerLights[i];
     const t = clockT.t * fl.speed + fl.phase;
@@ -2446,7 +2318,6 @@ function animate(now) {
 
   renderer.render(scene, camera);
 
-  // FPS
   fpsFrameCount++;
   const nowMs = performance.now();
   if (nowMs - fpsWindowStart >= 500) {
@@ -2457,7 +2328,6 @@ function animate(now) {
   }
 }
 
-/* ---- Init ---- */
 onResize();
 
 requestAnimationFrame((t) => {
@@ -2475,7 +2345,6 @@ setTimeout(() => {
   document.getElementById('hint').classList.add('hidden');
 }, 9000);
 
-/* pointerlockerror handler */
 document.addEventListener('pointerlockerror', () => {
   console.warn('Pointer lock error');
 });
