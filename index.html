@@ -39,21 +39,6 @@
     transition: opacity 0.3s;
   }
 
-  #ui {
-    position: fixed; top: max(10px, env(safe-area-inset-top)); left: max(10px, env(safe-area-inset-left));
-    z-index: 10; display: flex; align-items: center; gap: 6px;
-    background: rgba(0,0,0,0.35); padding: 6px 10px; border-radius: 8px;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.12);
-  }
-  #ui label { color: #e8f0e0; font-size: 12px; letter-spacing: 0.4px; }
-  #quality-select {
-    background: rgba(0,0,0,0.4); color: #e8f0e0;
-    border: 1px solid rgba(255,255,255,0.2); border-radius: 5px;
-    padding: 3px 6px; font-size: 12px; cursor: pointer; outline: none;
-  }
-  #quality-select option { background: #1a2420; }
-
   #hint {
     position: fixed; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%;
     transform: translateX(-50%); z-index: 9;
@@ -67,6 +52,112 @@
   }
   #hint.hidden { opacity: 0; }
 
+  /* ============ MENU BUTTON (top-right ☰) ============ */
+  #menu-btn {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #e8f0e0;
+    font-size: 22px; line-height: 1;
+    z-index: 40;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s ease, background 0.2s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  #menu-btn:active,
+  #menu-btn.active { transform: scale(0.92); background: rgba(0,0,0,0.58); }
+
+  /* ============ MENU PANEL ============ */
+  #menu-panel {
+    position: fixed;
+    top: max(66px, calc(env(safe-area-inset-top) + 58px));
+    right: max(12px, env(safe-area-inset-right));
+    width: min(300px, calc(100vw - 24px));
+    background: rgba(8,14,18,0.8);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 14px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #e8f0e0;
+    z-index: 39;
+    padding: 16px;
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.45);
+    font-size: 13px;
+    transform-origin: top right;
+    animation: menuIn 0.18s ease-out;
+  }
+  @keyframes menuIn {
+    from { opacity: 0; transform: scale(0.94) translateY(-6px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  #menu-panel.open { display: flex; }
+
+  .menu-section h3 {
+    font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+    opacity: 0.62; margin-bottom: 8px; font-weight: 600;
+  }
+  #menu-panel label {
+    display: block; font-size: 12px; margin-bottom: 5px; opacity: 0.82;
+  }
+  #menu-panel select {
+    width: 100%; padding: 9px 10px; font-size: 13px;
+    background: rgba(0,0,0,0.42); color: #e8f0e0;
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 7px;
+    outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.55) 50%),
+                      linear-gradient(135deg, rgba(255,255,255,0.55) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    padding-right: 30px;
+  }
+  #menu-panel select option { background: #101a1e; color: #e8f0e0; }
+
+  .fps-buttons { display: flex; gap: 6px; }
+  .fps-buttons button {
+    flex: 1; padding: 9px 4px; font-size: 12px;
+    background: rgba(0,0,0,0.38); color: #e8f0e0;
+    border: 1px solid rgba(255,255,255,0.16); border-radius: 7px;
+    cursor: pointer; transition: all 0.15s ease;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    font-weight: 500;
+    outline: none;
+  }
+  .fps-buttons button:active { transform: scale(0.96); }
+  .fps-buttons button.active {
+    background: rgba(120, 200, 120, 0.32);
+    border-color: rgba(150, 230, 150, 0.7);
+    color: #eeffee;
+    box-shadow: 0 0 14px rgba(120, 220, 120, 0.28), inset 0 0 8px rgba(160,255,160,0.1);
+  }
+
+  .fps-indicator {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.09);
+    font-size: 11.5px; opacity: 0.82;
+    display: flex; justify-content: space-between;
+    font-variant-numeric: tabular-nums;
+  }
+  #fps-value {
+    color: #9ee89e; font-weight: 700;
+    text-shadow: 0 0 8px rgba(120, 220, 120, 0.35);
+  }
+
+  /* ============ TOUCH CONTROLS ============ */
   #joystick {
     position: fixed;
     bottom: max(28px, env(safe-area-inset-bottom));
@@ -96,6 +187,7 @@
 
   @media (max-aspect-ratio: 3/4) {
     #hint { font-size: 11px; padding: 6px 12px; }
+    #menu-panel { width: min(280px, calc(100vw - 24px)); }
   }
 </style>
 </head>
@@ -103,14 +195,34 @@
 <canvas id="canvas"></canvas>
 <div id="crosshair"></div>
 
-<div id="ui">
-  <label for="quality-select">Quality</label>
-  <select id="quality-select">
-    <option value="low">Low</option>
-    <option value="medium">Medium</option>
-    <option value="high">High</option>
-    <option value="ultra">Ultra</option>
-  </select>
+<!-- Menu button (top-right, ☰) -->
+<button id="menu-btn" aria-label="Settings" type="button">&#9776;</button>
+
+<!-- Settings panel -->
+<div id="menu-panel" role="dialog" aria-label="Settings">
+  <div class="menu-section">
+    <h3>Графика</h3>
+    <label for="quality-select">Качество</label>
+    <select id="quality-select">
+      <option value="low">Низкое</option>
+      <option value="medium">Среднее</option>
+      <option value="high">Высокое</option>
+      <option value="ultra">Ультра</option>
+    </select>
+  </div>
+
+  <div class="menu-section">
+    <h3>Частота кадров</h3>
+    <div class="fps-buttons" id="fps-buttons">
+      <button type="button" data-fps="30">30 FPS</button>
+      <button type="button" data-fps="60">60 FPS</button>
+      <button type="button" data-fps="120">120 FPS</button>
+    </div>
+    <div class="fps-indicator">
+      <span>Цель: <span id="fps-target">60</span> FPS</span>
+      <span>Реально: <span id="fps-value">--</span> FPS</span>
+    </div>
+  </div>
 </div>
 
 <div id="joystick"><div id="knob"></div></div>
@@ -160,14 +272,20 @@ window.__grassStarted = true;
    - PBR-ish lighting: directional sun + hemisphere ambient
    - Distance fog + far blade clip in vertex shader
    - First-person controller with pointer lock + touch
+   - Realistic soil ground with procedural normal/color
+   - Menu with quality + FPS target + real FPS indicator
    ============================================================ */
+
+/* ---------- global grass tuning ---------- */
+// Central height multiplier — reduces grass height uniformly (≈15% reduction).
+const GRASS_HEIGHT_MULTIPLIER = 0.85;
 
 /* ---------- quality presets ---------- */
 const QUALITY_PRESETS = {
-  low:    { segments: 4, count: 25000,  radius: 30,  renderDist: 32,  fogNear: 12, fogFar: 32,  shadow: false },
-  medium: { segments: 5, count: 60000,  radius: 42,  renderDist: 46,  fogNear: 18, fogFar: 46,  shadow: false },
-  high:   { segments: 6, count: 150000, radius: 55,  renderDist: 62,  fogNear: 24, fogFar: 62,  shadow: true  },
-  ultra:  { segments: 7, count: 300000, radius: 68,  renderDist: 78,  fogNear: 30, fogFar: 78,  shadow: false }
+  low:    { segments: 4, count: 30000,  radius: 30,  renderDist: 32,  fogNear: 12, fogFar: 32,  shadow: false },
+  medium: { segments: 5, count: 70000,  radius: 42,  renderDist: 46,  fogNear: 18, fogFar: 46,  shadow: false },
+  high:   { segments: 6, count: 160000, radius: 55,  renderDist: 62,  fogNear: 24, fogFar: 62,  shadow: true  },
+  ultra:  { segments: 7, count: 350000, radius: 68,  renderDist: 78,  fogNear: 30, fogFar: 78,  shadow: false }
 };
 
 /* ---------- auto-detect best preset ---------- */
@@ -186,6 +304,8 @@ function detectQuality() {
 
 let currentQuality = detectQuality();
 let preset = QUALITY_PRESETS[currentQuality];
+let userOverrodeQuality = false;
+let userOverrodeFps = false;
 
 /* ---------- boilerplate ---------- */
 const canvas = document.getElementById('canvas');
@@ -303,16 +423,13 @@ const skyMat = new THREE.ShaderMaterial({
       vec3 dir = normalize(vDir);
       float y = max(dir.y, 0.0);
 
-      // gradient
       vec3 sky = mix(uSkyHorizon, uSkyTop, pow(y, 0.55));
 
-      // sun glow
       float sunDot = max(dot(dir, uSunDir), 0.0);
       sky += vec3(1.0, 0.92, 0.75) * pow(sunDot, 800.0) * 2.4;
       sky += vec3(1.0, 0.86, 0.62) * pow(sunDot, 12.0) * 0.22;
       sky += vec3(1.0, 0.9, 0.75) * pow(sunDot, 90.0) * 0.15;
 
-      // clouds — only above horizon
       if (y > 0.015) {
         vec2 cuv = dir.xz / (y + 0.25);
         cuv = cuv * 0.55 + vec2(uTime * 0.0035, uTime * 0.0012);
@@ -321,11 +438,9 @@ const skyMat = new THREE.ShaderMaterial({
         float c2 = fbm(cuv * 2.6 + 41.0);
         c *= smoothstep(0.35, 0.65, c2 + 0.15);
 
-        // cloud lighting
         float lit = 0.65 + 0.45 * max(dot(uSunDir, vec3(0.0,1.0,0.0)), 0.0);
         vec3 cloudCol = mix(vec3(0.62, 0.66, 0.70), vec3(1.0, 0.99, 0.97), c);
         cloudCol *= lit;
-        // subtle blue shading on undersides
         cloudCol = mix(cloudCol, vec3(0.6, 0.66, 0.78), (1.0 - c) * 0.3);
 
         float horizonMask = smoothstep(0.0, 0.12, y);
@@ -375,14 +490,17 @@ function terrainHeight(x, z) {
   h += (fbm2(x * 0.02, z * 0.02) - 0.5) * 3.2;
   h += (fbm2(x * 0.09, z * 0.09) - 0.5) * 0.75;
   h += (vnoise(x * 0.4, z * 0.4) - 0.5) * 0.14;
+  // micro-relief (soil bumps) — small, avoids perfectly flat surface near camera
+  h += (vnoise(x * 2.3 + 11.0, z * 2.3 - 4.0) - 0.5) * 0.035;
   return h;
 }
 
 /* ============================================================
-   GROUND — displaced plane, procedural shader
+   GROUND — displaced plane, realistic soil shader
+   Continuous surface, procedural PBR-ish color + normal + AO
    ============================================================ */
 const GROUND_SIZE = 260;
-const GROUND_SEG = 160;
+const GROUND_SEG = 180;
 const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEG, GROUND_SEG);
 groundGeo.rotateX(-Math.PI / 2);
 {
@@ -436,38 +554,83 @@ const groundMat = new THREE.ShaderMaterial({
       for (int i = 0; i < 5; i++){ v += a*noise(p); p*=2.03; a*=0.5; }
       return v;
     }
+    // higher-detail fbm for normal perturbation
+    float fbm7(vec2 p){
+      float v = 0.0, a = 0.5;
+      for (int i = 0; i < 6; i++){ v += a*noise(p); p = p*2.07 + 13.0; a *= 0.5; }
+      return v;
+    }
 
     void main(){
       vec3 P = vWorldPos;
-      float n1 = fbm(P.xz * 0.06);
-      float n2 = fbm(P.xz * 0.35 + 17.0);
-      float n3 = fbm(P.xz * 1.6 + 55.0);
 
-      vec3 grassA = vec3(0.11, 0.20, 0.055);
-      vec3 grassB = vec3(0.055, 0.115, 0.028);
-      vec3 olive  = vec3(0.19, 0.21, 0.075);
-      vec3 dry    = vec3(0.32, 0.27, 0.135);
-      vec3 dirt   = vec3(0.24, 0.165, 0.095);
+      /* -------- base noise fields -------- */
+      float n1 = fbm(P.xz * 0.06);                 // large organic patches
+      float n2 = fbm(P.xz * 0.35 + 17.0);          // medium variation
+      float n3 = fbm(P.xz * 1.6 + 55.0);           // fine grain
+      float n4 = fbm(P.xz * 6.0 + 121.0);          // soil clumps
+      float n5 = noise(P.xz * 18.0 + 211.0);       // micro grain
 
-      vec3 col = mix(grassA, grassB, n2);
-      col = mix(col, olive, smoothstep(0.35, 0.85, n1) * 0.55);
-      col = mix(col, dry, smoothstep(0.6, 0.95, n3) * 0.30);
-      float dirtMask = smoothstep(0.80, 0.98, n1 * 0.55 + n3 * 0.55);
-      col = mix(col, dirt, dirtMask * 0.55);
+      /* -------- soil palette (dark moist → dry → organic) -------- */
+      vec3 soilDark   = vec3(0.085, 0.055, 0.032);   // very dark wet soil
+      vec3 soilWet    = vec3(0.150, 0.095, 0.055);   // wet brown
+      vec3 soilMid    = vec3(0.230, 0.150, 0.085);   // mid brown
+      vec3 soilDry    = vec3(0.330, 0.245, 0.150);   // dry light brown
+      vec3 soilRed    = vec3(0.270, 0.150, 0.085);   // iron-rich tint
+      vec3 grassGreen = vec3(0.085, 0.155, 0.045);   // moss/organic
+      vec3 grassOlive = vec3(0.170, 0.170, 0.062);   // olive
+      vec3 pebbleCol  = vec3(0.240, 0.220, 0.190);   // pale pebble
+      vec3 darkClump  = vec3(0.055, 0.035, 0.020);   // very dark clump
 
-      // contact-darkening under grass canopy (near zero slope looks darker)
-      float nSlope = 1.0 - abs(vNormal.y);
-      col *= mix(0.82, 1.0, nSlope * 0.6 + 0.4);
+      /* -------- base soil color -------- */
+      vec3 col = mix(soilWet, soilMid, smoothstep(0.25, 0.7, n1));
+      col = mix(col, soilDry, smoothstep(0.55, 0.9, n2) * 0.55);
+      col = mix(col, soilDark, smoothstep(0.55, 0.95, n4) * 0.5);
+      col = mix(col, soilRed,  smoothstep(0.5, 0.9, n3) * 0.35);
 
-      // lighting
-      vec3 N = normalize(vNormal);
+      /* -------- organic/mossy top layer -------- */
+      float organic = smoothstep(0.3, 0.8, n2) * (1.0 - smoothstep(0.55, 0.9, n1));
+      col = mix(col, grassGreen, organic * 0.5);
+      col = mix(col, grassOlive, smoothstep(0.45, 0.85, n3) * 0.22);
+
+      /* -------- pebbles / soil aggregates -------- */
+      float pebble = smoothstep(0.86, 0.99, n5);
+      col = mix(col, pebbleCol, pebble * 0.55);
+      float dkclump = smoothstep(0.82, 0.97, n4);
+      col = mix(col, darkClump, dkclump * 0.4);
+
+      /* -------- procedural normal perturbation -------- */
+      float e = 0.06;
+      float hL = fbm7((P.xz - vec2(e, 0.0)) * 3.5 + 71.0);
+      float hR = fbm7((P.xz + vec2(e, 0.0)) * 3.5 + 71.0);
+      float hD = fbm7((P.xz - vec2(0.0, e)) * 3.5 + 71.0);
+      float hU = fbm7((P.xz + vec2(0.0, e)) * 3.5 + 71.0);
+      vec3 N = normalize(vNormal + vec3((hR - hL) * 2.4, 0.0, (hU - hD) * 2.4));
+
+      /* -------- contact / cavity AO from grass cover noise -------- */
+      float grassCover = smoothstep(0.28, 0.75, n2);
+      float cavity = smoothstep(0.55, 0.95, n4);
+      float ao = mix(1.0, 0.55, grassCover * 0.7);
+      ao *= mix(1.0, 0.7, cavity * 0.8);
+      // slope-based small AO (crevices)
+      float nSlope = 1.0 - abs(N.y);
+      ao *= mix(0.82, 1.0, nSlope * 0.6 + 0.4);
+      col *= ao;
+
+      /* -------- lighting -------- */
       float ndl = max(dot(N, uSunDir), 0.0);
       float sky = 0.5 + 0.5 * N.y;
       vec3 ambient = mix(uAmbientGnd, uAmbientSky, sky);
-
       vec3 lit = col * (uSunColor * ndl * 0.95 + ambient * 0.9);
 
-      // fog
+      /* subtle specular (rough, damp soil highlights only at grazing) */
+      vec3 V = normalize(uCameraPos - P);
+      vec3 H = normalize(V + uSunDir);
+      float spec = pow(max(dot(N, H), 0.0), 12.0) * 0.06;
+
+      lit += uSunColor * spec;
+
+      /* -------- fog -------- */
       float d = length(P - uCameraPos);
       float fogF = smoothstep(uFogNear, uFogFar, d);
       lit = mix(lit, uFogColor, fogF);
@@ -495,9 +658,7 @@ function createBladeGeometry(segments) {
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
     const y = t;
-    // taper width — tip nearly a point
     const w = (1.0 - t * 0.92) * 0.5;
-    // gentle natural droop along length
     const droop = t * t * 0.35;
 
     positions.push(-w, y, droop);
@@ -554,7 +715,7 @@ const grassMat = new THREE.ShaderMaterial({
     attribute vec3 aColor;
     attribute float aPhase;
     attribute float aStiffness;
-    attribute vec2 aTilt;       // natural directional bend
+    attribute vec2 aTilt;
 
     uniform float uTime;
     uniform vec2 uWindDir;
@@ -568,30 +729,25 @@ const grassMat = new THREE.ShaderMaterial({
     varying float vDist;
 
     void main(){
-      float hFrac = position.y; // 0..1 along blade
+      float hFrac = position.y;
 
-      // scale
       vec3 p = position;
       p.x *= aScale.x;
       p.y *= aScale.y;
       p.z *= aScale.x;
 
-      // natural bend (blade leans over more at the tip)
       p.x += aTilt.x * hFrac * hFrac * aScale.y * 0.45;
       p.z += aTilt.y * hFrac * hFrac * aScale.y * 0.45;
 
-      // rotate around Y
       float cs = cos(aRotation);
       float sn = sin(aRotation);
       vec3 r = vec3(p.x * cs - p.z * sn, p.y, p.x * sn + p.z * cs);
 
       vec3 worldPos = r + aOffset;
 
-      // ---------- WIND ----------
+      // ---- WIND ----
       float t = uTime * 1.6 + aPhase;
-      // travelling wave across the field
       float wave = sin(worldPos.x * 0.35 + worldPos.z * 0.28 + t);
-      // gust modulation
       float gust = 0.65 + 0.35 * sin(uTime * 0.28 + worldPos.x * 0.04 + worldPos.z * 0.03);
       float amt = uWindStrength * gust * (0.5 + 0.5 * wave) * aStiffness;
 
@@ -599,11 +755,10 @@ const grassMat = new THREE.ShaderMaterial({
       worldPos.x += uWindDir.x * amt * bend;
       worldPos.z += uWindDir.y * amt * bend;
 
-      // micro-sway independent from main wind
       worldPos.x += sin(t * 1.27 + aPhase * 2.1) * 0.06 * bend * uWindStrength;
       worldPos.z += cos(t * 1.13 + aPhase * 1.7) * 0.06 * bend * uWindStrength;
 
-      // ---------- PLAYER PUSH ----------
+      // ---- PLAYER PUSH ----
       vec2 toP = worldPos.xz - uCameraPos.xz;
       float dP = length(toP);
       if (dP < 1.6 && dP > 0.0005) {
@@ -619,9 +774,7 @@ const grassMat = new THREE.ShaderMaterial({
       float dist = length(worldPos - uCameraPos);
       vDist = dist;
 
-      // clip far blades cheaply
       if (dist > uRenderDist) {
-        // push out of clip space
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
       }
@@ -646,29 +799,22 @@ const grassMat = new THREE.ShaderMaterial({
     uniform vec3 uCameraPos;
 
     void main(){
-      // base darkening, tip brighter — light reaches tips
       vec3 col = vColor * mix(0.42, 1.18, vHeight);
 
-      // fake normal: blade roughly faces up/side. Approximate with a
-      // mixture of up-vector and a bit of lateral shading based on blade tip.
       vec3 N = normalize(vec3(0.0, 1.0, 0.0));
       float ndl = max(dot(N, uSunDir), 0.0);
 
-      // ambient: sky from above, ground bounce from below
       float skyMix = 0.5 + 0.5 * N.y;
       vec3 ambient = mix(uAmbientGnd, uAmbientSky, skyMix);
 
       vec3 lit = col * (uSunColor * ndl * 1.0 + ambient * 1.0);
 
-      // backlight / translucency — brighter when sun is behind the blade
       vec3 viewDir = normalize(uCameraPos - vWorldPos);
       float back = max(dot(-uSunDir, viewDir), 0.0);
       lit += col * pow(back, 2.0) * 0.25 * vHeight;
 
-      // ground contact darkening near base
       lit *= mix(0.55, 1.0, smoothstep(0.0, 0.35, vHeight));
 
-      // fog
       float fogF = smoothstep(uFogNear, uFogFar, vDist);
       lit = mix(lit, uFogColor, fogF);
 
@@ -706,38 +852,39 @@ function buildGrass() {
   const tmpColor = new THREE.Color();
 
   for (let i = 0; i < count; i++) {
-    // sample position with slight center bias (denser near origin)
+    // radial distribution biased toward center → higher density near camera
     const u = Math.random();
-    const r = radius * Math.pow(u, 0.65);
+    const r = radius * Math.pow(u, 0.72);
     const theta = Math.random() * Math.PI * 2;
     const x = Math.cos(theta) * r;
     const z = Math.sin(theta) * r;
 
     const groundY = terrainHeight(x, z);
 
+    // Sink base slightly into ground so blades emerge from soil naturally.
+    // With micro-relief in terrainHeight, this ensures no floating / no gap.
     offsets[i * 3]     = x;
-    offsets[i * 3 + 1] = groundY - 0.03; // slight sink into ground
+    offsets[i * 3 + 1] = groundY - 0.04;
     offsets[i * 3 + 2] = z;
 
     rotations[i] = Math.random() * Math.PI * 2;
 
-    // size — natural variance, taller in some patches
     const patch = fbm2(x * 0.08 + 3.1, z * 0.08 - 4.7);
-    const heightBase = 0.35 + patch * 0.55; // 0.35 - 0.9
-    const h = heightBase * (0.6 + Math.random() * 0.9);
+    const heightBase = 0.35 + patch * 0.55;
+    // GRASS_HEIGHT_MULTIPLIER applied centrally to slightly shorten grass
+    const h = heightBase * (0.6 + Math.random() * 0.9) * GRASS_HEIGHT_MULTIPLIER;
     const w = (0.020 + Math.random() * 0.030) * (0.8 + patch * 0.5);
 
     scales[i * 2]     = w;
     scales[i * 2 + 1] = h;
 
-    // color palette: dark green → fresh green → olive → yellowish tips
+    // natural hue variance, keeps field from looking uniform
     const patchHue = fbm2(x * 0.12 - 8.2, z * 0.12 + 5.6);
-    const hue = 0.21 + patchHue * 0.09 + (Math.random() - 0.5) * 0.02; // ~76..112 deg
+    const hue = 0.21 + patchHue * 0.09 + (Math.random() - 0.5) * 0.02;
     const sat = 0.35 + Math.random() * 0.35;
     const lig = 0.20 + Math.random() * 0.28;
 
     tmpColor.setHSL(hue, sat, lig);
-    // slight variation and slight yellowing near tips (baked into per-blade color)
     colors[i * 3]     = tmpColor.r;
     colors[i * 3 + 1] = tmpColor.g;
     colors[i * 3 + 2] = tmpColor.b;
@@ -745,7 +892,6 @@ function buildGrass() {
     phases[i]    = Math.random() * Math.PI * 2;
     stiffness[i] = 0.55 + Math.random() * 0.75;
 
-    // natural lean direction
     const lean = 0.6 + Math.random() * 0.7;
     const leanAng = Math.random() * Math.PI * 2;
     tilts[i * 2]     = Math.cos(leanAng) * lean;
@@ -785,13 +931,50 @@ const player = {
 
 const keys = Object.create(null);
 let pointerLocked = false;
+let menuOpen = false;
 
 const isTouchDevice = ('ontouchstart' in window) ||
                       (navigator.maxTouchPoints > 0) ||
                       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
+/* ---------- MENU ---------- */
+const menuBtn = document.getElementById('menu-btn');
+const menuPanel = document.getElementById('menu-panel');
+
+function setMenuOpen(open) {
+  menuOpen = !!open;
+  menuPanel.classList.toggle('open', menuOpen);
+  menuBtn.classList.toggle('active', menuOpen);
+  if (menuOpen) {
+    if (pointerLocked && document.exitPointerLock) document.exitPointerLock();
+    // reset touch look state so panel touches don't rotate camera
+    lookState.touchId = null;
+    joystickState.active = false;
+    joystickState.touchId = null;
+    joystickState.x = 0;
+    joystickState.y = 0;
+    if (knobEl) knobEl.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
+menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setMenuOpen(!menuOpen);
+});
+menuBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+menuBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+
+// Close when clicking outside panel
+document.addEventListener('pointerdown', (e) => {
+  if (!menuOpen) return;
+  if (menuPanel.contains(e.target)) return;
+  if (menuBtn.contains(e.target)) return;
+  setMenuOpen(false);
+}, true);
+
 /* ---------- desktop mouse look + pointer lock ---------- */
 canvas.addEventListener('click', () => {
+  if (menuOpen) return;
   if (!isTouchDevice && !pointerLocked) {
     canvas.requestPointerLock && canvas.requestPointerLock();
   }
@@ -805,6 +988,7 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('mousemove', (e) => {
   if (!pointerLocked) return;
+  if (menuOpen) return;
   const sens = 0.0022;
   player.yaw   -= e.movementX * sens;
   player.pitch -= e.movementY * sens;
@@ -835,11 +1019,6 @@ function showTouchControls() {
   document.getElementById('hint').textContent = 'Left: move · Right: look around';
 }
 
-function hideTouchControls() {
-  joystickEl.style.display = 'none';
-  lookzoneEl.style.display = 'none';
-}
-
 showTouchControls();
 
 const joyRectCache = { x: 0, y: 0, size: 0, cx: 0, cy: 0 };
@@ -854,6 +1033,7 @@ function updateJoyRect() {
 
 joystickEl.addEventListener('touchstart', (e) => {
   e.preventDefault();
+  if (menuOpen) return;
   updateJoyRect();
   const t = e.changedTouches[0];
   joystickState.active = true;
@@ -863,6 +1043,7 @@ joystickEl.addEventListener('touchstart', (e) => {
 
 joystickEl.addEventListener('touchmove', (e) => {
   e.preventDefault();
+  if (menuOpen) return;
   for (const t of e.changedTouches) {
     if (t.identifier === joystickState.touchId) {
       handleJoyMove(t.clientX, t.clientY);
@@ -900,6 +1081,7 @@ function handleJoyMove(cx, cy) {
 const lookState = { touchId: null, lastX: 0, lastY: 0 };
 lookzoneEl.addEventListener('touchstart', (e) => {
   e.preventDefault();
+  if (menuOpen) return;
   if (lookState.touchId !== null) return;
   const t = e.changedTouches[0];
   lookState.touchId = t.identifier;
@@ -908,6 +1090,7 @@ lookzoneEl.addEventListener('touchstart', (e) => {
 }, { passive: false });
 lookzoneEl.addEventListener('touchmove', (e) => {
   e.preventDefault();
+  if (menuOpen) return;
   for (const t of e.changedTouches) {
     if (t.identifier === lookState.touchId) {
       const dx = t.clientX - lookState.lastX;
@@ -937,32 +1120,29 @@ const GRAVITY = -18;
 const WALK_SPEED = 3.0;
 const RUN_SPEED = 6.5;
 const JUMP_VELOCITY = 6.2;
-const FIELD_LIMIT = preset.radius * 0.92;
 
 function updatePlayer(dt) {
-  // input axes
   let inX = 0, inZ = 0;
-  if (keys['KeyW'] || keys['ArrowUp'])    inZ -= 1;
-  if (keys['KeyS'] || keys['ArrowDown'])  inZ += 1;
-  if (keys['KeyA'] || keys['ArrowLeft'])  inX -= 1;
-  if (keys['KeyD'] || keys['ArrowRight']) inX += 1;
+  if (!menuOpen) {
+    if (keys['KeyW'] || keys['ArrowUp'])    inZ -= 1;
+    if (keys['KeyS'] || keys['ArrowDown'])  inZ += 1;
+    if (keys['KeyA'] || keys['ArrowLeft'])  inX -= 1;
+    if (keys['KeyD'] || keys['ArrowRight']) inX += 1;
 
-  if (joystickState.active) {
-    inX += joystickState.x;
-    inZ += joystickState.y;
+    if (joystickState.active) {
+      inX += joystickState.x;
+      inZ += joystickState.y;
+    }
   }
 
-  // normalize
   const mag = Math.hypot(inX, inZ);
   if (mag > 1) { inX /= mag; inZ /= mag; }
 
-  const running = keys['ShiftLeft'] || keys['ShiftRight'];
+  const running = !menuOpen && (keys['ShiftLeft'] || keys['ShiftRight']);
   const speed = running ? RUN_SPEED : WALK_SPEED;
 
-  // camera-relative movement
   const cosY = Math.cos(player.yaw);
   const sinY = Math.sin(player.yaw);
-  // forward is -Z in camera space
   const fwdX = -sinY;
   const fwdZ = -cosY;
   const rgtX =  cosY;
@@ -971,26 +1151,23 @@ function updatePlayer(dt) {
   const mx = (fwdX * (-inZ) + rgtX * inX) * speed;
   const mz = (fwdZ * (-inZ) + rgtZ * inX) * speed;
 
-  // horizontal velocity (smooth)
   const accel = player.onGround ? 14 : 4;
   player.vel.x += (mx - player.vel.x) * Math.min(1, accel * dt);
   player.vel.z += (mz - player.vel.z) * Math.min(1, accel * dt);
 
-  // gravity
   player.vel.y += GRAVITY * dt;
 
-  // jump
-  if ((keys['Space']) && player.onGround) {
+  if (!menuOpen && keys['Space'] && player.onGround) {
     player.vel.y = JUMP_VELOCITY;
     player.onGround = false;
   }
 
-  // integrate
   player.pos.x += player.vel.x * dt;
   player.pos.y += player.vel.y * dt;
   player.pos.z += player.vel.z * dt;
 
   // clamp to field
+  const FIELD_LIMIT = preset.radius * 0.92;
   const dx = player.pos.x;
   const dz = player.pos.z;
   const distSq = dx * dx + dz * dz;
@@ -1022,12 +1199,10 @@ function updatePlayer(dt) {
   const bobY = Math.sin(player.bobPhase) * bobAmt;
   const bobX = Math.cos(player.bobPhase * 0.5) * bobAmt * 0.6;
 
-  // smooth camera follow
   camera.position.x += (player.pos.x + bobX * Math.cos(player.yaw) - camera.position.x) * Math.min(1, dt * 18);
   camera.position.y += (player.pos.y + bobY - camera.position.y) * Math.min(1, dt * 14);
   camera.position.z += (player.pos.z - bobX * Math.sin(player.yaw) - camera.position.z) * Math.min(1, dt * 18);
 
-  // apply rotation
   const q = new THREE.Quaternion();
   q.setFromEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
   camera.quaternion.copy(q);
@@ -1083,23 +1258,71 @@ function applyQuality(q) {
 
   buildGrass();
 }
+
 qualitySelect.addEventListener('change', () => {
+  userOverrodeQuality = true;
   applyQuality(qualitySelect.value);
 });
 
 /* ============================================================
-   MAIN LOOP
+   FPS TARGET
    ============================================================ */
-let lastTime = performance.now();
-let frameCount = 0;
-let fpsAccum = 0;
-let fpsTimer = 0;
+let targetFPS = 60;
+let targetFrameInterval = 1000 / 60;
+const fpsValueEl = document.getElementById('fps-value');
+const fpsTargetEl = document.getElementById('fps-target');
+const fpsButtons = document.querySelectorAll('#fps-buttons button');
+
+function setTargetFPS(fps, fromUser) {
+  targetFPS = fps;
+  targetFrameInterval = 1000 / fps;
+  if (fromUser) userOverrodeFps = true;
+  fpsButtons.forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.fps, 10) === fps);
+  });
+  if (fpsTargetEl) fpsTargetEl.textContent = String(fps);
+}
+fpsButtons.forEach(b => {
+  b.addEventListener('click', () => {
+    setTargetFPS(parseInt(b.dataset.fps, 10), true);
+  });
+});
+setTargetFPS(60, false);
+
+/* ============================================================
+   MAIN LOOP — single loop, delta-time based, FPS-capped
+   ============================================================ */
+let lastFrameTime = performance.now();
+let firstFrameRendered = false;
+
+// Real FPS measurement
+let fpsFrameCount = 0;
+let fpsWindowStart = performance.now();
+
+// Auto-degrade bookkeeping
+let degradeFrameCount = 0;
+let degradeAccumDt = 0;
+let degradeTimer = 0;
 let autoDegraded = false;
 
 function animate(now) {
   requestAnimationFrame(animate);
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
+
+  const elapsed = now - lastFrameTime;
+  // Cap FPS: skip frames until target interval has elapsed.
+  // (Subtract small epsilon to avoid missing rAF ticks on exact-boundary displays.)
+  if (firstFrameRendered && elapsed < targetFrameInterval - 1.0) {
+    return;
+  }
+  // Pace using modulo to prevent drift accumulation.
+  if (firstFrameRendered) {
+    lastFrameTime = now - (elapsed % targetFrameInterval);
+  } else {
+    lastFrameTime = now;
+    firstFrameRendered = true;
+  }
+
+  const dt = Math.min(elapsed / 1000, 0.05);
 
   // update player
   updatePlayer(dt);
@@ -1111,27 +1334,34 @@ function animate(now) {
   groundMat.uniforms.uCameraPos.value.copy(camera.position);
   skyMat.uniforms.uTime.value = t;
 
-  // wind variation — periodic gusts
   const gust = 0.85 + 0.4 * Math.sin(t * 0.22) + 0.15 * Math.sin(t * 0.7 + 1.4);
   grassUniforms.uWindStrength.value = Math.max(0.4, gust);
 
-  // sky follows camera
   skyMesh.position.copy(camera.position);
 
-  // sun follows camera
   sunLight.position.copy(camera.position).add(SUN_DIR.clone().multiplyScalar(40));
   sunLight.target.position.copy(camera.position);
   sunLight.target.updateMatrixWorld();
 
   renderer.render(scene, camera);
 
-  // FPS auto-degrade
-  frameCount++;
-  fpsAccum += 1 / dt;
-  fpsTimer += dt;
-  if (fpsTimer > 3.0) {
-    const avg = fpsAccum / frameCount;
-    if (!autoDegraded && avg < 24 && currentQuality !== 'low') {
+  // ---- real FPS indicator (updated ~2× per second) ----
+  fpsFrameCount++;
+  const nowMs = performance.now();
+  if (nowMs - fpsWindowStart >= 500) {
+    const realFps = fpsFrameCount * 1000 / (nowMs - fpsWindowStart);
+    if (fpsValueEl) fpsValueEl.textContent = realFps.toFixed(0);
+    fpsFrameCount = 0;
+    fpsWindowStart = nowMs;
+  }
+
+  // ---- auto-degrade (only if user hasn't overridden quality) ----
+  degradeFrameCount++;
+  degradeAccumDt += dt;
+  degradeTimer += dt;
+  if (degradeTimer > 3.0) {
+    const avgFps = degradeFrameCount / degradeAccumDt;
+    if (!autoDegraded && !userOverrodeQuality && avgFps < 24 && currentQuality !== 'low') {
       const order = ['low', 'medium', 'high', 'ultra'];
       const i = order.indexOf(currentQuality);
       if (i > 0) {
@@ -1141,18 +1371,18 @@ function animate(now) {
         autoDegraded = true;
       }
     }
-    frameCount = 0;
-    fpsAccum = 0;
-    fpsTimer = 0;
+    degradeFrameCount = 0;
+    degradeAccumDt = 0;
+    degradeTimer = 0;
   }
 }
 
 /* ---------- init ---------- */
 onResize();
 
-// hide loading on first render
 requestAnimationFrame((t) => {
-  lastTime = t;
+  lastFrameTime = t;
+  firstFrameRendered = false;
   requestAnimationFrame(animate);
   requestAnimationFrame(() => {
     loadingEl.classList.add('hidden');
@@ -1160,7 +1390,7 @@ requestAnimationFrame((t) => {
   });
 });
 
-// show hint fade
+// hide hint after a while
 setTimeout(() => {
   if (!pointerLocked && !isTouchDevice) return;
   document.getElementById('hint').classList.add('hidden');
