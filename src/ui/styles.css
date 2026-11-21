@@ -1,0 +1,934 @@
+/* ============================================================================
+ * MODERN HOUSE 3D — styles.css
+ * Single source of truth for all visual presentation.
+ *
+ * Layers, top to bottom:
+ *   1. Reset
+ *   2. Design tokens
+ *   3. Base / typography
+ *   4. Platform visibility
+ *   5. Noscript fallback
+ *   6. App shell
+ *   7. HUD (crosshair, hint, fps, interact-prompt)
+ *   8. Mobile controls
+ *   9. Start blocker
+ *  10. Loading overlay
+ *  11. Toast
+ *  12. Accessibility (focus, motion, contrast)
+ *  13. Responsive breakpoints
+ * ========================================================================== */
+
+
+/* ============================================================================
+ * 1. RESET
+ * Минимальный, но осмысленный. Сбрасываем только то, что мешает,
+ * не трогаем встроенные элементы (button, kbd) — это сохраняет
+ * семантику и доступность.
+ * ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100vh;
+  height: 100dvh;               /* iOS 15+, Android Chrome 108+ */
+  overflow: hidden;
+  overscroll-behavior: none;    /* блокируем pull-to-refresh */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: none;           /* отключаем pinch-zoom и scroll */
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  font-synthesis: none;         /* никаких фейковых italic/bold */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+kbd {
+  font-family:
+    ui-monospace,
+    'SF Mono',
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    'Liberation Mono',
+    monospace;
+  font-size: 0.82em;
+  line-height: 1;
+}
+
+canvas {
+  display: block;
+  outline: none;
+}
+
+
+/* ============================================================================
+ * 2. DESIGN TOKENS
+ * Все значения — здесь. Один источник правды. Изменения в этом блоке
+ * должны быть осознанными: они влияют на все слои UI и частично читаются
+ * из JS через getComputedStyle().
+ * ========================================================================== */
+
+:root {
+  /* ---- Color: base surfaces ---- */
+  --c-void:            #05060a;   /* самый глубокий фон, под всем */
+  --c-base:            #0a0c12;   /* основной фон приложения */
+  --c-surface:         #0f1219;   /* панели, карточки */
+  --c-surface-soft:    rgba(15, 18, 26, 0.72);   /* стекло */
+  --c-surface-solid:   rgba(15, 18, 26, 0.92);   /* стекло, когда blur недоступен */
+  --c-surface-hover:   rgba(255, 255, 255, 0.06);
+
+  /* ---- Color: borders ---- */
+  --c-border-subtle:   rgba(255, 255, 255, 0.08);
+  --c-border-default:  rgba(255, 255, 255, 0.14);
+  --c-border-strong:   rgba(255, 255, 255, 0.24);
+
+  /* ---- Color: text ---- */
+  --c-text-primary:    #f0f3f9;
+  --c-text-secondary:  rgba(240, 243, 249, 0.68);
+  --c-text-muted:      rgba(240, 243, 249, 0.42);
+
+  /* ---- Color: accent (blue family, main interaction color) ---- */
+  --c-accent:          #4a7fff;
+  --c-accent-bright:   #6a9bff;
+  --c-accent-deep:     #2a5edd;
+
+  /* ---- Color: semantic ---- */
+  --c-gold:            #ffcc00;    /* interact-available, active crosshair */
+  --c-success:         #7fff7f;    /* FPS counter, success toast */
+  --c-danger:          #ff5566;    /* error toast */
+  --c-warn:            #ffb020;    /* warn toast */
+
+  /* ---- Color: glow (для box-shadow с прозрачностью) ---- */
+  --c-accent-glow:     rgba(74, 127, 255, 0.45);
+  --c-gold-glow:       rgba(255, 204, 0, 0.55);
+
+  /* ---- Blur: радиусы для backdrop-filter ---- */
+  --blur-sm:           8px;
+  --blur-md:           16px;
+  --blur-lg:           24px;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --s-1:               4px;
+  --s-2:               8px;
+  --s-3:               12px;
+  --s-4:               16px;
+  --s-5:               20px;
+  --s-6:               24px;
+  --s-8:               32px;
+  --s-10:              40px;
+
+  /* ---- Radius ---- */
+  --r-xs:              4px;
+  --r-sm:              6px;
+  --r-md:              10px;
+  --r-lg:              16px;
+  --r-xl:              20px;
+  --r-pill:            999px;
+  --r-circle:          50%;
+
+  /* ---- Shadow (elevation) ---- */
+  --sh-sm:             0 1px 3px rgba(0, 0, 0, 0.30);
+  --sh-md:             0 4px 12px rgba(0, 0, 0, 0.40);
+  --sh-lg:             0 10px 30px rgba(0, 0, 0, 0.50);
+  --sh-xl:             0 20px 60px rgba(0, 0, 0, 0.62);
+  --sh-accent:         0 8px 24px var(--c-accent-glow);
+  --sh-accent-strong:  0 12px 32px rgba(74, 127, 255, 0.62);
+  --sh-gold:           0 0 20px var(--c-gold-glow);
+
+  /* ---- Motion ---- */
+  --dur-instant:       80ms;
+  --dur-fast:          150ms;
+  --dur-base:          250ms;
+  --dur-slow:          450ms;
+  --ease-out:          cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out:       cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Z-index scale (единая шкала, никаких 9999) ---- */
+  --z-hud:             5;
+  --z-prompt:          10;
+  --z-mobile:          15;
+  --z-mobile-btn:      16;
+  --z-loading:         25;
+  --z-blocker:         30;
+  --z-toast:           35;
+
+  /* ---- Layout ---- */
+  --safe-t:            max(var(--s-3), env(safe-area-inset-top,    0px));
+  --safe-r:            max(var(--s-3), env(safe-area-inset-right,  0px));
+  --safe-b:            max(var(--s-3), env(safe-area-inset-bottom, 0px));
+  --safe-l:            max(var(--s-3), env(safe-area-inset-left,   0px));
+}
+
+
+/* ============================================================================
+ * 3. BASE / TYPOGRAPHY
+ * ========================================================================== */
+
+body {
+  background: var(--c-base);
+  color: var(--c-text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Убираем дефолтный outline, но возвращаем его для keyboard-only навигации
+   (см. §12 Accessibility). */
+
+
+/* ============================================================================
+ * 4. PLATFORM VISIBILITY
+ * Управляется JS через body[data-platform]. До того как JS определит
+ * платформу — "detecting" — прячем и ПК- и мобильные подсказки, чтобы
+ * не было FOUC и мигания.
+ * ========================================================================== */
+
+/* detecting: не показываем ничего платформо-специфичного */
+body[data-platform="detecting"] .pc-only,
+body[data-platform="detecting"] .mobile-only,
+body[data-platform="detecting"] #mobile-controls {
+  display: none !important;
+}
+
+/* desktop */
+body[data-platform="desktop"] .mobile-only { display: none !important; }
+body[data-platform="desktop"] #mobile-controls { display: none !important; }
+
+/* mobile */
+body[data-platform="mobile"] .pc-only { display: none !important; }
+body[data-platform="mobile"] #mobile-controls { display: block; }
+
+
+/* ============================================================================
+ * 5. NOSCRIPT FALLBACK
+ * ========================================================================== */
+
+.noscript-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-4);
+  background: var(--c-void);
+  color: var(--c-text-primary);
+  text-align: center;
+  padding: var(--s-8);
+  z-index: 999;
+}
+
+.noscript-overlay h1 {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: 4px;
+}
+
+.noscript-overlay p {
+  color: var(--c-text-secondary);
+  max-width: 360px;
+}
+
+
+/* ============================================================================
+ * 6. APP SHELL
+ * ========================================================================== */
+
+#app {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;         /* создаёт stacking context для z-index детей */
+}
+
+#app > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+
+/* ============================================================================
+ * 7. HUD
+ * Полностью декоративен для мыши — pointer-events: none на контейнере,
+ * но отдельные элементы могут включать. Скрыт от скринридеров
+ * через aria-hidden на #hud (см. index.html), кроме элементов
+ * с aria-live внутри.
+ * ========================================================================== */
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-hud);
+  font-size: 13px;
+}
+
+/* ---- 7.1 Crosshair ---- */
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.92);
+  border-radius: var(--r-circle);
+  box-shadow:
+    0 0 4px rgba(0, 0, 0, 0.85),
+    inset 0 0 3px rgba(0, 0, 0, 0.35);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+  will-change: transform;
+}
+
+#crosshair.active {
+  transform: scale(1.5);
+  border-color: var(--c-gold);
+  box-shadow:
+    0 0 4px rgba(0, 0, 0, 0.85),
+    0 0 12px var(--c-gold-glow);
+}
+
+/* ---- 7.2 Hint (top center) ---- */
+#hint {
+  position: absolute;
+  top: var(--safe-t);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-5);
+  max-width: calc(100vw - var(--s-10));
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: var(--c-text-secondary);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-md);
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+#hint .sep {
+  opacity: 0.35;
+  padding: 0 2px;
+}
+
+#hint kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  color: var(--c-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--c-border-subtle);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  font-size: 10.5px;
+}
+
+#hint.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- 7.3 FPS (top right) ---- */
+#fps {
+  position: absolute;
+  top: var(--safe-t);
+  right: var(--safe-r);
+  padding: var(--s-1) var(--s-3);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--c-success);
+  background: rgba(0, 0, 0, 0.52);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 7.4 Interact prompt (below crosshair) ---- */
+#interact-prompt {
+  position: absolute;
+  top: calc(58%);
+  left: 50%;
+  transform: translate(-50%, 0);
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  color: var(--c-text-primary);
+  background: rgba(0, 0, 0, 0.68);
+  border: 1px solid rgba(255, 204, 0, 0.35);
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+#interact-prompt.visible {
+  opacity: 1;
+  transform: translate(-50%, -2px);
+}
+
+
+/* ============================================================================
+ * 8. MOBILE CONTROLS
+ * Показываются только при body[data-platform="mobile"].
+ * ========================================================================== */
+
+#mobile-controls {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-mobile);
+  pointer-events: none;
+}
+
+/* ---- 8.1 Look zone (right half, captures touch drag) ---- */
+#look-zone {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 55%;
+  height: 100%;
+  pointer-events: auto;
+  touch-action: none;
+  /* Полупрозрачная подсветка только в debug-mode, в проде — нет */
+}
+
+/* ---- 8.2 Joystick (bottom left) ---- */
+#joystick {
+  position: absolute;
+  left: var(--safe-l);
+  bottom: var(--safe-b);
+  width: 150px;
+  height: 150px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+#joy-base {
+  position: absolute;
+  inset: 5px;
+  border-radius: var(--r-circle);
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 70%,
+      transparent 100%
+    );
+  border: 2px solid var(--c-border-default);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.35);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+#joy-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: var(--r-circle);
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 255, 255, 0.55),
+      rgba(120, 150, 200, 0.35) 60%,
+      rgba(60, 80, 120, 0.35) 100%
+    );
+  border: 2px solid var(--c-border-strong);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 2px 6px rgba(255, 255, 255, 0.28),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.30);
+  will-change: transform;
+  /* transition на transform НЕ ставим — JS обновляет его 60 раз в секунду,
+     transition создаёт лаг. Вместо этого возврат к центру делаем в JS. */
+}
+
+/* ---- 8.3 Action buttons (bottom right, cluster) ---- */
+.action-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  color: var(--c-text-primary);
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 255, 255, 0.22),
+      rgba(0, 0, 0, 0.38) 80%
+    );
+  border: 2px solid var(--c-border-strong);
+  border-radius: var(--r-circle);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    transform var(--dur-instant) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
+  will-change: transform;
+}
+
+.action-btn:active,
+.action-btn.pressed {
+  transform: scale(0.90);
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(120, 180, 255, 0.62),
+      rgba(74, 127, 255, 0.42) 80%
+    );
+  border-color: rgba(120, 180, 255, 0.85);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 18px var(--c-accent-glow);
+}
+
+/* Sizes and positions */
+#btn-jump {
+  right: var(--safe-r);
+  bottom: var(--safe-b);
+  width: 78px;
+  height: 78px;
+  font-size: 22px;
+}
+
+#btn-run {
+  right: var(--safe-r);
+  bottom: calc(var(--safe-b) + 95px);
+  width: 62px;
+  height: 62px;
+}
+
+#btn-use {
+  right: calc(var(--safe-r) + 95px);
+  bottom: var(--safe-b);
+  width: 62px;
+  height: 62px;
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+/* btn-run: toggle (активный бег) */
+#btn-run[aria-pressed="true"] {
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 200, 50, 0.65),
+      rgba(200, 120, 0, 0.42) 80%
+    );
+  border-color: rgba(255, 200, 50, 0.85);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(255, 200, 50, 0.45);
+}
+
+/* btn-use: активируется, когда объект в прицеле */
+#btn-use.available {
+  opacity: 1;
+  border-color: rgba(255, 204, 0, 0.85);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    var(--sh-gold);
+}
+
+
+/* ============================================================================
+ * 9. START BLOCKER
+ * Полноэкранный стартовый слой. Изолирован, чтобы его backdrop-filter
+ * не «съедал» производительность у соседей.
+ * ========================================================================== */
+
+#blocker {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-blocker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l);
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(20, 25, 35, 0.85) 0%,
+      rgba(5, 5, 10, 0.98) 100%
+    );
+  cursor: pointer;
+  isolation: isolate;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+#blocker.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Panel ---- */
+#blocker .panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-10) clamp(var(--s-8), 6vw, 60px);
+  max-width: min(92vw, 520px);
+  text-align: center;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-xl);
+  contain: layout style paint;
+  animation: panel-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* Стекло — только если движок умеет */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  #blocker .panel {
+    backdrop-filter: blur(var(--blur-lg)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(140%);
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#blocker h1 {
+  margin-bottom: var(--s-2);
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 200;
+  letter-spacing: 6px;
+  line-height: 1.1;
+  /* Gradient text — стандартный трюк, но с осмысленным fallback */
+  color: var(--c-text-primary);
+  background: linear-gradient(135deg, #ffffff 0%, #a8c0ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#blocker .sub {
+  color: var(--c-text-muted);
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* ---- Play button ---- */
+.play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  padding: 14px 44px;
+  margin-top: var(--s-2);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-deep) 100%);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-accent);
+  transition:
+    transform var(--dur-fast) var(--ease-spring),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* Ховер — только на устройствах с реальным ховером */
+@media (hover: hover) {
+  #blocker:hover .play-btn {
+    transform: scale(1.05);
+    box-shadow: var(--sh-accent-strong);
+  }
+}
+
+.play-btn:active {
+  transform: scale(0.98);
+}
+
+.play-btn:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 4px;
+}
+
+/* ---- Controls hint ---- */
+#blocker .controls {
+  margin-top: var(--s-3);
+  color: var(--c-text-muted);
+  font-size: 11px;
+  line-height: 1.9;
+  letter-spacing: 0.3px;
+}
+
+#blocker .controls .sep {
+  opacity: 0.35;
+  padding: 0 4px;
+}
+
+#blocker .controls kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  color: var(--c-text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--r-xs);
+  margin: 0 1px;
+}
+
+
+/* ============================================================================
+ * 10. LOADING OVERLAY
+ * ========================================================================== */
+
+#loading {
+  position: absolute;
+  left: 50%;
+  bottom: max(var(--s-10), env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: var(--z-loading);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 220px;
+  color: var(--c-text-muted);
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+#loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loading .bar {
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-pill);
+}
+
+#loading-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--c-accent) 0%, var(--c-accent-bright) 100%);
+  border-radius: inherit;
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+#loading-percent {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--c-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ============================================================================
+ * 11. TOAST
+ * Всплывающие уведомления. Появляются сверху-справа (или сверху-центра
+ * на узких экранах). Управляются JS: element.dataset.variant + textContent.
+ * ========================================================================== */
+
+#toast {
+  position: absolute;
+  top: calc(var(--safe-t) + 52px);   /* ниже #fps */
+  right: var(--safe-r);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-2);
+  pointer-events: none;
+  max-width: min(320px, calc(100vw - var(--s-8)));
+}
+
+#toast .toast-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: var(--c-text-primary);
+  background: var(--c-surface-solid);
+  border: 1px solid var(--c-border-default);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-lg);
+  pointer-events: auto;
+  animation: toast-in var(--dur-base) var(--ease-out) both;
+  white-space: pre-line;
+}
+
+#toast .toast-item[data-variant="success"] { border-color: rgba(127, 255, 127, 0.45); }
+#toast .toast-item[data-variant="warn"]    { border-color: rgba(255, 176, 32, 0.45); }
+#toast .toast-item[data-variant="error"]   { border-color: rgba(255, 85, 102, 0.55); }
+
+#toast .toast-item.is-leaving {
+  animation: toast-out var(--dur-fast) var(--ease-out) both;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0)    scale(1);    }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
+
+/* ============================================================================
+ * 12. ACCESSIBILITY
+ * ========================================================================== */
+
+/* Focus ring — только для клавиатуры, не для мыши */
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 2px solid var(--c-gold);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* Уважаем reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  #blocker .panel { animation: none; }
+  #crosshair.active { transform: none; }
+}
+
+
+/* ============================================================================
+ * 13. RESPONSIVE
+ * ========================================================================== */
+
+/* Узкие экраны: ужимаем hint, сжимаем кластер кнопок */
+@media (max-width: 600px) {
+  #hint {
+    font-size: 11px;
+    padding: 6px 12px;
+    gap: 4px;
+  }
+  #hint kbd { font-size: 10px; padding: 1px 4px; }
+
+  #fps { font-size: 10px; padding: 2px 6px; }
+
+  #blocker .panel {
+    padding: var(--s-8) var(--s-6);
+  }
+}
+
+/* Низкие экраны (ландшафт на телефоне): компактный джойстик, кнопки меньше */
+@media (max-height: 480px) {
+  #joystick        { width: 120px; height: 120px; }
+  #joy-base        { inset: 4px; }
+  #joy-knob        { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+
+  #btn-jump        { width: 64px; height: 64px; font-size: 18px; }
+  #btn-run         { width: 52px; height: 52px; bottom: calc(var(--safe-b) + 78px); }
+  #btn-use         { width: 52px; height: 52px; right: calc(var(--safe-r) + 78px); }
+}
+
+/* Ландшафт: hint уходит влево сверху, чтобы не сталкиваться с FPS */
+@media (max-height: 480px) and (orientation: landscape) {
+  #hint { font-size: 10.5px; top: max(var(--s-2), env(safe-area-inset-top, 0px)); }
+}
+
+/* Тост на узком экране — по центру сверху */
+@media (max-width: 480px) {
+  #toast {
+    right: 50%;
+    transform: translateX(50%);
+    align-items: center;
+  }
+}
+
+
+/* ============================================================================
+ * 14. PRINT  (защита от случайной печати UI)
+ * ========================================================================== */
+
+@media print {
+  #hud,
+  #mobile-controls,
+  #blocker,
+  #loading,
+  #toast { display: none !important; }
+}
