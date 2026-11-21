@@ -62,6 +62,7 @@
         display: flex; align-items: center; justify-content: center;
         background: radial-gradient(ellipse at center, rgba(20,25,35,0.85) 0%, rgba(5,5,10,0.98) 100%);
         z-index: 30; cursor: pointer;
+        touch-action: manipulation;
         transition: opacity 0.5s;
     }
     #blocker.hidden { opacity: 0; pointer-events: none; }
@@ -1634,14 +1635,28 @@ document.addEventListener('pointerlockchange', () => {
 
 // Блокер
 const blockerEl = document.getElementById('blocker');
-blockerEl.addEventListener('click', () => {
+const startGame = (e) => {
+    e.preventDefault();
     if (isMobile) {
         blockerEl.classList.add('hidden');
         hideHint();
     } else {
-        renderer.domElement.requestPointerLock();
+        try {
+            const promise = renderer.domElement.requestPointerLock();
+            if (promise && promise.catch) {
+                promise.catch(() => {
+                    blockerEl.classList.add('hidden');
+                    hideHint();
+                });
+            }
+        } catch (_) {
+            blockerEl.classList.add('hidden');
+            hideHint();
+        }
     }
-});
+};
+blockerEl.addEventListener('pointerdown', startGame);
+blockerEl.addEventListener('click', startGame);
 
 // Клавиатура
 const keys = { w: false, a: false, s: false, d: false, shift: false };
@@ -2067,3 +2082,6 @@ setTimeout(hideHint, 8000);
 console.log('%c Modern House 3D — Cinematic ', 'background: #4a7fff; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: bold;');
 console.log('Platform:', isMobile ? 'Mobile' : 'Desktop', '| Quality:', QUALITY);
 console.log('Colliders:', colliders.length, '| Interactables:', interactables.length);
+</script>
+</body>
+</html>
