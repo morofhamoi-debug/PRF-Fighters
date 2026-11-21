@@ -1,71 +1,1127 @@
-<!doctype html>
-<html lang="ru" translate="no">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Modern House 3D — AAA-качество в браузере</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 20px;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 14px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        }
+        #blocker {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            cursor: pointer;
+            backdrop-filter: blur(3px);
+        }
+        #blocker div {
+            text-align: center;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 30px 50px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        #blocker h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        #blocker p {
+            margin: 5px 0;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+        /* Мобильные элементы управления */
+        #joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+            z-index: 15;
+            display: none;
+            pointer-events: none;
+        }
+        #joystick-base {
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+            pointer-events: none;
+        }
+        #joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        #look-area {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            z-index: 14;
+            display: none;
+            pointer-events: none;
+        }
+        #jump-btn {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            z-index: 15;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+            pointer-events: auto;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #jump-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        @media (pointer: coarse) {
+            #joystick-container, #look-area, #jump-btn {
+                display: flex;
+            }
+            #joystick-container {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">WASD — движение | Мышь — обзор | Shift — бег | Space — прыжок | E — взаимодействие</div>
+    <div id="crosshair"></div>
+    <div id="blocker">
+        <div>
+            <h1>MODERN HOUSE 3D</h1>
+            <p>Нажмите, чтобы войти</p>
+            <p style="font-size:12px; opacity:0.5; margin-top:15px;">10×10 м · Два этажа · Полная обстановка</p>
+        </div>
+    </div>
+    <div id="joystick-container">
+        <div id="joystick-base"><div id="joystick-knob"></div></div>
+    </div>
+    <div id="look-area"></div>
+    <div id="jump-btn">JUMP</div>
 
-    <!-- =========================== -->
-    <!-- Общие meta и PWA настройки -->
-    <!-- =========================== -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
-    <!-- Цвет строки состояния / верхней панели браузера (Android, Chrome, Edge) -->
-    <meta name="theme-color" content="#ffffff" />
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-    <!-- Название PWA для iOS -->
-    <meta name="apple-mobile-web-app-title" content="Мой ПВЗ" />
+        // ============================================================
+        // 1. БАЗОВАЯ НАСТРОЙКА СЦЕНЫ
+        // ============================================================
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Небо
+        scene.fog = new THREE.Fog(0x87CEEB, 30, 80);
 
-    <!-- Включает полноэкранный режим PWA на iOS -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
+        camera.position.set(0, 1.7, 12); // Начальная позиция перед домом
 
-    <!-- Стиль верхней статусной строки iOS: default | black | black-translucent -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        document.body.appendChild(renderer.domElement);
 
-    <!-- Отключает перевод страницы Chromium-браузеров -->
-    <meta name="google" content="notranslate" />
+        // ============================================================
+        // 2. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (PBR)
+        // ============================================================
+        function createCanvasTexture(width, height, drawFn) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            drawFn(ctx, width, height);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.anisotropy = 8;
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
 
-    <!-- =========================== -->
-    <!-- Favicon для браузеров -->
-    <!-- =========================== -->
-    <!-- 16×16 — вкладки браузера -->
-    <link rel="icon" href="/icons/16.png" sizes="16x16" />
-    <!-- 32×32 — браузеры с высокой плотностью пикселей (Retina / 4K) -->
-    <link rel="icon" href="/icons/32.png" sizes="32x32" />
-    <!-- 48×48 — старые версии Windows / fallback -->
-    <link rel="icon" href="/icons/48.png" sizes="48x48" />
+        // --- Дерево (паркет) ---
+        function woodTexture(baseHue = 30, lightness = 45) {
+            return createCanvasTexture(512, 512, (ctx, w, h) => {
+                ctx.fillStyle = `hsl(${baseHue}, 40%, ${lightness}%)`;
+                ctx.fillRect(0, 0, w, h);
+                for (let i = 0; i < 200; i++) {
+                    const x = Math.random() * w;
+                    const y = Math.random() * h;
+                    const len = 20 + Math.random() * 80;
+                    const angle = (Math.random() - 0.5) * 0.2;
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(angle);
+                    ctx.strokeStyle = `hsla(${baseHue + 10}, 30%, ${lightness - 15 + Math.random() * 20}%, ${0.1 + Math.random() * 0.2})`;
+                    ctx.lineWidth = 1 + Math.random() * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(len, 0);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                // Потёртости
+                for (let i = 0; i < 50; i++) {
+                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.05})`;
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 20, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
 
-    <!-- =========================== -->
-    <!-- Apple iOS icons -->
-    <!-- =========================== -->
-    <!-- iPhone non-pro Retina -->
-    <link rel="apple-touch-icon" sizes="120x120" href="/icons/120.png" />
-    <!-- iPad Retina -->
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/152.png" />
-    <!-- iPad Pro -->
-    <link rel="apple-touch-icon" sizes="167x167" href="/icons/167.png" />
-    <!-- iPhone Retina / современные iPhone -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/180.png" />
-    <!-- fallback iOS -->
-    <link rel="apple-touch-icon" href="/icons/512.png" />
+        // --- Бетон / штукатурка ---
+        function plasterTexture(baseColor = '#d4cfc7') {
+            return createCanvasTexture(512, 512, (ctx, w, h) => {
+                ctx.fillStyle = baseColor;
+                ctx.fillRect(0, 0, w, h);
+                for (let i = 0; i < 8000; i++) {
+                    const gray = 180 + Math.random() * 60;
+                    ctx.fillStyle = `rgba(${gray},${gray},${gray},${Math.random() * 0.15})`;
+                    ctx.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 3);
+                }
+                // Мелкие трещины
+                ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+                for (let i = 0; i < 20; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(Math.random() * w, Math.random() * h);
+                    ctx.lineTo(Math.random() * w, Math.random() * h);
+                    ctx.stroke();
+                }
+            });
+        }
 
-    <!-- =========================== -->
-    <!-- Windows Tiles (Pin to Start) -->
-    <!-- =========================== -->
-    <!-- Цвет плитки для Windows 8-10 -->
-    <meta name="msapplication-TileColor" content="#ffffff" />
-    <!-- Конфиг плиток для Windows 8-10 -->
-    <meta name="msapplication-config" content="/browserconfig.xml" />
+        // --- Керамическая плитка ---
+        function tileTexture(baseColor = '#c0b8a8', groutColor = '#a09888') {
+            return createCanvasTexture(512, 512, (ctx, w, h) => {
+                ctx.fillStyle = groutColor;
+                ctx.fillRect(0, 0, w, h);
+                const tileW = 128, tileH = 128;
+                for (let y = 0; y < h; y += tileH) {
+                    for (let x = 0; x < w; x += tileW) {
+                        const variation = Math.random() * 20 - 10;
+                        ctx.fillStyle = `hsl(30, 10%, ${70 + variation}%)`;
+                        ctx.fillRect(x + 2, y + 2, tileW - 4, tileH - 4);
+                        // Блик
+                        const grad = ctx.createLinearGradient(x, y, x + tileW, y + tileH);
+                        grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+                        grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+                        grad.addColorStop(1, 'rgba(0,0,0,0.05)');
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(x + 2, y + 2, tileW - 4, tileH - 4);
+                    }
+                }
+            });
+        }
 
-    <!-- =========================== -->
-    <!-- Title -->
-    <!-- =========================== -->
-    <title>Мой ПВЗ</title>
-    <script type="module" crossorigin src="/assets/index-BIfPBHhT.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/style-Fe3lSUDL.css">
-  <link rel="manifest" href="/manifest.webmanifest"></head>
-  <body>
-    <div id="root"></div>
-  </body>
+        // --- Металл (холодильник, плита) ---
+        function metalTexture() {
+            return createCanvasTexture(512, 512, (ctx, w, h) => {
+                const grad = ctx.createLinearGradient(0, 0, w, h);
+                grad.addColorStop(0, '#e0e0e0');
+                grad.addColorStop(0.3, '#b0b0b0');
+                grad.addColorStop(0.5, '#d0d0d0');
+                grad.addColorStop(0.7, '#a0a0a0');
+                grad.addColorStop(1, '#e0e0e0');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+                // Шлифовка
+                for (let i = 0; i < 3000; i++) {
+                    ctx.strokeStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
+                    ctx.beginPath();
+                    const y = Math.random() * h;
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y + (Math.random() - 0.5) * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // --- Ткань (диван, кровать) ---
+        function fabricTexture(baseHue = 200, lightness = 40) {
+            return createCanvasTexture(512, 512, (ctx, w, h) => {
+                ctx.fillStyle = `hsl(${baseHue}, 20%, ${lightness}%)`;
+                ctx.fillRect(0, 0, w, h);
+                // Плетение
+                for (let y = 0; y < h; y += 4) {
+                    for (let x = 0; x < w; x += 4) {
+                        const shade = Math.random() * 20 - 10;
+                        ctx.fillStyle = `hsla(${baseHue}, 20%, ${lightness + shade}%, 0.6)`;
+                        ctx.fillRect(x, y, 4, 4);
+                    }
+                }
+                // Ворс
+                for (let i = 0; i < 2000; i++) {
+                    ctx.fillStyle = `hsla(${baseHue}, 20%, ${lightness + Math.random() * 20}%, 0.3)`;
+                    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+                }
+            });
+        }
+
+        // --- Стекло (для окон и душевой) ---
+        function glassTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(200, 220, 240, 0.3)';
+            ctx.fillRect(0, 0, 256, 256);
+            // Блики
+            const grad = ctx.createLinearGradient(0, 0, 256, 256);
+            grad.addColorStop(0, 'rgba(255,255,255,0.4)');
+            grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+            grad.addColorStop(1, 'rgba(255,255,255,0.2)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 256);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        // Создаём текстуры
+        const floorWoodTex = woodTexture(30, 45);
+        const wallPlasterTex = plasterTexture('#d4cfc7');
+        const tileTex = tileTexture();
+        const metalTex = metalTexture();
+        const fabricTex = fabricTexture(210, 35);
+        const glassTex = glassTexture();
+
+        // ============================================================
+        // 3. МАТЕРИАЛЫ (PBR)
+        // ============================================================
+        const materials = {
+            wood: new THREE.MeshStandardMaterial({ map: floorWoodTex, roughness: 0.7, metalness: 0.0 }),
+            wall: new THREE.MeshStandardMaterial({ map: wallPlasterTex, roughness: 0.9, metalness: 0.0 }),
+            ceiling: new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.95, metalness: 0.0 }),
+            tile: new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.3, metalness: 0.1 }),
+            metal: new THREE.MeshStandardMaterial({ map: metalTex, roughness: 0.3, metalness: 0.8 }),
+            fabric: new THREE.MeshStandardMaterial({ map: fabricTex, roughness: 0.9, metalness: 0.0 }),
+            glass: new THREE.MeshPhysicalMaterial({
+                map: glassTex,
+                roughness: 0.05,
+                metalness: 0.0,
+                transmission: 0.9,
+                transparent: true,
+                opacity: 0.4,
+                ior: 1.5,
+                thickness: 0.1
+            }),
+            darkWood: new THREE.MeshStandardMaterial({ map: woodTexture(25, 25), roughness: 0.6, metalness: 0.0 }),
+            white: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.0 }),
+            black: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.3 }),
+            grass: new THREE.MeshStandardMaterial({ color: 0x3a7d34, roughness: 1.0, metalness: 0.0 }),
+            concrete: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9, metalness: 0.0 })
+        };
+
+        // ============================================================
+        // 4. ОСВЕЩЕНИЕ
+        // ============================================================
+        // Солнце (DirectionalLight)
+        const sunLight = new THREE.DirectionalLight(0xfff5e6, 3.0);
+        sunLight.position.set(15, 25, 10);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 0.5;
+        sunLight.shadow.camera.far = 60;
+        sunLight.shadow.camera.left = -20;
+        sunLight.shadow.camera.right = 20;
+        sunLight.shadow.camera.top = 20;
+        sunLight.shadow.camera.bottom = -20;
+        sunLight.shadow.bias = -0.0001;
+        scene.add(sunLight);
+        scene.add(sunLight.target);
+
+        // Общий свет (HemisphereLight)
+        const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x3a7d34, 0.8);
+        scene.add(hemiLight);
+
+        // Заполняющий свет (AmbientLight)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        // Внутренние точечные светильники (добавим позже)
+
+        // ============================================================
+        // 5. ПОСТРОЕНИЕ ДОМА
+        // ============================================================
+        const houseGroup = new THREE.Group();
+        scene.add(houseGroup);
+
+        // Размеры дома
+        const W = 10;   // ширина (X)
+        const D = 10;   // глубина (Z)
+        const H = 2.8;  // высота этажа
+        const SLAB = 0.3; // толщина перекрытия
+        const WALL_THICK = 0.2; // толщина внешних стен
+        const INNER_WALL = 0.1; // толщина внутренних перегородок
+
+        // Коллайдеры (AABB)
+        const colliders = [];
+
+        // Функция добавления коллайдера
+        function addCollider(mesh, isWall = false) {
+            const box = new THREE.Box3().setFromObject(mesh);
+            // Расширяем для надёжности
+            box.expandByScalar(0.02);
+            colliders.push({ box, mesh });
+        }
+
+        // Функция создания стены с проёмами (упрощённо: сплошная стена, проёмы вырезаются отдельными сегментами)
+        // Для простоты создаём стены как набор сегментов.
+        function createWallSegment(x, y, z, w, h, d, material) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            houseGroup.add(mesh);
+            addCollider(mesh, true);
+            return mesh;
+        }
+
+        // ---- ПОЛ ПЕРВОГО ЭТАЖА ----
+        const floor1Geo = new THREE.BoxGeometry(W, 0.1, D);
+        const floor1 = new THREE.Mesh(floor1Geo, materials.wood);
+        floor1.position.set(0, -0.05, 0);
+        floor1.receiveShadow = true;
+        houseGroup.add(floor1);
+
+        // ---- ПОЛ ВТОРОГО ЭТАЖА (перекрытие) ----
+        const floor2Geo = new THREE.BoxGeometry(W, SLAB, D);
+        const floor2 = new THREE.Mesh(floor2Geo, materials.wood);
+        floor2.position.set(0, H + SLAB / 2, 0);
+        floor2.receiveShadow = true;
+        floor2.castShadow = true;
+        houseGroup.add(floor2);
+        addCollider(floor2, false);
+
+        // ---- ВНЕШНИЕ СТЕНЫ (толщиной 0.2) ----
+        // Северная стена (z = -5)
+        // Разбиваем на сегменты для окон и дверей
+        // Окна: ширина 1.2, высота 1.5, подоконник 0.9
+        // Дверь: ширина 0.9, высота 2.1
+        function buildExteriorWall(axis, fixedCoord, startCoord, endCoord, height, yOffset, openings = []) {
+            // axis: 'x' (стена вдоль X) или 'z' (вдоль Z)
+            const segments = [];
+            let cursor = startCoord;
+            openings.sort((a, b) => a.start - b.start);
+            for (const op of openings) {
+                if (op.start > cursor) {
+                    segments.push({ start: cursor, end: op.start, type: 'solid' });
+                }
+                segments.push({ start: op.start, end: op.end, type: op.type, bottom: op.bottom, top: op.top });
+                cursor = op.end;
+            }
+            if (cursor < endCoord) {
+                segments.push({ start: cursor, end: endCoord, type: 'solid' });
+            }
+            for (const seg of segments) {
+                const len = seg.end - seg.start;
+                if (len <= 0.01) continue;
+                if (seg.type === 'solid') {
+                    // Сплошной сегмент
+                    let w, d, x, z;
+                    if (axis === 'x') {
+                        w = len;
+                        d = WALL_THICK;
+                        x = (seg.start + seg.end) / 2;
+                        z = fixedCoord;
+                    } else {
+                        w = WALL_THICK;
+                        d = len;
+                        x = fixedCoord;
+                        z = (seg.start + seg.end) / 2;
+                    }
+                    createWallSegment(x, yOffset + height / 2, z, w, height, d, materials.wall);
+                } else if (seg.type === 'window') {
+                    // Нижняя часть (подоконник)
+                    const bottomH = seg.bottom;
+                    if (bottomH > 0.01) {
+                        let w, d, x, z;
+                        if (axis === 'x') {
+                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
+                        } else {
+                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
+                        }
+                        createWallSegment(x, yOffset + bottomH / 2, z, w, bottomH, d, materials.wall);
+                    }
+                    // Верхняя часть (над окном)
+                    const topH = height - seg.top;
+                    if (topH > 0.01) {
+                        let w, d, x, z;
+                        if (axis === 'x') {
+                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
+                        } else {
+                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
+                        }
+                        createWallSegment(x, yOffset + seg.top + topH / 2, z, w, topH, d, materials.wall);
+                    }
+                    // Стекло
+                    let w, d, x, z;
+                    if (axis === 'x') {
+                        w = len; d = 0.05; x = (seg.start + seg.end) / 2; z = fixedCoord;
+                    } else {
+                        w = 0.05; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
+                    }
+                    const glassH = seg.top - seg.bottom;
+                    const glassGeo = new THREE.BoxGeometry(w, glassH, d);
+                    const glassMesh = new THREE.Mesh(glassGeo, materials.glass);
+                    glassMesh.position.set(x, yOffset + seg.bottom + glassH / 2, z);
+                    glassMesh.castShadow = false;
+                    glassMesh.receiveShadow = true;
+                    houseGroup.add(glassMesh);
+                } else if (seg.type === 'door') {
+                    // Верхняя перемычка
+                    const topH = height - seg.top;
+                    if (topH > 0.01) {
+                        let w, d, x, z;
+                        if (axis === 'x') {
+                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
+                        } else {
+                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
+                        }
+                        createWallSegment(x, yOffset + seg.top + topH / 2, z, w, topH, d, materials.wall);
+                    }
+                    // Дверь (просто проём, без створки для простоты)
+                }
+            }
+        }
+
+        // Северная стена (z = -5), окна и входная дверь
+        buildExteriorWall('x', -5, -5, 5, H, 0, [
+            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: -1.0, end: 0.0, type: 'door', bottom: 0, top: 2.1 },
+            { start: 1.5, end: 2.7, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+
+        // Южная стена (z = 5) — окна
+        buildExteriorWall('x', 5, -5, 5, H, 0, [
+            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: 2.3, end: 3.5, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+
+        // Западная стена (x = -5)
+        buildExteriorWall('z', -5, -5, 5, H, 0, [
+            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: 2.0, end: 3.2, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+
+        // Восточная стена (x = 5)
+        buildExteriorWall('z', 5, -5, 5, H, 0, [
+            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: 1.0, end: 2.2, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+
+        // ---- ВНУТРЕННИЕ ПЕРЕГОРОДКИ (первый этаж) ----
+        // Разделение на гостиную (левая часть) и кухню (правая часть)
+        // Перегородка вдоль Z на x = 0, от z = -5 до z = 5, с проёмом для прохода
+        // Создаём сегменты
+        function createInnerWall(x, z, w, d, h = H, y = 0) {
+            return createWallSegment(x, y + h / 2, z, w, h, d, materials.wall);
+        }
+
+        // Перегородка x = 0 (разделяет гостиную и кухню), с проходом шириной 1.2 м по центру
+        // От z = -5 до z = -1
+        createInnerWall(0, -3, INNER_WALL, 4, H, 0);
+        // От z = 1 до z = 5
+        createInnerWall(0, 3, INNER_WALL, 4, H, 0);
+        // Верхняя перемычка над проходом (от z = -1 до z = 1)
+        createInnerWall(0, 0, INNER_WALL, 2, H - 2.1, 2.1); // перемычка
+
+        // Ванная комната на первом этаже (в углу, например, юго-запад)
+        // Стены ванной: x от -5 до -3, z от 3 до 5
+        // Перегородка вдоль X на z = 3, от x = -5 до x = -3
+        createInnerWall(-4, 3, 2, INNER_WALL, H, 0);
+        // Перегородка вдоль Z на x = -3, от z = 3 до z = 5
+        createInnerWall(-3, 4, INNER_WALL, 2, H, 0);
+        // Дверь в ванную (проём в перегородке x = -3, z от 3.2 до 4.1) — упрощённо: оставим проём, не создавая стену
+
+        // ---- ВТОРОЙ ЭТАЖ ----
+        // Внешние стены второго этажа (аналогично, но с другими окнами)
+        // Северная стена (z = -5), y = H + SLAB
+        buildExteriorWall('x', -5, -5, 5, H, H + SLAB, [
+            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: 1.5, end: 2.7, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+        // Южная стена (z = 5)
+        buildExteriorWall('x', 5, -5, 5, H, H + SLAB, [
+            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
+            { start: 2.3, end: 3.5, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+        // Западная стена (x = -5)
+        buildExteriorWall('z', -5, -5, 5, H, H + SLAB, [
+            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+        // Восточная стена (x = 5)
+        buildExteriorWall('z', 5, -5, 5, H, H + SLAB, [
+            { start: 1.0, end: 2.2, type: 'window', bottom: 0.9, top: 2.4 }
+        ]);
+
+        // Внутренние перегородки второго этажа
+        // Спальня 1 (левая часть), Спальня 2 (правая часть), Ванная
+        // Перегородка вдоль Z на x = 0
+        createInnerWall(0, -3, INNER_WALL, 4, H, H + SLAB);
+        createInnerWall(0, 3, INNER_WALL, 4, H, H + SLAB);
+        createInnerWall(0, 0, INNER_WALL, 2, H - 2.1, H + SLAB + 2.1); // перемычка
+
+        // Перегородка для ванной на втором этаже (например, в юго-восточном углу)
+        // x от 3 до 5, z от 3 до 5
+        createInnerWall(4, 3, 2, INNER_WALL, H, H + SLAB); // вдоль X на z=3
+        createInnerWall(3, 4, INNER_WALL, 2, H, H + SLAB); // вдоль Z на x=3
+
+        // ---- КРЫША ----
+        // Простая двускатная крыша
+        const roofGeo = new THREE.ConeGeometry(7.5, 1.8, 4);
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.9, metalness: 0.1 });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.set(0, H * 2 + SLAB + 0.9, 0);
+        roof.rotation.y = Math.PI / 4;
+        roof.castShadow = true;
+        roof.receiveShadow = true;
+        houseGroup.add(roof);
+
+        // ---- ЛЕСТНИЦА ----
+        // Расположим вдоль западной стены (x = -4), от z = -1 до z = 3
+        const stairGroup = new THREE.Group();
+        const steps = 12;
+        const stepH = H / steps; // 2.8 / 12 ≈ 0.233
+        const stepW = 1.0; // ширина
+        const stepD = 0.28; // глубина
+        for (let i = 0; i < steps; i++) {
+            const stepGeo = new THREE.BoxGeometry(stepW, stepH, stepD);
+            const stepMesh = new THREE.Mesh(stepGeo, materials.darkWood);
+            stepMesh.position.set(-4.2, stepH * i + stepH / 2, -1 + i * stepD);
+            stepMesh.castShadow = true;
+            stepMesh.receiveShadow = true;
+            stairGroup.add(stepMesh);
+            addCollider(stepMesh, false);
+        }
+        // Перила (упрощённо)
+        houseGroup.add(stairGroup);
+
+        // ============================================================
+        // 6. МЕБЕЛЬ (ПРОЦЕДУРНАЯ)
+        // ============================================================
+        // Вспомогательная функция для создания блока
+        function createBox(w, h, d, x, y, z, material, parent = houseGroup) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            parent.add(mesh);
+            addCollider(mesh, false);
+            return mesh;
+        }
+
+        // ---- ГОСТИНАЯ (левая часть первого этажа) ----
+        // Диван
+        createBox(2.2, 0.8, 0.9, -2.5, 0.4, -1.0, materials.fabric); // основание
+        createBox(2.2, 0.5, 0.3, -2.5, 0.9, -1.35, materials.fabric); // спинка
+        createBox(2.2, 0.2, 0.9, -2.5, 0.8, -1.0, materials.fabric); // подушки
+
+        // Журнальный столик
+        createBox(1.0, 0.4, 0.6, -2.5, 0.2, 1.5, materials.darkWood);
+
+        // Телевизор (на стене или тумбе)
+        createBox(1.6, 0.9, 0.1, -2.5, 1.5, -4.8, materials.black); // экран
+        createBox(1.8, 0.5, 0.4, -2.5, 0.25, -4.8, materials.darkWood); // тумба
+
+        // Шкаф в гостиной
+        createBox(1.0, 2.0, 0.5, -4.5, 1.0, -3.5, materials.wood);
+
+        // ---- КУХНЯ (правая часть первого этажа) ----
+        // Кухонные шкафы (нижние)
+        createBox(3.0, 0.9, 0.6, 2.5, 0.45, -4.5, materials.wood);
+        // Верхние шкафы
+        createBox(3.0, 0.7, 0.4, 2.5, 2.0, -4.7, materials.wood);
+        // Холодильник
+        createBox(0.8, 1.8, 0.7, 4.2, 0.9, -4.5, materials.metal);
+        // Плита
+        createBox(0.6, 0.1, 0.6, 1.5, 0.95, -4.5, materials.black);
+        // Раковина
+        createBox(0.8, 0.2, 0.5, 3.0, 0.9, -4.5, materials.tile);
+        // Обеденный стол
+        createBox(1.5, 0.05, 0.9, 2.5, 0.75, -2.0, materials.darkWood);
+        // Стулья (4 шт)
+        createBox(0.4, 0.45, 0.4, 1.8, 0.22, -2.0, materials.darkWood);
+        createBox(0.4, 0.45, 0.4, 3.2, 0.22, -2.0, materials.darkWood);
+        createBox(0.4, 0.45, 0.4, 1.8, 0.22, -1.4, materials.darkWood);
+        createBox(0.4, 0.45, 0.4, 3.2, 0.22, -1.4, materials.darkWood);
+
+        // ---- ВАННАЯ (первый этаж, юго-запад) ----
+        // Унитаз
+        createBox(0.4, 0.6, 0.6, -4.5, 0.3, 4.0, materials.white);
+        // Раковина
+        createBox(0.6, 0.15, 0.4, -4.5, 0.8, 4.7, materials.tile);
+        // Душ (стеклянная кабина)
+        createBox(1.2, 2.0, 1.2, -4.0, 1.0, 4.2, materials.glass); // упрощённо
+
+        // ---- СПАЛЬНЯ 1 (второй этаж, левая часть) ----
+        // Кровать
+        createBox(1.8, 0.4, 2.0, -2.5, H + SLAB + 0.2, -2.0, materials.fabric); // матрас
+        createBox(1.9, 0.8, 0.1, -2.5, H + SLAB + 0.6, -3.0, materials.wood); // изголовье
+        // Тумбочки
+        createBox(0.5, 0.5, 0.4, -3.5, H + SLAB + 0.25, -2.5, materials.wood);
+        createBox(0.5, 0.5, 0.4, -1.5, H + SLAB + 0.25, -2.5, materials.wood);
+        // Шкаф
+        createBox(1.2, 2.0, 0.6, -4.0, H + SLAB + 1.0, -3.5, materials.wood);
+
+        // ---- СПАЛЬНЯ 2 (второй этаж, правая часть) ----
+        createBox(1.8, 0.4, 2.0, 2.5, H + SLAB + 0.2, -2.0, materials.fabric);
+        createBox(1.9, 0.8, 0.1, 2.5, H + SLAB + 0.6, -3.0, materials.wood);
+        createBox(0.5, 0.5, 0.4, 1.5, H + SLAB + 0.25, -2.5, materials.wood);
+        createBox(0.5, 0.5, 0.4, 3.5, H + SLAB + 0.25, -2.5, materials.wood);
+        createBox(1.2, 2.0, 0.6, 4.0, H + SLAB + 1.0, -3.5, materials.wood);
+
+        // ---- ВАННАЯ ВТОРОГО ЭТАЖА ----
+        createBox(0.4, 0.6, 0.6, 4.5, H + SLAB + 0.3, 4.0, materials.white);
+        createBox(0.6, 0.15, 0.4, 4.5, H + SLAB + 0.8, 4.7, materials.tile);
+
+        // ---- ОСВЕЩЕНИЕ ВНУТРИ ----
+        // Точечные светильники в комнатах
+        const interiorLights = [
+            { pos: [-2.5, 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
+            { pos: [2.5, 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
+            { pos: [0, H + SLAB + 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
+            { pos: [-2.5, H + SLAB + 2.5, -2], intensity: 0.8, color: 0xfff0d0 },
+            { pos: [2.5, H + SLAB + 2.5, -2], intensity: 0.8, color: 0xfff0d0 },
+        ];
+        interiorLights.forEach(l => {
+            const light = new THREE.PointLight(l.color, l.intensity, 10, 2);
+            light.position.set(...l.pos);
+            light.castShadow = true;
+            light.shadow.mapSize.width = 512;
+            light.shadow.mapSize.height = 512;
+            light.shadow.bias = -0.001;
+            scene.add(light);
+        });
+
+        // ============================================================
+        // 7. ОКРУЖЕНИЕ (УЧАСТОК)
+        // ============================================================
+        // Газон
+        const grassGeo = new THREE.PlaneGeometry(40, 40);
+        const grass = new THREE.Mesh(grassGeo, materials.grass);
+        grass.rotation.x = -Math.PI / 2;
+        grass.position.y = -0.1;
+        grass.receiveShadow = true;
+        scene.add(grass);
+
+        // Дорожка из плитки (от входной двери)
+        const pathGeo = new THREE.PlaneGeometry(2, 8);
+        const pathMat = new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.8 });
+        const path = new THREE.Mesh(pathGeo, pathMat);
+        path.rotation.x = -Math.PI / 2;
+        path.position.set(0, 0.01, -9);
+        path.receiveShadow = true;
+        scene.add(path);
+
+        // Забор (простой)
+        function createFenceSegment(x, z, w, d) {
+            const geo = new THREE.BoxGeometry(w, 1.2, d);
+            const mesh = new THREE.Mesh(geo, materials.wood);
+            mesh.position.set(x, 0.6, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+        }
+        // Забор по периметру (упрощённо)
+        for (let i = -15; i <= 15; i += 3) {
+            createFenceSegment(i, -18, 3, 0.1); // север
+            createFenceSegment(i, 18, 3, 0.1);  // юг
+            createFenceSegment(-18, i, 0.1, 3); // запад
+            createFenceSegment(18, i, 0.1, 3);  // восток
+        }
+
+        // Деревья (простые)
+        function createTree(x, z) {
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2.0);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.9 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.set(x, 1.0, z);
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            scene.add(trunk);
+            const foliageGeo = new THREE.SphereGeometry(1.5, 8, 8);
+            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2d6a2d, roughness: 1.0 });
+            const foliage = new THREE.Mesh(foliageGeo, foliageMat);
+            foliage.position.set(x, 2.8, z);
+            foliage.castShadow = true;
+            foliage.receiveShadow = true;
+            scene.add(foliage);
+        }
+        createTree(-12, -10);
+        createTree(12, -10);
+        createTree(-12, 12);
+        createTree(12, 12);
+
+        // ============================================================
+        // 8. УПРАВЛЕНИЕ (ПК + МОБИЛЬНЫЕ)
+        // ============================================================
+        // --- ПК: PointerLockControls ---
+        const controls = new PointerLockControls(camera, renderer.domElement);
+        scene.add(controls.getObject()); // Добавляем объект управления в сцену (камера уже внутри)
+
+        // Перемещение
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        let moveForward = false;
+        let moveBackward = false;
+        let moveLeft = false;
+        let moveRight = false;
+        let isRunning = false;
+        let canJump = false;
+
+        // Мобильные переменные
+        let joystickActive = false;
+        let joystickVector = new THREE.Vector2(0, 0);
+        let lookTouchId = null;
+        let lookLastX = 0, lookLastY = 0;
+        let jumpRequested = false;
+
+        // Обработчики клавиатуры
+        document.addEventListener('keydown', (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'ShiftLeft': isRunning = true; break;
+                case 'Space': if (canJump) { velocity.y += 4.0; canJump = false; } break;
+                case 'KeyE': /* взаимодействие */ break;
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'ShiftLeft': isRunning = false; break;
+            }
+        });
+
+        // Блокировщик (клик для входа)
+        const blocker = document.getElementById('blocker');
+        blocker.addEventListener('click', () => {
+            controls.lock();
+        });
+        controls.addEventListener('lock', () => {
+            blocker.style.display = 'none';
+        });
+        controls.addEventListener('unlock', () => {
+            blocker.style.display = 'flex';
+        });
+
+        // --- Мобильные элементы управления ---
+        const joystickContainer = document.getElementById('joystick-container');
+        const joystickKnob = document.getElementById('joystick-knob');
+        const joystickBase = document.getElementById('joystick-base');
+        const lookArea = document.getElementById('look-area');
+        const jumpBtn = document.getElementById('jump-btn');
+
+        // Виртуальный джойстик
+        joystickContainer.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            joystickActive = true;
+            joystickContainer.setPointerCapture(e.pointerId);
+            updateJoystick(e);
+        });
+        joystickContainer.addEventListener('pointermove', (e) => {
+            if (!joystickActive) return;
+            e.preventDefault();
+            updateJoystick(e);
+        });
+        joystickContainer.addEventListener('pointerup', (e) => {
+            joystickActive = false;
+            joystickKnob.style.transform = `translate(-50%, -50%)`;
+            joystickVector.set(0, 0);
+            joystickContainer.releasePointerCapture(e.pointerId);
+        });
+        joystickContainer.addEventListener('pointercancel', (e) => {
+            joystickActive = false;
+            joystickKnob.style.transform = `translate(-50%, -50%)`;
+            joystickVector.set(0, 0);
+        });
+
+        function updateJoystick(e) {
+            const rect = joystickBase.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            let dx = e.clientX - centerX;
+            let dy = e.clientY - centerY;
+            const maxDist = rect.width / 2;
+            const dist = Math.hypot(dx, dy);
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joystickVector.set(dx / maxDist, dy / maxDist);
+        }
+
+        // Область обзора (drag-to-look)
+        lookArea.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            lookTouchId = e.pointerId;
+            lookLastX = e.clientX;
+            lookLastY = e.clientY;
+            lookArea.setPointerCapture(e.pointerId);
+        });
+        lookArea.addEventListener('pointermove', (e) => {
+            if (e.pointerId !== lookTouchId) return;
+            e.preventDefault();
+            const dx = e.clientX - lookLastX;
+            const dy = e.clientY - lookLastY;
+            lookLastX = e.clientX;
+            lookLastY = e.clientY;
+            // Поворот камеры
+            const sensitivity = 0.005;
+            // Вращаем камеру напрямую (yaw/pitch)
+            // PointerLockControls не используется на мобильных, поэтому вращаем вручную
+            // Но у нас камера внутри controls.getObject(), можно вращать объект
+            const yawObj = controls.getObject();
+            // yaw
+            yawObj.rotation.y -= dx * sensitivity;
+            // pitch (ограничим)
+            camera.rotation.x -= dy * sensitivity;
+            camera.rotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, camera.rotation.x));
+        });
+        lookArea.addEventListener('pointerup', (e) => {
+            if (e.pointerId === lookTouchId) {
+                lookTouchId = null;
+                lookArea.releasePointerCapture(e.pointerId);
+            }
+        });
+        lookArea.addEventListener('pointercancel', (e) => {
+            if (e.pointerId === lookTouchId) {
+                lookTouchId = null;
+            }
+        });
+
+        // Кнопка прыжка
+        jumpBtn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            jumpRequested = true;
+        });
+
+        // ============================================================
+        // 9. ФИЗИКА И КОЛЛИЗИИ
+        // ============================================================
+        const playerRadius = 0.3;
+        const playerHeight = 1.7;
+        const gravity = 9.8;
+
+        // Проверка коллизии для позиции (x, z)
+        function checkCollision(x, z) {
+            // Проверяем AABB коллайдеров
+            for (const collider of colliders) {
+                const box = collider.box;
+                // Расширяем box на радиус игрока
+                const expanded = box.clone().expandByScalar(playerRadius);
+                if (x > expanded.min.x && x < expanded.max.x &&
+                    z > expanded.min.z && z < expanded.max.z) {
+                    // Проверяем по Y (упрощённо: игрок на земле или на этаже)
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Перемещение с учётом коллизий (скольжение)
+        function moveWithCollision(dx, dz) {
+            const obj = controls.getObject();
+            const newX = obj.position.x + dx;
+            const newZ = obj.position.z + dz;
+            // Проверяем X
+            if (!checkCollision(newX, obj.position.z)) {
+                obj.position.x = newX;
+            }
+            // Проверяем Z
+            if (!checkCollision(obj.position.x, newZ)) {
+                obj.position.z = newZ;
+            }
+        }
+
+        // ============================================================
+        // 10. АНИМАЦИОННЫЙ ЦИКЛ
+        // ============================================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min(clock.getDelta(), 0.1);
+
+            // --- Мобильное управление ---
+            if (joystickActive) {
+                // Джойстик: X — влево/вправо, Y — вперёд/назад
+                const forward = -joystickVector.y;
+                const right = joystickVector.x;
+                const speed = isRunning ? 6.0 : 3.0;
+                const dx = right * speed * delta;
+                const dz = forward * speed * delta;
+                moveWithCollision(dx, dz);
+            }
+
+            // --- ПК управление ---
+            if (controls.isLocked) {
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= gravity * delta;
+
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+
+                const speed = isRunning ? 80.0 : 40.0;
+                if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+
+                const dx = -velocity.x * delta;
+                const dz = -velocity.z * delta;
+                moveWithCollision(dx, dz);
+
+                // Прыжок
+                if (jumpRequested && canJump) {
+                    velocity.y += 4.0;
+                    canJump = false;
+                    jumpRequested = false;
+                }
+
+                // Гравитация по Y
+                const obj = controls.getObject();
+                obj.position.y += velocity.y * delta;
+
+                // Проверка приземления (упрощённо: пол на y=0 или на перекрытии)
+                if (obj.position.y < 1.7) {
+                    velocity.y = 0;
+                    obj.position.y = 1.7;
+                    canJump = true;
+                }
+                // На втором этаже (если игрок поднялся по лестнице)
+                // Упрощённо: если позиция в зоне лестницы, позволяем подняться
+                // (В реальном проекте нужна сложная логика, но для демо достаточно)
+
+                // Ограничение по высоте (чтобы не улететь)
+                if (obj.position.y > 10) {
+                    velocity.y = 0;
+                    obj.position.y = 10;
+                }
+            }
+
+            // Мобильный прыжок
+            if (jumpRequested && canJump) {
+                velocity.y = 4.0;
+                canJump = false;
+                jumpRequested = false;
+            }
+
+            // Обновление камеры (PointerLockControls уже делает это)
+            // Для мобильных камера вращается вручную через lookArea
+
+            renderer.render(scene, camera);
+        }
+
+        // Обработка изменения размера окна
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Запуск
+        animate();
+
+        // ============================================================
+        // 11. ДОПОЛНИТЕЛЬНО: ОПРЕДЕЛЕНИЕ МОБИЛЬНОГО УСТРОЙСТВА
+        // ============================================================
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            // Показываем мобильные элементы
+            joystickContainer.style.display = 'block';
+            lookArea.style.display = 'block';
+            jumpBtn.style.display = 'flex';
+            // Скрываем блокировщик (на мобильных он не нужен, но можно оставить для приветствия)
+            // Можно скрыть через 2 секунды или по клику
+            blocker.addEventListener('click', () => {
+                blocker.style.display = 'none';
+            });
+        }
+
+        // Логирование для отладки
+        console.log('Modern House 3D загружен. Коллайдеров:', colliders.length);
+    </script>
+</body>
 </html>
