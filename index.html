@@ -3,275 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>Modern House 3D — Cinematic</title>
+<title>Modern House 3D — Refactored</title>
 <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body {
-        margin: 0; padding: 0; overflow: hidden;
-        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #000; color: #fff;
-        width: 100%; height: 100%;
-        touch-action: none;
-        user-select: none; -webkit-user-select: none;
+    html, body { margin:0; padding:0; overflow:hidden; width:100%; height:100%;
+        font-family:'Segoe UI',sans-serif; background:#000; color:#fff;
+        touch-action:none; user-select:none; -webkit-user-select:none; }
+    #app { position:fixed; inset:0; }
+    canvas { display:block; }
+    #crosshair { position:absolute; top:50%; left:50%; width:8px; height:8px;
+        border:1.5px solid rgba(255,255,255,.9); border-radius:50%;
+        transform:translate(-50%,-50%); pointer-events:none; z-index:5;
+        box-shadow:0 0 4px rgba(0,0,0,.8); transition:transform .15s; }
+    #crosshair.active { transform:translate(-50%,-50%) scale(1.5); border-color:#ffcc00; }
+    #hint { position:absolute; top:max(12px,env(safe-area-inset-top)); left:50%;
+        transform:translateX(-50%); background:rgba(0,0,0,.55); padding:8px 18px;
+        border-radius:100px; font-size:13px; letter-spacing:.5px;
+        backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.12);
+        white-space:nowrap; transition:opacity .6s; z-index:10; pointer-events:none; }
+    #hint.hidden { opacity:0; }
+    #fps { position:absolute; top:max(12px,env(safe-area-inset-top));
+        right:max(12px,env(safe-area-inset-right)); background:rgba(0,0,0,.5);
+        padding:4px 10px; border-radius:6px; font-size:11px;
+        font-family:monospace; color:#7fff7f; z-index:10; }
+    #blocker { position:absolute; inset:0; display:flex; align-items:center;
+        justify-content:center; z-index:30; cursor:pointer;
+        background:radial-gradient(ellipse at center,rgba(20,25,35,.85),rgba(5,5,10,.98));
+        transition:opacity .5s; }
+    #blocker.hidden { opacity:0; pointer-events:none; }
+    #blocker .panel { text-align:center; padding:40px 50px;
+        background:rgba(15,18,26,.85); border-radius:20px;
+        border:1px solid rgba(255,255,255,.1); backdrop-filter:blur(20px);
+        max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+    #blocker h1 { margin:0 0 8px; font-size:clamp(22px,5vw,32px);
+        font-weight:200; letter-spacing:6px;
+        background:linear-gradient(135deg,#fff,#a8c0ff);
+        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        background-clip:text; }
+    #blocker .sub { opacity:.6; font-size:12px; letter-spacing:3px;
+        margin-bottom:25px; text-transform:uppercase; }
+    #blocker .play-btn { display:inline-block; padding:14px 44px;
+        background:linear-gradient(135deg,#4a7fff,#2a5edd); border-radius:100px;
+        font-size:15px; font-weight:500; letter-spacing:2px; text-transform:uppercase;
+        transition:transform .2s,box-shadow .2s; box-shadow:0 8px 24px rgba(74,127,255,.4); }
+    #blocker:hover .play-btn { transform:scale(1.05); box-shadow:0 12px 32px rgba(74,127,255,.6); }
+    #blocker .controls-hint { margin-top:22px; opacity:.45; font-size:11px; line-height:1.9; }
+    #blocker .controls-hint kbd { display:inline-block; padding:1px 6px;
+        background:rgba(255,255,255,.1); border-radius:4px;
+        font-family:monospace; border:1px solid rgba(255,255,255,.15); margin:0 2px; }
+    #loading { position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+        text-align:center; z-index:25; font-size:11px; letter-spacing:3px; opacity:.7; }
+    #loading .bar { width:200px; height:2px; background:rgba(255,255,255,.1);
+        border-radius:2px; margin:10px auto 0; overflow:hidden; }
+    #loading .bar div { width:0%; height:100%;
+        background:linear-gradient(90deg,#4a7fff,#a8c0ff); transition:width .3s; }
+    #mobile-ui { display:none; }
+    #mobile-ui.visible { display:block; }
+    #joy-zone { position:absolute; left:max(20px,env(safe-area-inset-left));
+        bottom:max(20px,env(safe-area-inset-bottom)); width:150px; height:150px;
+        z-index:15; touch-action:none; }
+    #joy-base { position:absolute; width:140px; height:140px; left:5px; top:5px;
+        border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,.08),rgba(255,255,255,.03) 70%,transparent);
+        border:2px solid rgba(255,255,255,.15); backdrop-filter:blur(8px); }
+    #joy-knob { position:absolute; width:60px; height:60px; left:40px; top:40px;
+        border-radius:50%; background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.5),rgba(120,150,200,.35));
+        border:2px solid rgba(255,255,255,.4);
+        box-shadow:0 4px 16px rgba(0,0,0,.3),inset 0 2px 6px rgba(255,255,255,.3);
+        transition:transform .05s linear; pointer-events:none; }
+    #look-zone { position:absolute; right:0; top:0; width:55%; height:100%;
+        z-index:14; touch-action:none; }
+    .action-btn { position:absolute; border-radius:50%;
+        background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.2),rgba(0,0,0,.35));
+        border:2px solid rgba(255,255,255,.3); color:#fff;
+        font-size:11px; font-weight:600; letter-spacing:1px;
+        display:flex; align-items:center; justify-content:center;
+        text-align:center; z-index:16; touch-action:none; user-select:none;
+        backdrop-filter:blur(6px); transition:transform .1s,background .1s; }
+    .action-btn:active, .action-btn.pressed { transform:scale(.9);
+        background:radial-gradient(circle at 30% 30%,rgba(120,180,255,.6),rgba(74,127,255,.4));
+        border-color:rgba(120,180,255,.8); }
+    #btn-jump { right:max(24px,env(safe-area-inset-right));
+        bottom:max(24px,env(safe-area-inset-bottom)); width:78px; height:78px; font-size:22px; }
+    #btn-run { right:max(24px,env(safe-area-inset-right));
+        bottom:calc(max(24px,env(safe-area-inset-bottom)) + 95px);
+        width:62px; height:62px; }
+    #btn-use { right:calc(max(24px,env(safe-area-inset-right)) + 95px);
+        bottom:max(24px,env(safe-area-inset-bottom)); width:62px; height:62px;
+        font-size:14px; opacity:.6; transition:opacity .2s,transform .1s,background .1s; }
+    #btn-use.available { opacity:1; border-color:rgba(255,204,0,.8);
+        box-shadow:0 0 20px rgba(255,204,0,.5); }
+    #btn-run.active { background:radial-gradient(circle at 30% 30%,rgba(255,200,50,.6),rgba(200,120,0,.4));
+        border-color:rgba(255,200,50,.8); }
+    #interact-prompt { position:absolute; top:58%; left:50%; transform:translateX(-50%);
+        background:rgba(0,0,0,.7); padding:6px 16px; border-radius:100px;
+        font-size:12px; letter-spacing:1px; pointer-events:none; z-index:10;
+        opacity:0; transition:opacity .2s; border:1px solid rgba(255,204,0,.3);
+        white-space:nowrap; }
+    #interact-prompt.visible { opacity:1; }
+    @media (max-height:480px) {
+        #joy-zone{width:120px;height:120px} #joy-base{width:110px;height:110px}
+        #joy-knob{width:50px;height:50px;left:30px;top:30px}
     }
-    #app { position: fixed; inset: 0; }
-    canvas { display: block; }
-
-    /* HUD */
-    #crosshair {
-        position: absolute; top: 50%; left: 50%;
-        width: 8px; height: 8px;
-        border: 1.5px solid rgba(255,255,255,0.9);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        pointer-events: none; z-index: 5;
-        box-shadow: 0 0 4px rgba(0,0,0,0.8), inset 0 0 4px rgba(0,0,0,0.3);
-        transition: transform 0.15s;
-    }
-    #crosshair.active { transform: translate(-50%,-50%) scale(1.5); border-color: #ffcc00; }
-
-    #hint {
-        position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.55);
-        padding: 8px 18px; border-radius: 100px;
-        font-size: 13px; letter-spacing: 0.5px;
-        pointer-events: none; z-index: 10;
-        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.12);
-        white-space: nowrap;
-        opacity: 1; transition: opacity 0.6s;
-        max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
-    }
-    #hint.hidden { opacity: 0; }
-
-    #fps {
-        position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
-        background: rgba(0,0,0,0.5);
-        padding: 4px 10px; border-radius: 6px;
-        font-size: 11px; font-family: monospace;
-        pointer-events: none; z-index: 10;
-        color: #7fff7f;
-    }
-
-    /* Стартовый экран */
-    #blocker {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        background: radial-gradient(ellipse at center, rgba(20,25,35,0.85) 0%, rgba(5,5,10,0.98) 100%);
-        z-index: 30; cursor: pointer;
-        touch-action: manipulation;
-        transition: opacity 0.5s;
-    }
-    #blocker.hidden { opacity: 0; pointer-events: none; }
-    #blocker .panel {
-        text-align: center; padding: 40px 50px;
-        background: rgba(15, 18, 26, 0.85);
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.1);
-        backdrop-filter: blur(20px);
-        max-width: 90vw;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    }
-    #blocker h1 {
-        margin: 0 0 8px;
-        font-size: clamp(22px, 5vw, 32px);
-        font-weight: 200;
-        letter-spacing: 6px;
-        background: linear-gradient(135deg, #fff 0%, #a8c0ff 100%);
-        -webkit-background-clip: text; background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    #blocker .sub {
-        opacity: 0.6; font-size: 12px;
-        letter-spacing: 3px; margin-bottom: 25px;
-        text-transform: uppercase;
-    }
-    #blocker .play-btn {
-        display: inline-block;
-        padding: 14px 44px;
-        background: linear-gradient(135deg, #4a7fff, #2a5edd);
-        border-radius: 100px;
-        font-size: 15px; font-weight: 500;
-        letter-spacing: 2px; text-transform: uppercase;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 8px 24px rgba(74,127,255,0.4);
-    }
-    #blocker:hover .play-btn { transform: scale(1.05); box-shadow: 0 12px 32px rgba(74,127,255,0.6); }
-    #blocker .controls-hint {
-        margin-top: 22px;
-        opacity: 0.45; font-size: 11px;
-        line-height: 1.9;
-    }
-    #blocker .controls-hint kbd {
-        display: inline-block;
-        padding: 1px 6px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 4px;
-        font-family: monospace;
-        border: 1px solid rgba(255,255,255,0.15);
-        margin: 0 2px;
-    }
-
-    /* Загрузочный индикатор */
-    #loading {
-        position: absolute; bottom: 40px; left: 50%;
-        transform: translateX(-50%);
-        text-align: center; z-index: 25;
-        font-size: 11px; letter-spacing: 3px;
-        opacity: 0.7;
-    }
-    #loading .bar {
-        width: 200px; height: 2px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 2px;
-        margin: 10px auto 0;
-        overflow: hidden;
-    }
-    #loading .bar div {
-        width: 0%; height: 100%;
-        background: linear-gradient(90deg, #4a7fff, #a8c0ff);
-        transition: width 0.3s;
-    }
-
-    /* ================= МОБИЛЬНОЕ УПРАВЛЕНИЕ ================= */
-    #mobile-ui { display: none; }
-    #mobile-ui.visible { display: block; }
-
-    /* Джойстик */
-    #joy-zone {
-        position: absolute;
-        left: max(20px, env(safe-area-inset-left));
-        bottom: max(20px, env(safe-area-inset-bottom));
-        width: 150px; height: 150px;
-        z-index: 15;
-        pointer-events: auto;
-        touch-action: none;
-    }
-    #joy-base {
-        position: absolute;
-        width: 140px; height: 140px;
-        left: 5px; top: 5px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 70%, transparent 100%);
-        border: 2px solid rgba(255,255,255,0.15);
-        backdrop-filter: blur(8px);
-    }
-    #joy-knob {
-        position: absolute;
-        width: 60px; height: 60px;
-        left: 40px; top: 40px;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), rgba(120,150,200,0.35));
-        border: 2px solid rgba(255,255,255,0.4);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,255,255,0.3);
-        transition: transform 0.05s linear;
-        pointer-events: none;
-    }
-
-    /* Зона обзора (drag) */
-    #look-zone {
-        position: absolute;
-        right: 0; top: 0;
-        width: 55%; height: 100%;
-        z-index: 14;
-        pointer-events: auto;
-        touch-action: none;
-    }
-
-    /* Кнопки действий */
-    .action-btn {
-        position: absolute;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(0,0,0,0.35));
-        border: 2px solid rgba(255,255,255,0.3);
-        color: #fff;
-        font-size: 11px; font-weight: 600; letter-spacing: 1px;
-        display: flex; align-items: center; justify-content: center;
-        text-align: center;
-        z-index: 16;
-        pointer-events: auto;
-        touch-action: none;
-        user-select: none;
-        backdrop-filter: blur(6px);
-        transition: transform 0.1s, background 0.1s;
-    }
-    .action-btn:active, .action-btn.pressed {
-        transform: scale(0.9);
-        background: radial-gradient(circle at 30% 30%, rgba(120,180,255,0.6), rgba(74,127,255,0.4));
-        border-color: rgba(120,180,255,0.8);
-    }
-
-    #btn-jump {
-        right: max(24px, env(safe-area-inset-right));
-        bottom: max(24px, env(safe-area-inset-bottom));
-        width: 78px; height: 78px;
-        font-size: 22px;
-    }
-    #btn-run {
-        right: max(24px, env(safe-area-inset-right));
-        bottom: calc(max(24px, env(safe-area-inset-bottom)) + 95px);
-        width: 62px; height: 62px;
-    }
-    #btn-use {
-        right: calc(max(24px, env(safe-area-inset-right)) + 95px);
-        bottom: max(24px, env(safe-area-inset-bottom));
-        width: 62px; height: 62px;
-        font-size: 14px;
-        opacity: 0.6;
-        transition: opacity 0.2s, transform 0.1s, background 0.1s;
-    }
-    #btn-use.available {
-        opacity: 1;
-        border-color: rgba(255,204,0,0.8);
-        box-shadow: 0 0 20px rgba(255,204,0,0.5);
-    }
-    #btn-use.available:active { transform: scale(0.9); }
-
-    /* Индикатор бега */
-    #btn-run.active {
-        background: radial-gradient(circle at 30% 30%, rgba(255,200,50,0.6), rgba(200,120,0,0.4));
-        border-color: rgba(255,200,50,0.8);
-    }
-
-    /* Уведомление об объекте взаимодействия */
-    #interact-prompt {
-        position: absolute;
-        top: 58%; left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.7);
-        padding: 6px 16px;
-        border-radius: 100px;
-        font-size: 12px;
-        letter-spacing: 1px;
-        pointer-events: none;
-        z-index: 10;
-        opacity: 0;
-        transition: opacity 0.2s;
-        border: 1px solid rgba(255,204,0,0.3);
-        white-space: nowrap;
-    }
-    #interact-prompt.visible { opacity: 1; }
-
-    @media (max-height: 480px) {
-        #joy-zone { width: 120px; height: 120px; }
-        #joy-base { width: 110px; height: 110px; }
-        #joy-knob { width: 50px; height: 50px; left: 30px; top: 30px; }
-        .action-btn { transform: scale(0.85); }
-    }
-
-    #blocker .mobile-badge {
-        display: none;
-        margin-top: 12px;
-        font-size: 11px;
-        color: #7fff7f;
-        letter-spacing: 2px;
-    }
-    body.mobile #blocker .mobile-badge { display: block; }
-    body.mobile #blocker .pc-only { display: none; }
-    body:not(.mobile) #blocker .mobile-only { display: none; }
 </style>
 </head>
 <body>
@@ -280,40 +112,24 @@
     <div id="hint">WASD — движение · Мышь — обзор · Shift — бег · Space — прыжок · E — действие</div>
     <div id="fps">--- FPS</div>
     <div id="interact-prompt"></div>
-
     <div id="mobile-ui">
         <div id="look-zone"></div>
-        <div id="joy-zone">
-            <div id="joy-base"></div>
-            <div id="joy-knob"></div>
-        </div>
+        <div id="joy-zone"><div id="joy-base"></div><div id="joy-knob"></div></div>
         <div class="action-btn" id="btn-jump">↑</div>
         <div class="action-btn" id="btn-run">RUN</div>
         <div class="action-btn" id="btn-use">USE</div>
     </div>
-
     <div id="blocker">
         <div class="panel">
             <h1>MODERN HOUSE</h1>
-            <div class="sub">Cinematic 3D Experience</div>
+            <div class="sub">Refactored · Physics · Interactions</div>
             <div class="play-btn">Играть</div>
-            <div class="controls-hint pc-only">
-                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> движение &nbsp;·&nbsp;
-                <kbd>Shift</kbd> бег &nbsp;·&nbsp; <kbd>Space</kbd> прыжок &nbsp;·&nbsp;
-                <kbd>E</kbd> действие &nbsp;·&nbsp; <kbd>Esc</kbd> пауза
+            <div class="controls-hint">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> движение · <kbd>Shift</kbd> бег · <kbd>Space</kbd> прыжок · <kbd>E</kbd> действие · <kbd>Esc</kbd> пауза
             </div>
-            <div class="controls-hint mobile-only">
-                Джойстик слева — движение &nbsp;·&nbsp; Свайп справа — обзор<br>
-                Кнопки справа — прыжок, бег, действие
-            </div>
-            <div class="mobile-badge">📱 Мобильный режим</div>
         </div>
     </div>
-
-    <div id="loading">
-        <div>ЗАГРУЗКА СЦЕНЫ</div>
-        <div class="bar"><div id="loading-bar"></div></div>
-    </div>
+    <div id="loading"><div>ЗАГРУЗКА СЦЕНЫ</div><div class="bar"><div id="loading-bar"></div></div></div>
 </div>
 
 <script type="importmap">
@@ -337,58 +153,38 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 
 // ============================================================
-// 0. ОПРЕДЕЛЕНИЕ ПЛАТФОРМЫ И КАЧЕСТВА
+// 0. PLATFORM
 // ============================================================
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     || (navigator.maxTouchPoints > 1 && window.innerWidth < 1200);
 
-if (isMobile) document.body.classList.add('mobile');
-
 const QUALITY = isMobile ? {
-    pixelRatio: 1.0,
-    shadowMapSize: 1024,
-    shadowMapType: THREE.PCFShadowMap,
-    bloom: true, bloomStrength: 0.35,
-    bloomRadius: 0.4,
-    smaa: false,
-    useGTAO: false,
-    sunShadow: true,
-    rectAreaLights: false,
-    textureSize: 512,
-    maxPointLights: 2
+    pixelRatio: 1.0, shadowMapSize: 1024, shadowMapType: THREE.PCFShadowMap,
+    bloom: true, bloomStrength: 0.35, bloomRadius: 0.4,
+    smaa: false, sunShadow: true, rectAreaLights: false,
+    textureSize: 512, maxPointLights: 3
 } : {
-    pixelRatio: Math.min(window.devicePixelRatio, 2),
-    shadowMapSize: 4096,
-    shadowMapType: THREE.PCFSoftShadowMap,
-    bloom: true, bloomStrength: 0.4,
-    bloomRadius: 0.5,
-    smaa: true,
-    useGTAO: true,
-    sunShadow: true,
-    rectAreaLights: true,
-    textureSize: 1024,
-    maxPointLights: 5
+    pixelRatio: Math.min(window.devicePixelRatio, 2), shadowMapSize: 4096,
+    shadowMapType: THREE.PCFSoftShadowMap, bloom: true, bloomStrength: 0.4,
+    bloomRadius: 0.5, smaa: true, sunShadow: true, rectAreaLights: true,
+    textureSize: 1024, maxPointLights: 6
 };
 
 // ============================================================
 // 1. RENDERER
 // ============================================================
-const renderer = new THREE.WebGLRenderer({
-    antialias: false, // используем SMAA постобработку
-    powerPreference: 'high-performance',
-    stencil: false
-});
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
 renderer.setPixelRatio(QUALITY.pixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = QUALITY.shadowMapType;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.05;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById('app').appendChild(renderer.domElement);
 
 // ============================================================
-// 2. СЦЕНА + КАМЕРА
+// 2. SCENE / CAMERA / PLAYER
 // ============================================================
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0xa8c4d8, 0.008);
@@ -396,13 +192,16 @@ scene.fog = new THREE.FogExp2(0xa8c4d8, 0.008);
 const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 500);
 camera.rotation.order = 'YXZ';
 
+const PLAYER_HEIGHT = 1.7;
+const PLAYER_RADIUS = 0.3;
+
 const player = new THREE.Object3D();
-player.position.set(0, 1.7, 14);
+player.position.set(0, PLAYER_HEIGHT + 0.01, 14);
 player.add(camera);
 scene.add(player);
 
 // ============================================================
-// 3. НЕБО + ОКРУЖЕНИЕ (HDRI через PMREM)
+// 3. SKY / ENVIRONMENT
 // ============================================================
 RectAreaLightUniformsLib.init();
 
@@ -411,61 +210,52 @@ sky.scale.setScalar(10000);
 scene.add(sky);
 
 const skyU = sky.material.uniforms;
-skyU['turbidity'].value = 8;
-skyU['rayleigh'].value = 2.5;
+skyU['turbidity'].value = 6;
+skyU['rayleigh'].value = 2.2;
 skyU['mieCoefficient'].value = 0.005;
 skyU['mieDirectionalG'].value = 0.82;
 
-// Позиция солнца (утро)
-const sunElevation = 28;
+const sunElevation = 32;
 const sunAzimuth = 145;
 const sunPhi = THREE.MathUtils.degToRad(90 - sunElevation);
 const sunTheta = THREE.MathUtils.degToRad(sunAzimuth);
-const sunPos = new THREE.Vector3();
-sunPos.setFromSphericalCoords(1, sunPhi, sunTheta);
+const sunPos = new THREE.Vector3().setFromSphericalCoords(1, sunPhi, sunTheta);
 skyU['sunPosition'].value.copy(sunPos);
 
-// Создаём environment map для PBR-отражений
 const pmrem = new THREE.PMREMGenerator(renderer);
 pmrem.compileEquirectangularShader();
 const skyScene = new THREE.Scene();
-const skyCopy = sky.clone();
-skyScene.add(skyCopy);
+skyScene.add(sky.clone());
 const envMap = pmrem.fromScene(skyScene, 0.04).texture;
 scene.environment = envMap;
 
 // ============================================================
-// 4. ОСВЕЩЕНИЕ
+// 4. GLOBAL LIGHTING
 // ============================================================
-const sunLight = new THREE.DirectionalLight(0xfff0dd, 3.5);
+const sunLight = new THREE.DirectionalLight(0xfff0dd, 3.2);
 sunLight.position.copy(sunPos).multiplyScalar(40);
 sunLight.target.position.set(0, 0, 0);
 scene.add(sunLight.target);
-
 if (QUALITY.sunShadow) {
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = QUALITY.shadowMapSize;
-    sunLight.shadow.mapSize.height = QUALITY.shadowMapSize;
+    sunLight.shadow.mapSize.set(QUALITY.shadowMapSize, QUALITY.shadowMapSize);
     sunLight.shadow.camera.near = 1;
     sunLight.shadow.camera.far = 100;
-    sunLight.shadow.camera.left = -25;
-    sunLight.shadow.camera.right = 25;
-    sunLight.shadow.camera.top = 25;
-    sunLight.shadow.camera.bottom = -25;
+    sunLight.shadow.camera.left = -22;
+    sunLight.shadow.camera.right = 22;
+    sunLight.shadow.camera.top = 22;
+    sunLight.shadow.camera.bottom = -22;
     sunLight.shadow.bias = -0.0003;
     sunLight.shadow.normalBias = 0.02;
     sunLight.shadow.radius = 4;
 }
 scene.add(sunLight);
 
-const hemiLight = new THREE.HemisphereLight(0xa8c4d8, 0x3a4a2a, 0.6);
-scene.add(hemiLight);
-
-const ambient = new THREE.AmbientLight(0xffffff, 0.15);
-scene.add(ambient);
+scene.add(new THREE.HemisphereLight(0xa8c4d8, 0x3a4a2a, 0.55));
+scene.add(new THREE.AmbientLight(0xffffff, 0.12));
 
 // ============================================================
-// 5. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (с нормал-мапами)
+// 5. PROCEDURAL TEXTURES (improved normal maps)
 // ============================================================
 const TS = QUALITY.textureSize;
 
@@ -484,6 +274,7 @@ function makeTex(canvas, isColor = true) {
     return t;
 }
 
+// Improved: Sobel-based normal map with proper scaling
 function generateNormalMap(sourceCanvas, strength = 1.5) {
     const w = sourceCanvas.width, h = sourceCanvas.height;
     const srcCtx = sourceCanvas.getContext('2d');
@@ -494,25 +285,31 @@ function generateNormalMap(sourceCanvas, strength = 1.5) {
     const outImg = outCtx.createImageData(w, h);
     const d = outImg.data;
 
-    const lum = (idx) => (src[idx] * 0.299 + src[idx+1] * 0.587 + src[idx+2] * 0.114);
+    const lum = (x, y) => {
+        x = (x + w) % w; y = (y + h) % h;
+        const i = (y * w + x) * 4;
+        return (src[i] * 0.299 + src[i+1] * 0.587 + src[i+2] * 0.114) / 255;
+    };
 
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
             const idx = (y * w + x) * 4;
-            const l = lum((y * w + ((x - 1 + w) % w)) * 4);
-            const r = lum((y * w + ((x + 1) % w)) * 4);
-            const t = lum((((y - 1 + h) % h) * w + x) * 4);
-            const b = lum((((y + 1) % h) * w + x) * 4);
+            // Sobel
+            const tl = lum(x-1,y-1), t = lum(x,y-1), tr = lum(x+1,y-1);
+            const l = lum(x-1,y),   r = lum(x+1,y);
+            const bl = lum(x-1,y+1), b = lum(x,y+1), br = lum(x+1,y+1);
+            const gx = (tr + 2*r + br) - (tl + 2*l + bl);
+            const gy = (bl + 2*b + br) - (tl + 2*t + tr);
 
-            let dx = (l - r) / 255 * strength;
-            let dy = (t - b) / 255 * strength;
-            let dz = 1;
-            const len = Math.hypot(dx, dy, dz);
-            dx /= len; dy /= len; dz /= len;
+            let nx = -gx * strength * 0.5;
+            let ny = -gy * strength * 0.5;
+            let nz = 1;
+            const len = Math.hypot(nx, ny, nz);
+            nx /= len; ny /= len; nz /= len;
 
-            d[idx] = (dx * 0.5 + 0.5) * 255;
-            d[idx+1] = (dy * 0.5 + 0.5) * 255;
-            d[idx+2] = (dz * 0.5 + 0.5) * 255;
+            d[idx] = (nx * 0.5 + 0.5) * 255;
+            d[idx+1] = (ny * 0.5 + 0.5) * 255;
+            d[idx+2] = (nz * 0.5 + 0.5) * 255;
             d[idx+3] = 255;
         }
     }
@@ -522,254 +319,144 @@ function generateNormalMap(sourceCanvas, strength = 1.5) {
 
 function generateRoughnessMap(sourceCanvas, base = 0.8, variance = 0.2) {
     const w = sourceCanvas.width, h = sourceCanvas.height;
-    const srcCtx = sourceCanvas.getContext('2d');
-    const src = srcCtx.getImageData(0, 0, w, h).data;
-
+    const src = sourceCanvas.getContext('2d').getImageData(0, 0, w, h).data;
     const out = createCanvas(w);
     const outCtx = out.getContext('2d');
     const outImg = outCtx.createImageData(w, h);
     const d = outImg.data;
-
     for (let i = 0; i < w * h; i++) {
         const idx = i * 4;
         const lum = (src[idx] * 0.299 + src[idx+1] * 0.587 + src[idx+2] * 0.114) / 255;
         const r = Math.max(0, Math.min(1, base + (lum - 0.5) * variance));
-        const v = r * 255;
-        d[idx] = d[idx+1] = d[idx+2] = v;
+        d[idx] = d[idx+1] = d[idx+2] = r * 255;
         d[idx+3] = 255;
     }
     outCtx.putImageData(outImg, 0, 0);
     return out;
 }
 
-// ---------- ДЕРЕВО (паркет) ----------
+// ---- Wood (parquet) ----
 function createWoodCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-
-    // Фон
-    ctx.fillStyle = '#8b6b4a';
-    ctx.fillRect(0, 0, w, h);
-
-    // Доски (полосы)
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    ctx.fillStyle = '#7d5a3c'; ctx.fillRect(0, 0, w, h);
     const plankH = h / 5;
     for (let p = 0; p < 5; p++) {
         const y = p * plankH;
-        const hue = 28 + Math.random() * 12;
-        const light = 42 + Math.random() * 12;
-        ctx.fillStyle = `hsl(${hue}, 38%, ${light}%)`;
+        const hue = 26 + Math.random() * 14, light = 42 + Math.random() * 10;
+        ctx.fillStyle = `hsl(${hue},38%,${light}%)`;
         ctx.fillRect(0, y, w, plankH - 2);
-
-        // Тёмная линия между досками
-        ctx.fillStyle = `rgba(20,10,0,0.6)`;
+        ctx.fillStyle = 'rgba(20,10,0,0.7)';
         ctx.fillRect(0, y + plankH - 2, w, 2);
-
-        // Волокна дерева
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 70; i++) {
             const fy = y + Math.random() * (plankH - 4);
-            const startX = Math.random() * w;
-            const len = 30 + Math.random() * (w / 2);
-            ctx.strokeStyle = `hsla(${hue}, 30%, ${light - 15 + Math.random() * 20}%, ${0.15 + Math.random() * 0.25})`;
+            const sx = Math.random() * w, len = 30 + Math.random() * (w / 2);
+            ctx.strokeStyle = `hsla(${hue},30%,${light-15+Math.random()*18}%,${0.15+Math.random()*0.2})`;
             ctx.lineWidth = 0.5 + Math.random() * 2;
-            ctx.beginPath();
-            ctx.moveTo(startX, fy);
-            for (let x = startX; x < startX + len && x < w; x += 4) {
+            ctx.beginPath(); ctx.moveTo(sx, fy);
+            for (let x = sx; x < sx + len && x < w; x += 4)
                 ctx.lineTo(x, fy + Math.sin(x * 0.05 + p) * 1.5);
-            }
             ctx.stroke();
         }
-
-        // Стыки досок (вертикальные)
         const splitX = Math.random() * w;
-        ctx.fillStyle = 'rgba(20,10,0,0.4)';
+        ctx.fillStyle = 'rgba(20,10,0,0.5)';
         ctx.fillRect(splitX, y, 1.5, plankH - 2);
-
-        // Потёртости / блики
-        for (let i = 0; i < 25; i++) {
-            ctx.fillStyle = `rgba(255,240,210,${Math.random() * 0.06})`;
-            ctx.beginPath();
-            ctx.arc(Math.random() * w, y + Math.random() * plankH, Math.random() * 30, 0, Math.PI * 2);
-            ctx.fill();
-        }
     }
     return c;
 }
 
-// ---------- ШТУКАТУРКА СТЕН ----------
+// ---- Plaster ----
 function createWallCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-    ctx.fillStyle = '#e8e3da';
-    ctx.fillRect(0, 0, w, h);
-
-    // Мелкая зернистость
-    const img = ctx.getImageData(0, 0, w, h);
-    const d = img.data;
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    ctx.fillStyle = '#e8e3da'; ctx.fillRect(0, 0, w, h);
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
     for (let i = 0; i < d.length; i += 4) {
-        const n = (Math.random() - 0.5) * 20;
+        const n = (Math.random() - 0.5) * 16;
         d[i] = Math.max(0, Math.min(255, d[i] + n));
         d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
         d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
     }
     ctx.putImageData(img, 0, 0);
-
-    // Пятна и потёртости
-    for (let i = 0; i < 40; i++) {
-        ctx.fillStyle = `rgba(120,110,100,${Math.random() * 0.04})`;
-        ctx.beginPath();
-        ctx.arc(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // Мелкие трещины
-    for (let i = 0; i < 8; i++) {
-        ctx.strokeStyle = 'rgba(80,70,60,0.08)';
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        let x = Math.random() * w, y = Math.random() * h;
-        ctx.moveTo(x, y);
-        for (let s = 0; s < 10; s++) {
-            x += (Math.random() - 0.5) * 30;
-            y += Math.random() * 20;
-            ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+    for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgba(120,110,100,${Math.random() * 0.03})`;
+        ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 0, Math.PI * 2); ctx.fill();
     }
     return c;
 }
 
-// ---------- ПЛИТКА ----------
+// ---- Tile ----
 function createTileCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-
-    ctx.fillStyle = '#9a9085';
-    ctx.fillRect(0, 0, w, h);
-
-    const tileSize = w / 4;
-    const gap = 3;
-    for (let y = 0; y < 4; y++) {
-        for (let x = 0; x < 4; x++) {
-            const v = Math.random() * 15 - 7;
-            const base = 175 + v;
-            ctx.fillStyle = `rgb(${base}, ${base - 5}, ${base - 12})`;
-            ctx.fillRect(x * tileSize + gap, y * tileSize + gap, tileSize - gap * 2, tileSize - gap * 2);
-
-            // Мраморные прожилки
-            ctx.strokeStyle = `rgba(120,110,100,0.15)`;
-            ctx.lineWidth = 0.8;
-            for (let i = 0; i < 5; i++) {
-                ctx.beginPath();
-                const sx = x * tileSize + Math.random() * tileSize;
-                const sy = y * tileSize + Math.random() * tileSize;
-                ctx.moveTo(sx, sy);
-                ctx.bezierCurveTo(
-                    sx + Math.random() * 60 - 30, sy + Math.random() * 60 - 30,
-                    sx + Math.random() * 60 - 30, sy + Math.random() * 60 - 30,
-                    sx + Math.random() * 80 - 40, sy + Math.random() * 80 - 40
-                );
-                ctx.stroke();
-            }
-
-            // Блик
-            const grad = ctx.createLinearGradient(
-                x * tileSize, y * tileSize,
-                x * tileSize + tileSize, y * tileSize + tileSize
-            );
-            grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-            grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-            grad.addColorStop(1, 'rgba(0,0,0,0.1)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(x * tileSize + gap, y * tileSize + gap, tileSize - gap * 2, tileSize - gap * 2);
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    ctx.fillStyle = '#9a9085'; ctx.fillRect(0, 0, w, h);
+    const t = w / 4, gap = 3;
+    for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+        const v = 175 + Math.random() * 15 - 7;
+        ctx.fillStyle = `rgb(${v},${v - 5},${v - 12})`;
+        ctx.fillRect(x * t + gap, y * t + gap, t - gap * 2, t - gap * 2);
+        ctx.strokeStyle = 'rgba(120,110,100,0.15)';
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            const sx = x * t + Math.random() * t, sy = y * t + Math.random() * t;
+            ctx.moveTo(sx, sy);
+            ctx.bezierCurveTo(sx + 30, sy + 20, sx + 30, sy - 20, sx + 60, sy + 10);
+            ctx.stroke();
         }
+        const g = ctx.createLinearGradient(x * t, y * t, (x+1) * t, (y+1) * t);
+        g.addColorStop(0, 'rgba(255,255,255,0.15)');
+        g.addColorStop(0.5, 'rgba(255,255,255,0)');
+        g.addColorStop(1, 'rgba(0,0,0,0.1)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x * t + gap, y * t + gap, t - gap * 2, t - gap * 2);
     }
     return c;
 }
 
-// ---------- МЕТАЛЛ ----------
+// ---- Metal ----
 function createMetalCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#d8d8d8');
-    grad.addColorStop(0.3, '#a8a8a8');
-    grad.addColorStop(0.7, '#b8b8b8');
-    grad.addColorStop(1, '#c8c8c8');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, h);
-
-    // Вертикальная шлифовка
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#d8d8d8'); g.addColorStop(.3, '#a8a8a8');
+    g.addColorStop(.7, '#b8b8b8'); g.addColorStop(1, '#c8c8c8');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 4000; i++) {
         ctx.strokeStyle = `rgba(255,255,255,${Math.random() * 0.08})`;
         const x = Math.random() * w;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x + (Math.random() - 0.5) * 2, h);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + (Math.random() - 0.5) * 2, h); ctx.stroke();
     }
     return c;
 }
 
-// ---------- ТКАНЬ ----------
+// ---- Fabric ----
 function createFabricCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-
-    ctx.fillStyle = '#3a4a5c';
-    ctx.fillRect(0, 0, w, h);
-
-    // Плетение
-    const stitch = 4;
-    for (let y = 0; y < h; y += stitch) {
-        for (let x = 0; x < w; x += stitch) {
-            const shade = (x + y) % (stitch * 2) === 0 ? 15 : -15;
-            ctx.fillStyle = `rgba(${60 + shade}, ${80 + shade}, ${100 + shade}, 0.4)`;
-            ctx.fillRect(x, y, stitch, stitch);
-        }
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    ctx.fillStyle = '#3a4a5c'; ctx.fillRect(0, 0, w, h);
+    const s = 4;
+    for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
+        const sh = (x + y) % (s * 2) === 0 ? 15 : -15;
+        ctx.fillStyle = `rgba(${60+sh},${80+sh},${100+sh},0.4)`;
+        ctx.fillRect(x, y, s, s);
     }
-    // Ворс
     for (let i = 0; i < 3000; i++) {
-        ctx.fillStyle = `rgba(${100 + Math.random() * 60}, ${120 + Math.random() * 60}, ${150 + Math.random() * 60}, 0.15)`;
+        ctx.fillStyle = `rgba(${100+Math.random()*60},${120+Math.random()*60},${150+Math.random()*60},0.15)`;
         ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
     }
     return c;
 }
 
-// ---------- ТРАВА (для газона) ----------
+// ---- Grass ----
 function createGrassCanvas() {
-    const c = createCanvas(TS);
-    const ctx = c.getContext('2d');
-    const w = TS, h = TS;
-    ctx.fillStyle = '#2e5025';
-    ctx.fillRect(0, 0, w, h);
-
+    const c = createCanvas(TS), ctx = c.getContext('2d'), w = TS, h = TS;
+    ctx.fillStyle = '#2e5025'; ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 8000; i++) {
-        const g = 60 + Math.random() * 80;
-        const r = 40 + Math.random() * 40;
-        ctx.strokeStyle = `rgb(${r}, ${g}, ${30 + Math.random() * 30})`;
+        const g = 60 + Math.random() * 80, r = 40 + Math.random() * 40;
+        ctx.strokeStyle = `rgb(${r},${g},${30+Math.random()*30})`;
         ctx.lineWidth = 0.5 + Math.random() * 1.5;
         const x = Math.random() * w, y = Math.random() * h;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + (Math.random() - 0.5) * 4, y - 2 - Math.random() * 4);
-        ctx.stroke();
-    }
-    // Пятна земли
-    for (let i = 0; i < 30; i++) {
-        ctx.fillStyle = `rgba(60,45,30,${Math.random() * 0.15})`;
-        ctx.beginPath();
-        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 30, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (Math.random() - .5) * 4, y - 2 - Math.random() * 4); ctx.stroke();
     }
     return c;
 }
 
-// ---------- Создаём все текстуры ----------
 const woodCanvas = createWoodCanvas();
 const wallCanvas = createWallCanvas();
 const tileCanvas = createTileCanvas();
@@ -778,131 +465,104 @@ const fabricCanvas = createFabricCanvas();
 const grassCanvas = createGrassCanvas();
 
 // ============================================================
-// 6. МАТЕРИАЛЫ (PBR с нормалями)
+// 6. MATERIALS
 // ============================================================
 const matWood = new THREE.MeshPhysicalMaterial({
     map: makeTex(woodCanvas),
-    normalMap: makeTex(generateNormalMap(woodCanvas, 1.2), false),
+    normalMap: makeTex(generateNormalMap(woodCanvas, 2.0), false),
     roughnessMap: makeTex(generateRoughnessMap(woodCanvas, 0.55, 0.3), false),
     roughness: 1, metalness: 0,
     clearcoat: 0.3, clearcoatRoughness: 0.4,
     envMapIntensity: 0.8
 });
-matWood.map.repeat.set(2, 2);
-matWood.normalMap.repeat.set(2, 2);
-matWood.roughnessMap.repeat.set(2, 2);
+matWood.map.repeat.set(2, 2); matWood.normalMap.repeat.set(2, 2); matWood.roughnessMap.repeat.set(2, 2);
 
 const matWall = new THREE.MeshStandardMaterial({
     map: makeTex(wallCanvas),
-    normalMap: makeTex(generateNormalMap(wallCanvas, 0.8), false),
+    normalMap: makeTex(generateNormalMap(wallCanvas, 1.2), false),
     roughness: 0.95, metalness: 0,
     envMapIntensity: 0.3
 });
-matWall.map.repeat.set(2, 2);
-matWall.normalMap.repeat.set(2, 2);
+matWall.map.repeat.set(2, 2); matWall.normalMap.repeat.set(2, 2);
 
-const matCeiling = new THREE.MeshStandardMaterial({
-    color: 0xf5f2ee, roughness: 0.95, metalness: 0,
-    envMapIntensity: 0.2
-});
+const matCeiling = new THREE.MeshStandardMaterial({ color: 0xf5f2ee, roughness: 0.95 });
 
 const matTile = new THREE.MeshPhysicalMaterial({
     map: makeTex(tileCanvas),
-    normalMap: makeTex(generateNormalMap(tileCanvas, 0.6), false),
+    normalMap: makeTex(generateNormalMap(tileCanvas, 0.8), false),
     roughnessMap: makeTex(generateRoughnessMap(tileCanvas, 0.15, 0.2), false),
     roughness: 1, metalness: 0.05,
     clearcoat: 0.6, clearcoatRoughness: 0.15,
     envMapIntensity: 1.2
 });
-matTile.map.repeat.set(3, 3);
-matTile.normalMap.repeat.set(3, 3);
-matTile.roughnessMap.repeat.set(3, 3);
+matTile.map.repeat.set(3, 3); matTile.normalMap.repeat.set(3, 3); matTile.roughnessMap.repeat.set(3, 3);
 
 const matMetal = new THREE.MeshPhysicalMaterial({
     map: makeTex(metalCanvas),
-    normalMap: makeTex(generateNormalMap(metalCanvas, 0.4), false),
+    normalMap: makeTex(generateNormalMap(metalCanvas, 0.6), false),
     roughnessMap: makeTex(generateRoughnessMap(metalCanvas, 0.35, 0.15), false),
     roughness: 1, metalness: 0.9,
-    clearcoat: 0.2,
-    envMapIntensity: 1.5
+    clearcoat: 0.2, envMapIntensity: 1.5
 });
 
 const matFabric = new THREE.MeshStandardMaterial({
     map: makeTex(fabricCanvas),
-    normalMap: makeTex(generateNormalMap(fabricCanvas, 2.5), false),
+    normalMap: makeTex(generateNormalMap(fabricCanvas, 3.0), false),
     roughness: 0.95, metalness: 0,
     envMapIntensity: 0.4
 });
-matFabric.map.repeat.set(2, 2);
-matFabric.normalMap.repeat.set(2, 2);
+matFabric.map.repeat.set(2, 2); matFabric.normalMap.repeat.set(2, 2);
 
 const matDarkWood = new THREE.MeshPhysicalMaterial({
     color: 0x3a2a1e, roughness: 0.5, metalness: 0,
-    clearcoat: 0.5, clearcoatRoughness: 0.3,
-    envMapIntensity: 0.9
+    clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.9
 });
 
-const matWhite = new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.35, metalness: 0,
-    envMapIntensity: 0.9
-});
-
-const matBlack = new THREE.MeshStandardMaterial({
-    color: 0x0a0a0a, roughness: 0.3, metalness: 0.4,
-    envMapIntensity: 0.8
-});
+const matWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, envMapIntensity: 0.9 });
+const matBlack = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.3, metalness: 0.4 });
 
 const matGlass = new THREE.MeshPhysicalMaterial({
-    color: 0xc8dfff,
-    transmission: 0.95,
-    transparent: true,
-    opacity: 0.4,
-    roughness: 0.03,
-    metalness: 0,
-    ior: 1.52,
-    thickness: 0.02,
-    clearcoat: 1,
-    clearcoatRoughness: 0.02,
-    envMapIntensity: 1.8
+    color: 0xc8dfff, transmission: 0.95, transparent: true, opacity: 0.5,
+    roughness: 0.03, metalness: 0, ior: 1.52, thickness: 0.02,
+    clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.8
+});
+
+const matAluminum = new THREE.MeshStandardMaterial({
+    color: 0x2c2c30, roughness: 0.4, metalness: 0.85, envMapIntensity: 1.2
 });
 
 const matGrass = new THREE.MeshStandardMaterial({
     map: makeTex(grassCanvas),
-    normalMap: makeTex(generateNormalMap(grassCanvas, 2.0), false),
-    roughness: 1, metalness: 0,
-    envMapIntensity: 0.4
+    normalMap: makeTex(generateNormalMap(grassCanvas, 2.5), false),
+    roughness: 1, metalness: 0, envMapIntensity: 0.4
 });
-matGrass.map.repeat.set(20, 20);
-matGrass.normalMap.repeat.set(20, 20);
+matGrass.map.repeat.set(20, 20); matGrass.normalMap.repeat.set(20, 20);
 
-const matConcrete = new THREE.MeshStandardMaterial({
-    color: 0x9a9a9a, roughness: 0.9, metalness: 0.05,
-    envMapIntensity: 0.4
-});
+const matConcrete = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.9, metalness: 0.05 });
+const matRoof = new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.65, metalness: 0.15 });
+const matBark = new THREE.MeshStandardMaterial({ color: 0x4a3520, roughness: 0.95 });
+const matLeaves = new THREE.MeshStandardMaterial({ color: 0x2d5520, roughness: 1, envMapIntensity: 0.3 });
 
-const matRoof = new THREE.MeshStandardMaterial({
-    color: 0x2a2a30, roughness: 0.65, metalness: 0.15,
-    envMapIntensity: 0.7
-});
+const matStone = new THREE.MeshStandardMaterial({ color: 0x6a6a70, roughness: 0.85, metalness: 0.05 });
 
-const matBark = new THREE.MeshStandardMaterial({
-    color: 0x4a3520, roughness: 0.95, metalness: 0
+const matEmissiveWhite = new THREE.MeshStandardMaterial({
+    color: 0xfff8e8, emissive: 0xffe0b0, emissiveIntensity: 0, roughness: 0.9
 });
-
-const matLeaves = new THREE.MeshStandardMaterial({
-    color: 0x2d5520, roughness: 1, metalness: 0,
-    envMapIntensity: 0.3
-});
+const matSwitchOn = new THREE.MeshStandardMaterial({ color: 0xffe8a0, emissive: 0xffaa00, emissiveIntensity: 0.8, roughness: 0.5 });
+const matSwitchOff = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.6 });
 
 // ============================================================
-// 7. ГЕОМЕТРИЯ ДОМА
+// 7. HOUSE GEOMETRY
 // ============================================================
 const houseGroup = new THREE.Group();
 scene.add(houseGroup);
 
 const W = 10, D = 10, H = 2.8, SLAB = 0.3, WALL_T = 0.2, INNER_T = 0.1;
-const colliders = [];
-const interactables = [];
+
+const colliders = [];      // AABB walls
+const floorMeshes = [];    // raycasted floors
+const interactables = [];  // {mesh, type, ...}
+const audioSources = [];   //
 
 function addBoxCollider(mesh) {
     mesh.updateMatrixWorld(true);
@@ -912,26 +572,78 @@ function addBoxCollider(mesh) {
     return mesh;
 }
 
-function makeBox(w, h, d, x, y, z, mat, parent = houseGroup, collide = true) {
+function makeBox(w, h, d, x, y, z, mat, parent = houseGroup, collide = true, isFloor = false) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z);
     m.castShadow = true;
     m.receiveShadow = true;
     parent.add(m);
     if (collide) addBoxCollider(m);
+    if (isFloor) floorMeshes.push(m);
     return m;
 }
 
-// --- Пол 1 этажа ---
-const floor1 = makeBox(W, 0.12, D, 0, -0.06, 0, matWood, houseGroup, false);
+// ============================================================
+// 8. AUDIO SYSTEM
+// ============================================================
+let audioCtx = null;
+function initAudio() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+document.addEventListener('pointerdown', initAudio, { once: true });
+document.addEventListener('keydown', initAudio, { once: true });
+
+function playTone(freq, duration, volume = 0.1, type = 'sine') {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(volume, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + duration);
+}
+
+function playDoorSound() {
+    // Creak: sweep + noise burst
+    playTone(180, 0.15, 0.06, 'sawtooth');
+    setTimeout(() => playTone(160, 0.25, 0.04, 'sawtooth'), 60);
+    setTimeout(() => playTone(220, 0.08, 0.03, 'triangle'), 200);
+}
+
+function playSwitchSound() {
+    playTone(1200, 0.03, 0.04, 'square');
+    setTimeout(() => playTone(800, 0.05, 0.03, 'square'), 30);
+}
+
+function playFootstep() {
+    playTone(120 + Math.random() * 40, 0.08, 0.02, 'sine');
+}
+
+// ============================================================
+// 9. HOUSE SHELL
+// ============================================================
+// Foundation
+makeBox(W + 0.4, 0.3, D + 0.4, 0, 0.15, 0, matStone, houseGroup, true, false);
+
+// First floor
+const floor1 = makeBox(W, 0.12, D, 0, -0.06, 0, matWood, houseGroup, false, true);
 floor1.receiveShadow = true;
 
-// --- Перекрытие (пол 2 этажа) ---
-makeBox(W, SLAB, D, 0, H + SLAB / 2, 0, matConcrete, houseGroup, true);
+// Slab (second floor) — is a floor mesh
+const slab = makeBox(W, SLAB, D, 0, H + SLAB / 2, 0, matConcrete, houseGroup, true, false);
+// Mark its top surface as walkable — use a separate thin mesh for raycasting
+const slabFloor = makeBox(W, 0.02, D, 0, H + SLAB + 0.01, 0, matWood, houseGroup, false, true);
+slabFloor.receiveShadow = true;
 
-// --- Внешние стены с проёмами ---
-function buildWall(axis, fixed, from, to, baseY, height, openings) {
-    // openings: {start, end, bottom, top, type}
+// Ceiling on top floor
+const ceil = makeBox(W, 0.1, D, 0, H * 2 + SLAB + 0.05, 0, matCeiling, houseGroup, true, false);
+
+// ---- WALLS ----
+function buildWall(axis, fixed, from, to, baseY, height, openings, opts = {}) {
     openings.sort((a, b) => a.start - b.start);
     let cursor = from;
     const segs = [];
@@ -953,51 +665,85 @@ function buildWall(axis, fixed, from, to, baseY, height, openings) {
         if (s.solid) {
             makeBox(w, height, d, cx, baseY + height / 2, cz, matWall);
         } else {
-            // Под окном
             if (s.bottom > 0.01) {
                 makeBox(w, s.bottom, d, cx, baseY + s.bottom / 2, cz, matWall);
+                // Window sill
+                if (s.type === 'window') {
+                    const sw = axis === 'x' ? len + 0.1 : 0.28;
+                    const sd = axis === 'x' ? 0.28 : len + 0.1;
+                    makeBox(sw, 0.05, sd, cx, baseY + s.bottom - 0.01, cz, matWhite, houseGroup, false);
+                }
             }
-            // Над проёмом
             const topH = height - s.top;
             if (topH > 0.01) {
                 makeBox(w, topH, d, cx, baseY + s.top + topH / 2, cz, matWall);
             }
-            // Стекло
             if (s.type === 'window') {
-                const gw = axis === 'x' ? len - 0.1 : 0.04;
-                const gd = axis === 'x' ? 0.04 : len - 0.1;
-                const gh = s.top - s.bottom;
-                const glass = new THREE.Mesh(
-                    new THREE.BoxGeometry(gw, gh, gd),
-                    matGlass
-                );
-                glass.position.set(cx, baseY + s.bottom + gh / 2, cz);
-                glass.castShadow = false;
-                glass.receiveShadow = false;
-                houseGroup.add(glass);
-                // Рама
-                const frameMat = matDarkWood;
-                const fw = axis === 'x' ? len : WALL_T + 0.06;
-                const fd = axis === 'x' ? WALL_T + 0.06 : len;
-                const fThick = 0.06;
-                // Верх
-                makeBox(fw, fThick, fd, cx, baseY + s.top, cz, frameMat, houseGroup, false);
-                // Низ
-                makeBox(fw, fThick, fd, cx, baseY + s.bottom, cz, frameMat, houseGroup, false);
-                // Боковые
-                if (axis === 'x') {
-                    makeBox(fThick, gh, fd, s.start, baseY + s.bottom + gh/2, cz, frameMat, houseGroup, false);
-                    makeBox(fThick, gh, fd, s.end, baseY + s.bottom + gh/2, cz, frameMat, houseGroup, false);
-                } else {
-                    makeBox(fw, gh, fThick, cx, baseY + s.bottom + gh/2, s.start, frameMat, houseGroup, false);
-                    makeBox(fw, gh, fThick, cx, baseY + s.bottom + gh/2, s.end, frameMat, houseGroup, false);
-                }
+                buildWindow(axis, cx, cz, len, s.bottom, s.top, baseY, fixed);
             }
         }
     }
 }
 
-// --- Внешние стены 1 этажа ---
+// Detailed window with frame, mullions, glass
+function buildWindow(axis, cx, cz, len, bottom, top, baseY, fixed) {
+    const gh = top - bottom;
+    const gw = len - 0.06;
+    const frameT = 0.05;
+    const mullionT = 0.035;
+    const glassT = 0.02;
+
+    // Glass panes (4 panes: 2x2 grid)
+    const hw = gw / 2 - mullionT / 2;
+    const hh = gh / 2 - mullionT / 2;
+    const panes = [
+        [-gw / 4 - mullionT / 4, gh / 4 + mullionT / 4],
+        [gw / 4 + mullionT / 4, gh / 4 + mullionT / 4],
+        [-gw / 4 - mullionT / 4, -gh / 4 - mullionT / 4],
+        [gw / 4 + mullionT / 4, -gh / 4 - mullionT / 4]
+    ];
+
+    for (const [ox, oy] of panes) {
+        const geo = axis === 'x'
+            ? new THREE.BoxGeometry(hw - 0.02, hh - 0.02, glassT)
+            : new THREE.BoxGeometry(glassT, hh - 0.02, hw - 0.02);
+        const g = new THREE.Mesh(geo, matGlass);
+        g.position.set(cx + (axis === 'x' ? ox : 0), baseY + bottom + gh / 2 + oy, cz + (axis === 'z' ? ox : 0));
+        houseGroup.add(g);
+    }
+
+    // Frame
+    const fw = axis === 'x' ? gw : WALL_T + 0.08;
+    const fd = axis === 'x' ? WALL_T + 0.08 : gw;
+    // Outer frame (aluminum)
+    makeBox(fw, frameT, fd, cx, baseY + top, cz, matAluminum, houseGroup, false);
+    makeBox(fw, frameT, fd, cx, baseY + bottom, cz, matAluminum, houseGroup, false);
+    if (axis === 'x') {
+        makeBox(frameT, gh, fd, cx - gw/2, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+        makeBox(frameT, gh, fd, cx + gw/2, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+        // Mullions
+        makeBox(mullionT, gh, fd - 0.02, cx, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+        makeBox(gw, mullionT, fd - 0.02, cx, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+    } else {
+        makeBox(fw, gh, frameT, cx, baseY + bottom + gh/2, cz - gw/2, matAluminum, houseGroup, false);
+        makeBox(fw, gh, frameT, cx, baseY + bottom + gh/2, cz + gw/2, matAluminum, houseGroup, false);
+        makeBox(fd - 0.02, gh, mullionT, cx, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+        makeBox(fd - 0.02, mullionT, gw, cx, baseY + bottom + gh/2, cz, matAluminum, houseGroup, false);
+    }
+    // Handle
+    const handleGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.14, 8);
+    const hdl = new THREE.Mesh(handleGeo, matAluminum);
+    if (axis === 'x') {
+        hdl.position.set(cx + gw/2 - 0.1, baseY + bottom + gh/2, cz + WALL_T/2 + 0.05);
+        hdl.rotation.z = Math.PI / 2;
+    } else {
+        hdl.position.set(cx + WALL_T/2 + 0.05, baseY + bottom + gh/2, cz + gw/2 - 0.1);
+        hdl.rotation.x = Math.PI / 2;
+    }
+    houseGroup.add(hdl);
+}
+
+// Exterior walls floor 1
 buildWall('x', -D/2, -W/2, W/2, 0, H, [
     { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
     { start: -1.0, end: 0.0, bottom: 0, top: 2.2, type: 'door' },
@@ -1016,7 +762,7 @@ buildWall('z', W/2, -D/2, D/2, 0, H, [
     { start: 1.0, end: 2.2, bottom: 0.9, top: 2.4, type: 'window' }
 ]);
 
-// --- Внешние стены 2 этажа ---
+// Floor 2 walls
 const base2 = H + SLAB;
 buildWall('x', -D/2, -W/2, W/2, base2, H, [
     { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
@@ -1033,112 +779,47 @@ buildWall('z', W/2, -D/2, D/2, base2, H, [
     { start: 1.0, end: 2.2, bottom: 0.9, top: 2.4, type: 'window' }
 ]);
 
-// --- Внутренние стены 1 этажа ---
-makeBox(INNER_T, H, 4, 0, H/2, -3, matWall);   // x=0, z от -5 до -1
-makeBox(INNER_T, H, 4, 0, H/2, 3, matWall);    // x=0, z от 1 до 5
-makeBox(INNER_T, H - 2.2, 2, 0, 2.2 + (H-2.2)/2, 0, matWall); // перемычка
+// Interior walls floor 1
+makeBox(INNER_T, H, 4, 0, H/2, -3, matWall);
+makeBox(INNER_T, H, 4, 0, H/2, 3, matWall);
+makeBox(INNER_T, H - 2.2, 2, 0, 2.2 + (H-2.2)/2, 0, matWall);
 
-// Ванная (юго-запад): x=-5..-3, z=3..5
+// Bathroom 1 (SW)
 makeBox(2, H, INNER_T, -4, H/2, 3, matWall);
 makeBox(INNER_T, H, 1.8, -3, H/2, 4.1, matWall);
-makeBox(INNER_T, H - 2.1, 0.2, -3, 2.1 + (H-2.1)/2, 3.1, matWall); // перемычка двери
+makeBox(INNER_T, H - 2.1, 0.2, -3, 2.1 + (H-2.1)/2, 3.1, matWall);
 
-// --- Внутренние стены 2 этажа ---
+// Floor 2 interior
 makeBox(INNER_T, H, 4, 0, base2 + H/2, -3, matWall);
 makeBox(INNER_T, H, 4, 0, base2 + H/2, 3, matWall);
 makeBox(INNER_T, H - 2.2, 2, 0, base2 + 2.2 + (H-2.2)/2, 0, matWall);
-
-// Ванная 2 этажа (юго-восток)
 makeBox(2, H, INNER_T, 4, base2 + H/2, 3, matWall);
 makeBox(INNER_T, H, 1.8, 3, base2 + H/2, 4.1, matWall);
 
-// --- Входная дверь (открывающаяся) ---
-const doorGroup = new THREE.Group();
-doorGroup.position.set(-0.5, 0, -D/2 - WALL_T/2);
-const doorPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(0.95, 2.1, 0.06),
-    matDarkWood
-);
-doorPanel.position.set(0.475, 1.05, 0);
-doorPanel.castShadow = true;
-doorPanel.receiveShadow = true;
-doorGroup.add(doorPanel);
-// Ручка
-const handle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8),
-    matMetal
-);
-handle.rotation.z = Math.PI / 2;
-handle.position.set(0.85, 1.05, 0.05);
-doorGroup.add(handle);
-houseGroup.add(doorGroup);
-interactables.push({ mesh: doorGroup, type: 'door', open: false, angle: 0 });
-addBoxCollider(doorPanel);
-
-// --- Крыша (двускатная) ---
-function createRoof() {
-    const roofGroup = new THREE.Group();
-    const overhang = 0.6;
-    const roofW = W + overhang * 2;
-    const roofD = D + overhang * 2;
-    const ridgeH = 1.8;
-
-    // Два ската
-    const slopeGeo = new THREE.BufferGeometry();
-    const halfD = roofD / 2;
-    const slopeLength = Math.hypot(halfD, ridgeH);
-
-    // Передний скат
-    const front = new THREE.Mesh(
-        new THREE.BoxGeometry(roofW, 0.15, slopeLength),
-        matRoof
-    );
-    front.position.set(0, ridgeH / 2, -roofD / 4);
-    front.rotation.x = -Math.atan2(ridgeH, halfD);
-    front.castShadow = true;
-    front.receiveShadow = true;
-    roofGroup.add(front);
-
-    // Задний скат
-    const back = new THREE.Mesh(
-        new THREE.BoxGeometry(roofW, 0.15, slopeLength),
-        matRoof
-    );
-    back.position.set(0, ridgeH / 2, roofD / 4);
-    back.rotation.x = Math.atan2(ridgeH, halfD);
-    back.castShadow = true;
-    back.receiveShadow = true;
-    roofGroup.add(back);
-
-    // Фронтоны (треугольники) — 2 шт
-    const triShape = new THREE.Shape();
-    triShape.moveTo(-roofD / 2 + overhang, 0);
-    triShape.lineTo(roofD / 2 - overhang, 0);
-    triShape.lineTo(0, ridgeH);
-    triShape.closePath();
-    const triGeo = new THREE.ExtrudeGeometry(triShape, { depth: 0.15, bevelEnabled: false });
-
-    const frontWall = new THREE.Mesh(triGeo, matWall);
-    frontWall.rotation.y = Math.PI / 2;
-    frontWall.position.set(-W / 2, 0, 0);
-    frontWall.castShadow = true;
-    roofGroup.add(frontWall);
-
-    const backWall = new THREE.Mesh(triGeo, matWall);
-    backWall.rotation.y = -Math.PI / 2;
-    backWall.position.set(W / 2, 0, 0);
-    backWall.castShadow = true;
-    roofGroup.add(backWall);
-
-    roofGroup.position.y = base2 + H;
-    return roofGroup;
+// ---- BASEBOARDS (small skirting boards along walls) ----
+function buildBaseboard(axis, fixed, from, to, baseY) {
+    const len = to - from;
+    const cx = axis === 'x' ? (from + to) / 2 : fixed;
+    const cz = axis === 'x' ? fixed : (from + to) / 2;
+    const w = axis === 'x' ? len : 0.03;
+    const d = axis === 'x' ? 0.03 : len;
+    makeBox(w, 0.1, d, cx, baseY + 0.05, cz, matWhite, houseGroup, false);
 }
-houseGroup.add(createRoof());
+// Floor 1 baseboards (inner perimeter, offset 0.1 from wall)
+[[-W/2 + WALL_T/2 + 0.02, 'z'], [W/2 - WALL_T/2 - 0.02, 'z']].forEach(([fixed, axis]) => {
+    buildBaseboard('z', fixed, -D/2 + WALL_T, D/2 - WALL_T, 0);
+});
+[[-D/2 + WALL_T/2 + 0.02], [D/2 - WALL_T/2 - 0.02]].forEach(([fixed]) => {
+    buildBaseboard('x', fixed, -W/2 + WALL_T, W/2 - WALL_T, 0);
+});
+buildBaseboard('x', -D/2 + WALL_T/2 + 0.02, -W/2 + WALL_T, W/2 - WALL_T, base2);
+buildBaseboard('x', D/2 - WALL_T/2 - 0.02, -W/2 + WALL_T, W/2 - WALL_T, base2);
+buildBaseboard('z', -W/2 + WALL_T/2 + 0.02, -D/2 + WALL_T, D/2 - WALL_T, base2);
+buildBaseboard('z', W/2 - WALL_T/2 - 0.02, -D/2 + WALL_T, D/2 - WALL_T, base2);
 
-// ============================================================
-// 8. ЛЕСТНИЦА
-// ============================================================
-const stairGroup = new THREE.Group();
+// ---- STAIRS (with floor registration) ----
+const stairsGroup = new THREE.Group();
+houseGroup.add(stairsGroup);
 const steps = 14;
 const stepH = (H + SLAB) / steps;
 const stepD = 0.26;
@@ -1147,232 +828,482 @@ const stairX = -4.2;
 const stairStartZ = -0.5;
 
 for (let i = 0; i < steps; i++) {
-    const step = makeBox(
-        stepW, stepH, stepD,
-        stairX, stepH * i + stepH / 2, stairStartZ + i * stepD,
-        matWood, stairGroup, false
-    );
+    const step = makeBox(stepW, stepH, stepD, stairX, stepH * i + stepH / 2,
+        stairStartZ + i * stepD, matWood, stairsGroup, true, true);
+    // Top of step is a floor surface — but the box itself is registered
 }
-// Площадка наверху
-makeBox(stepW, 0.15, 1.0, stairX, H + SLAB - 0.075, stairStartZ + steps * stepD, matWood, stairGroup, false);
-// Перила
+// Landing
+makeBox(stepW, 0.15, 1.0, stairX, H + SLAB - 0.075, stairStartZ + steps * stepD, matWood, stairsGroup, true, true);
+
+// Stair railing
 for (let i = 0; i < 6; i++) {
-    const rail = makeBox(0.04, 1.0, 0.04,
-        stairX - stepW/2, stepH * (i*2) + 0.5, stairStartZ + (i*2) * stepD,
-        matDarkWood, stairGroup, false);
+    makeBox(0.04, 1.0, 0.04, stairX - stepW/2, stepH * (i*2) + 0.5,
+        stairStartZ + (i*2) * stepD, matDarkWood, stairsGroup, false);
 }
-// Поручень
-const handrailGeo = new THREE.BoxGeometry(0.06, 0.06, 3.8);
-const handrail = new THREE.Mesh(handrailGeo, matDarkWood);
+const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 3.8), matDarkWood);
 handrail.position.set(stairX - stepW/2, 1.3, stairStartZ + 1.9);
 handrail.rotation.x = -Math.atan2(stepH * steps, stepD * steps);
 handrail.castShadow = true;
-stairGroup.add(handrail);
+stairsGroup.add(handrail);
 
-houseGroup.add(stairGroup);
+// ---- DOOR with proper hinge pivot ----
+function createDoor(x, z, rotationY, width = 0.95, height = 2.1, isExterior = false) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 0, z);
+    pivot.rotation.y = rotationY;
+    houseGroup.add(pivot);
 
-// ============================================================
-// 9. МЕБЕЛЬ
-// ============================================================
-// ---- ГОСТИНАЯ ----
-// Диван
-makeBox(2.4, 0.5, 0.9, -2.6, 0.25, -1.5, matFabric);
-makeBox(2.4, 0.7, 0.25, -2.6, 0.85, -1.85, matFabric); // спинка
-makeBox(0.25, 0.6, 0.9, -3.7, 0.5, -1.5, matFabric);  // подлокотник
-makeBox(0.25, 0.6, 0.9, -1.5, 0.5, -1.5, matFabric);  // подлокотник
-// Подушки
-for (let i = 0; i < 3; i++) {
-    makeBox(0.6, 0.15, 0.6, -3.3 + i * 0.7, 0.58, -1.5, matFabric);
+    // Frame
+    const frameMat = matDarkWood;
+    const doorGroup = new THREE.Group();
+    pivot.add(doorGroup);
+
+    // Panel offset so it rotates around left edge (hinge)
+    const panel = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, 0.06),
+        isExterior ? matDarkWood : matWhite
+    );
+    panel.position.set(width / 2, height / 2, 0);
+    panel.castShadow = true;
+    panel.receiveShadow = true;
+    doorGroup.add(panel);
+
+    // Small inner panel (raised)
+    const inner = new THREE.Mesh(
+        new THREE.BoxGeometry(width * 0.7, height * 0.7, 0.01),
+        isExterior ? matDarkWood : matWhite
+    );
+    inner.position.set(width / 2, height / 2, 0.035);
+    doorGroup.add(inner);
+
+    // Handle
+    const handleGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.12, 8);
+    const handle = new THREE.Mesh(handleGeo, matMetal);
+    handle.rotation.z = Math.PI / 2;
+    handle.position.set(width - 0.08, height * 0.5, 0.06);
+    doorGroup.add(handle);
+
+    // Door collider (static — we don't recalc for animation, use the frame gap)
+    addBoxCollider(panel);
+
+    const doorObj = {
+        mesh: pivot, type: 'door', open: false, angle: 0,
+        targetAngle: 0, group: doorGroup, panel
+    };
+    interactables.push(doorObj);
+    return doorObj;
 }
 
-// Журнальный столик
+createDoor(-0.5, -D/2 - WALL_T/2, 0, 0.95, 2.1, true);
+
+// ---- CHIMNEY ----
+makeBox(0.7, 3.0, 0.7, 3.2, H + SLAB + H/2 + 0.2, -2.5, matStone, houseGroup, true, false);
+makeBox(0.8, 0.1, 0.8, 3.2, H * 2 + SLAB + 0.05 + 1.5, -2.5, matConcrete, houseGroup, false);
+
+// ---- ROOF ----
+function createRoof() {
+    const roofGroup = new THREE.Group();
+    const overhang = 0.6;
+    const roofW = W + overhang * 2;
+    const roofD = D + overhang * 2;
+    const ridgeH = 1.8;
+    const halfD = roofD / 2;
+    const slopeLength = Math.hypot(halfD, ridgeH);
+
+    const front = new THREE.Mesh(new THREE.BoxGeometry(roofW, 0.15, slopeLength), matRoof);
+    front.position.set(0, ridgeH / 2, -roofD / 4);
+    front.rotation.x = -Math.atan2(ridgeH, halfD);
+    front.castShadow = true; front.receiveShadow = true;
+    roofGroup.add(front);
+
+    const back = new THREE.Mesh(new THREE.BoxGeometry(roofW, 0.15, slopeLength), matRoof);
+    back.position.set(0, ridgeH / 2, roofD / 4);
+    back.rotation.x = Math.atan2(ridgeH, halfD);
+    back.castShadow = true; back.receiveShadow = true;
+    roofGroup.add(back);
+
+    // Fascia boards (карнизные планки)
+    const fascia = new THREE.BoxGeometry(roofW, 0.12, 0.06);
+    for (const z of [-roofD/2, roofD/2]) {
+        const f = new THREE.Mesh(fascia, matWhite);
+        f.position.set(0, 0.15, z);
+        roofGroup.add(f);
+    }
+
+    // Gables
+    const triShape = new THREE.Shape();
+    triShape.moveTo(-roofD/2 + overhang, 0);
+    triShape.lineTo(roofD/2 - overhang, 0);
+    triShape.lineTo(0, ridgeH);
+    triShape.closePath();
+    const triGeo = new THREE.ExtrudeGeometry(triShape, { depth: 0.15, bevelEnabled: false });
+    const fw = new THREE.Mesh(triGeo, matWall);
+    fw.rotation.y = Math.PI / 2; fw.position.set(-W/2, 0, 0);
+    fw.castShadow = true;
+    roofGroup.add(fw);
+    const bw = new THREE.Mesh(triGeo, matWall);
+    bw.rotation.y = -Math.PI / 2; bw.position.set(W/2, 0, 0);
+    bw.castShadow = true;
+    roofGroup.add(bw);
+
+    // Downspouts (водосточные трубы)
+    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.5, metalness: 0.6 });
+    for (const [px, pz] of [[-W/2-0.3, -D/2-0.3], [W/2+0.3, -D/2-0.3], [-W/2-0.3, D/2+0.3], [W/2+0.3, D/2+0.3]]) {
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 6, 8), pipeMat);
+        pipe.position.set(px, 3, pz);
+        pipe.castShadow = true;
+        roofGroup.add(pipe);
+    }
+    // Gutters (желоба)
+    for (const z of [-roofD/2 + 0.05, roofD/2 - 0.05]) {
+        const gutter = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.06, 0.06, roofW, 8, 1, true, 0, Math.PI),
+            pipeMat
+        );
+        gutter.rotation.z = Math.PI / 2;
+        gutter.rotation.y = Math.PI / 2;
+        gutter.position.set(0, 0.1, z);
+        roofGroup.add(gutter);
+    }
+
+    roofGroup.position.y = base2 + H;
+    return roofGroup;
+}
+houseGroup.add(createRoof());
+
+// House number (номер дома)
+const houseNumGeom = new THREE.PlaneGeometry(0.3, 0.2);
+const houseNumMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.4 });
+const houseNum = new THREE.Mesh(houseNumGeom, houseNumMat);
+houseNum.position.set(0.5, 1.6, -D/2 - WALL_T/2 - 0.02);
+houseGroup.add(houseNum);
+// Simple "42" as two small boxes
+for (const dx of [-0.06, 0.02, 0.1]) {
+    makeBox(0.03, 0.1, 0.01, 0.5 + dx, 1.6, -D/2 - WALL_T/2 - 0.025, matBlack, houseGroup, false);
+}
+
+// Mailbox
+const mailbox = makeBox(0.25, 0.3, 0.15, -1.2, 1.0, -D/2 - WALL_T/2 - 0.15, matMetal, houseGroup, false);
+addBoxCollider(mailbox);
+interactables.push({ mesh: mailbox, type: 'mailbox', open: false, angle: 0 });
+
+// ============================================================
+// 10. DETAILED FURNITURE
+// ============================================================
+
+// ---- SOFA (14 meshes) ----
+function createSofa(x, z, rotY = 0) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.rotation.y = rotY;
+    houseGroup.add(g);
+
+    const addPart = (w, h, d, px, py, pz, mat) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(px, py, pz);
+        m.castShadow = true; m.receiveShadow = true;
+        g.add(m);
+        return m;
+    };
+
+    // Base frame (wooden)
+    addPart(2.4, 0.15, 0.9, 0, 0.2, 0, matDarkWood);
+    // Seat
+    addPart(2.4, 0.25, 0.85, 0, 0.4, 0, matFabric);
+    // Back cushion base
+    addPart(2.4, 0.55, 0.18, 0, 0.75, -0.36, matFabric);
+    // Back cushions (3 separate)
+    for (let i = 0; i < 3; i++) {
+        addPart(0.72, 0.55, 0.12, -0.78 + i * 0.78, 0.75, -0.28, matFabric);
+    }
+    // Seat cushions (2 separate)
+    addPart(1.05, 0.15, 0.75, -0.55, 0.6, 0.02, matFabric);
+    addPart(1.05, 0.15, 0.75, 0.55, 0.6, 0.02, matFabric);
+    // Armrests
+    addPart(0.22, 0.55, 0.85, -1.09, 0.45, 0, matFabric);
+    addPart(0.22, 0.55, 0.85, 1.09, 0.45, 0, matFabric);
+    // Decorative pillows
+    addPart(0.35, 0.35, 0.1, -0.8, 0.85, -0.05, matFabric);
+    addPart(0.35, 0.35, 0.1, 0.8, 0.85, -0.05, matFabric);
+    // Wooden legs (4)
+    for (const [lx, lz] of [[-1.05, -0.35], [-1.05, 0.35], [1.05, -0.35], [1.05, 0.35]]) {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.15, 8), matDarkWood);
+        leg.position.set(lx, 0.075, lz);
+        leg.castShadow = true;
+        g.add(leg);
+    }
+    return g;
+}
+createSofa(-2.6, -1.5, 0);
+
+// Coffee table
 makeBox(1.1, 0.05, 0.7, -2.6, 0.45, 0.2, matDarkWood);
 for (const [dx, dz] of [[-0.5,-0.3],[-0.5,0.3],[0.5,-0.3],[0.5,0.3]]) {
     makeBox(0.05, 0.45, 0.05, -2.6 + dx, 0.225, 0.2 + dz, matDarkWood);
 }
 
-// ТВ-тумба + телевизор
-makeBox(1.8, 0.5, 0.4, -2.6, 0.25, -4.7, matDarkWood);
-makeBox(1.5, 0.85, 0.08, -2.6, 1.4, -4.75, matBlack);
-// Свечение экрана
-const tvLight = new THREE.PointLight(0x4466cc, 0.8, 3);
+// TV — working screen with emissive
+const tvStand = makeBox(1.8, 0.5, 0.4, -2.6, 0.25, -4.7, matDarkWood);
+// TV screen
+const tvScreenMat = new THREE.MeshStandardMaterial({
+    color: 0x000000, emissive: 0x2a4a8a, emissiveIntensity: 0.3, roughness: 0.1, metalness: 0.5
+});
+const tvScreen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.85, 0.05), tvScreenMat);
+tvScreen.position.set(-2.6, 1.4, -4.75);
+tvScreen.castShadow = true;
+houseGroup.add(tvScreen);
+// TV bezel
+makeBox(1.55, 0.9, 0.03, -2.6, 1.4, -4.78, matBlack);
+const tvLight = new THREE.PointLight(0x4466cc, 0.6, 4, 2);
 tvLight.position.set(-2.6, 1.4, -4.5);
 scene.add(tvLight);
 
-// Шкаф-стеллаж
-makeBox(1.2, 2.0, 0.4, -4.6, 1.0, -3.5, matWood);
-// Полки
-for (let i = 0; i < 4; i++) {
-    makeBox(1.15, 0.03, 0.38, -4.6, 0.5 + i * 0.4, -3.5, matDarkWood);
-}
+// TV interactable
+const tvObj = { mesh: tvScreen, type: 'tv', on: true, light: tvLight, screen: tvScreenMat };
+interactables.push(tvObj);
+// Remote (small black box)
+const remote = makeBox(0.06, 0.02, 0.15, -2.6, 0.49, 0.2, matBlack, houseGroup, false);
 
-// Ковёр
-const rugGeo = new THREE.PlaneGeometry(2.5, 1.8);
-const rug = new THREE.Mesh(rugGeo, new THREE.MeshStandardMaterial({
-    color: 0x5a4030, roughness: 1, metalness: 0
-}));
+// Rug
+const rug = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.5, 1.8),
+    new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 1 })
+);
 rug.rotation.x = -Math.PI / 2;
 rug.position.set(-2.6, 0.01, 0.2);
 rug.receiveShadow = true;
 houseGroup.add(rug);
 
-// ---- КУХНЯ ----
-// Нижние шкафы
+// ---- KITCHEN ----
+// Lower cabinets
 makeBox(3.2, 0.85, 0.6, 2.6, 0.425, -4.6, matWood);
-// Столешница
+// Countertop
 makeBox(3.2, 0.05, 0.62, 2.6, 0.875, -4.6, matConcrete);
-// Верхние шкафы
+// Upper cabinets
 makeBox(3.2, 0.7, 0.35, 2.6, 2.0, -4.75, matWood);
-
-// Холодильник
-makeBox(0.8, 1.9, 0.7, 4.3, 0.95, -4.5, matMetal);
-// Ручка холодильника
-makeBox(0.04, 0.5, 0.06, 4.65, 1.1, -4.15, matDarkWood);
-
-// Плита
-makeBox(0.6, 0.05, 0.6, 1.4, 0.92, -4.6, matBlack);
-// Конфорки
-for (const [x, z] of [[-0.15,-0.15],[-0.15,0.15],[0.15,-0.15],[0.15,0.15]]) {
-    const burner = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.08, 0.01, 16),
-        new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 })
-    );
-    burner.position.set(1.4 + x, 0.95, -4.6 + z);
-    houseGroup.add(burner);
+// Cabinet doors (6)
+for (let i = 0; i < 6; i++) {
+    const cx = 2.6 - 1.5 + i * 0.6;
+    makeBox(0.55, 0.8, 0.02, cx, 0.42, -4.28, matDarkWood, houseGroup, false);
+    // Handles
+    makeBox(0.15, 0.02, 0.03, cx, 0.6, -4.26, matMetal, houseGroup, false);
+}
+// Upper cabinet doors
+for (let i = 0; i < 4; i++) {
+    const cx = 2.6 - 1.2 + i * 0.8;
+    makeBox(0.75, 0.65, 0.02, cx, 2.0, -4.55, matDarkWood, houseGroup, false);
 }
 
-// Раковина
+// Fridge (with openable door)
+const fridgeBody = makeBox(0.8, 1.9, 0.7, 4.3, 0.95, -4.5, matMetal);
+const fridgePivot = new THREE.Group();
+fridgePivot.position.set(3.9, 0, -4.15); // hinge on left edge, front face
+houseGroup.add(fridgePivot);
+const fridgeDoor = new THREE.Mesh(new THREE.BoxGeometry(0.75, 1.85, 0.04), matMetal);
+fridgeDoor.position.set(0.4, 0.95, 0);
+fridgeDoor.castShadow = true;
+fridgePivot.add(fridgeDoor);
+// Handle
+const fh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.5, 0.06), matDarkWood);
+fh.position.set(0.7, 1.1, 0.04);
+fridgePivot.add(fh);
+interactables.push({ mesh: fridgePivot, type: 'fridge', open: false, angle: 0, group: fridgeDoor });
+
+// Cooktop burners
+makeBox(0.6, 0.05, 0.6, 1.4, 0.92, -4.6, matBlack);
+const burnerMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+for (const [x, z] of [[-0.15,-0.15],[-0.15,0.15],[0.15,-0.15],[0.15,0.15]]) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.01, 16), burnerMat);
+    b.position.set(1.4 + x, 0.95, -4.6 + z);
+    houseGroup.add(b);
+}
+
+// Sink + faucet
 makeBox(0.7, 0.03, 0.45, 3.2, 0.91, -4.6, matMetal);
-// Кран
-const faucet = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
-    matMetal
-);
+const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8), matMetal);
 faucet.position.set(3.2, 1.05, -4.45);
 houseGroup.add(faucet);
+const faucetTop = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8), matMetal);
+faucetTop.rotation.x = Math.PI / 2;
+faucetTop.position.set(3.2, 1.2, -4.375);
+houseGroup.add(faucetTop);
 
-// Обеденный стол
+// Dining table
 makeBox(1.6, 0.05, 0.9, 2.6, 0.75, -2.3, matDarkWood);
 for (const [dx, dz] of [[-0.7,-0.35],[-0.7,0.35],[0.7,-0.35],[0.7,0.35]]) {
     makeBox(0.06, 0.75, 0.06, 2.6 + dx, 0.375, -2.3 + dz, matDarkWood);
 }
-// Стулья
-for (const [x, z] of [[1.8,-2.8],[3.4,-2.8],[1.8,-1.8],[3.4,-1.8]]) {
-    makeBox(0.4, 0.05, 0.4, x, 0.45, z, matWood);
-    makeBox(0.4, 0.4, 0.05, x, 0.7, z - 0.18, matWood); // спинка
-    // Ножки
+// Chairs (4)
+for (const [cx, cz] of [[1.8,-2.8],[3.4,-2.8],[1.8,-1.8],[3.4,-1.8]]) {
+    makeBox(0.4, 0.05, 0.4, cx, 0.45, cz, matWood);
+    makeBox(0.4, 0.4, 0.05, cx, 0.7, cz - 0.18, matWood);
     for (const [dx, dz] of [[-0.15,-0.15],[-0.15,0.15],[0.15,-0.15],[0.15,0.15]]) {
-        makeBox(0.03, 0.45, 0.03, x + dx, 0.225, z + dz, matDarkWood);
+        makeBox(0.03, 0.45, 0.03, cx + dx, 0.225, cz + dz, matDarkWood);
     }
 }
 
-// ---- ВАННАЯ 1 этажа ----
-makeBox(0.45, 0.4, 0.6, -4.5, 0.2, 4.4, matWhite); // унитаз
-makeBox(0.4, 0.5, 0.15, -4.5, 0.55, 4.15, matWhite); // бачок
-makeBox(0.7, 0.15, 0.45, -3.5, 0.85, 4.5, matTile); // раковина
-// Душевая кабина (стекло + поддон)
+// ---- BEDROOM (detailed bed) ----
+function createBed(x, z, baseY) {
+    // Frame
+    makeBox(1.9, 0.25, 2.1, x, baseY + 0.125, z, matDarkWood);
+    // Mattress
+    makeBox(1.85, 0.25, 2.05, x, baseY + 0.375, z, matWhite);
+    // Sheet
+    const sheet = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.02, 2.1), matWhite);
+    sheet.position.set(x, baseY + 0.51, z);
+    sheet.castShadow = true; sheet.receiveShadow = true;
+    houseGroup.add(sheet);
+    // Duvet (offset to one side, with fold)
+    makeBox(1.85, 0.1, 1.4, x, baseY + 0.57, z + 0.15, matFabric);
+    // Duvet fold detail
+    makeBox(1.85, 0.03, 0.15, x, baseY + 0.62, z - 0.55, matWhite);
+    // Pillows
+    makeBox(0.6, 0.15, 0.4, x - 0.5, baseY + 0.62, z - 0.75, matWhite);
+    makeBox(0.6, 0.15, 0.4, x + 0.5, baseY + 0.62, z - 0.75, matWhite);
+    // Headboard
+    makeBox(2.0, 1.0, 0.1, x, baseY + 0.5, z - 1.1, matDarkWood);
+    // Nightstands
+    makeBox(0.5, 0.5, 0.4, x - 1.15, baseY + 0.25, z - 0.9, matWood);
+    makeBox(0.5, 0.5, 0.4, x + 1.15, baseY + 0.25, z - 0.9, matWood);
+    // Table lamp on nightstand
+    const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.15, 8), matDarkWood);
+    lampBase.position.set(x - 1.15, baseY + 0.58, z - 0.9);
+    houseGroup.add(lampBase);
+    const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.2, 12, 1, true), matEmissiveWhite.clone());
+    lampShade.material.emissiveIntensity = 0.5;
+    lampShade.position.set(x - 1.15, baseY + 0.76, z - 0.9);
+    houseGroup.add(lampShade);
+    // Wardrobe
+    makeBox(1.4, 2.1, 0.6, x - 1.4, baseY + 1.05, z - 1.8, matWood);
+    // Wardrobe doors
+    makeBox(0.68, 2.0, 0.02, x - 1.75, baseY + 1.05, z - 1.5, matDarkWood);
+    makeBox(0.68, 2.0, 0.02, x - 1.05, baseY + 1.05, z - 1.5, matDarkWood);
+    // Handles
+    makeBox(0.02, 0.15, 0.03, x - 1.45, baseY + 1.05, z - 1.48, matMetal);
+    makeBox(0.02, 0.15, 0.03, x - 1.35, baseY + 1.05, z - 1.48, matMetal);
+}
+createBed(-2.6, -2.0, base2);
+createBed(2.6, -2.0, base2);
+
+// ---- BATHROOM ----
+// Toilet (2 parts + lid + tank)
+makeBox(0.4, 0.35, 0.5, -4.5, 0.175, 4.3, matWhite);
+makeBox(0.4, 0.15, 0.5, -4.5, 0.425, 4.3, matWhite); // lid
+makeBox(0.4, 0.5, 0.15, -4.5, 0.25, 4.05, matWhite); // tank
+// Sink
+makeBox(0.7, 0.15, 0.45, -3.5, 0.85, 4.5, matTile);
+makeBox(0.1, 0.1, 0.1, -3.5, 1.0, 4.35, matMetal);
+// Shower base + glass wall
 makeBox(1.2, 0.1, 1.2, -4.3, 0.05, 3.6, matTile);
-const showerGlass = new THREE.Mesh(
-    new THREE.BoxGeometry(1.2, 2.0, 0.02),
-    matGlass
-);
+const showerGlass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 0.02), matGlass);
 showerGlass.position.set(-4.3, 1.1, 4.18);
 houseGroup.add(showerGlass);
+// Shower head
+const showerHead = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.02, 12), matMetal);
+showerHead.position.set(-4.3, 2.2, 3.7);
+houseGroup.add(showerHead);
 
-// ---- СПАЛЬНЯ 1 (2 этаж, левая) ----
-makeBox(1.9, 0.3, 2.1, -2.6, base2 + 0.15, -2.0, matFabric); // матрас
-makeBox(1.9, 0.05, 2.1, -2.6, base2 + 0.35, -2.0, matWhite); // простыня
-makeBox(0.15, 0.06, 2.1, -2.6, base2 + 0.38, -2.0, matFabric); // одеяло
-makeBox(2.0, 0.9, 0.1, -2.6, base2 + 0.65, -3.1, matDarkWood); // изголовье
-// Подушки
-makeBox(0.6, 0.15, 0.4, -3.1, base2 + 0.45, -2.6, matWhite);
-makeBox(0.6, 0.15, 0.4, -2.1, base2 + 0.45, -2.6, matWhite);
-// Тумбочки
-makeBox(0.5, 0.5, 0.4, -3.6, base2 + 0.25, -2.6, matWood);
-makeBox(0.5, 0.5, 0.4, -1.6, base2 + 0.25, -2.6, matWood);
-// Шкаф
-makeBox(1.4, 2.1, 0.6, -4.0, base2 + 1.05, -3.8, matWood);
-// Дверцы шкафа
-makeBox(0.68, 2.0, 0.02, -4.35, base2 + 1.05, -3.5, matDarkWood);
-makeBox(0.68, 2.0, 0.02, -3.65, base2 + 1.05, -3.5, matDarkWood);
-
-// ---- СПАЛЬНЯ 2 (2 этаж, правая) ----
-makeBox(1.9, 0.3, 2.1, 2.6, base2 + 0.15, -2.0, matFabric);
-makeBox(1.9, 0.05, 2.1, 2.6, base2 + 0.35, -2.0, matWhite);
-makeBox(0.15, 0.06, 2.1, 2.6, base2 + 0.38, -2.0, matFabric);
-makeBox(2.0, 0.9, 0.1, 2.6, base2 + 0.65, -3.1, matDarkWood);
-makeBox(0.6, 0.15, 0.4, 2.1, base2 + 0.45, -2.6, matWhite);
-makeBox(0.6, 0.15, 0.4, 3.1, base2 + 0.45, -2.6, matWhite);
-makeBox(0.5, 0.5, 0.4, 1.6, base2 + 0.25, -2.6, matWood);
-makeBox(0.5, 0.5, 0.4, 3.6, base2 + 0.25, -2.6, matWood);
-makeBox(1.4, 2.1, 0.6, 4.0, base2 + 1.05, -3.8, matWood);
-makeBox(0.68, 2.0, 0.02, 3.65, base2 + 1.05, -3.5, matDarkWood);
-makeBox(0.68, 2.0, 0.02, 4.35, base2 + 1.05, -3.5, matDarkWood);
-
-// ---- ВАННАЯ 2 этажа ----
-makeBox(0.45, 0.4, 0.6, 4.5, base2 + 0.2, 4.4, matWhite);
-makeBox(0.4, 0.5, 0.15, 4.5, base2 + 0.55, 4.15, matWhite);
+// Bathroom 2 (floor 2)
+makeBox(0.4, 0.35, 0.5, 4.5, base2 + 0.175, 4.3, matWhite);
+makeBox(0.4, 0.15, 0.5, 4.5, base2 + 0.425, 4.3, matWhite);
+makeBox(0.4, 0.5, 0.15, 4.5, base2 + 0.25, 4.05, matWhite);
 makeBox(0.7, 0.15, 0.45, 3.5, base2 + 0.85, 4.5, matTile);
 
-// ============================================================
-// 10. ВНУТРЕННЕЕ ОСВЕЩЕНИЕ + ОКОННЫЕ СВЕТИЛЬНИКИ
-// ============================================================
-// Точечные (тёплые) в комнатах
-const roomLights = [
-    { x: -2.5, y: 2.6, z: 0, intensity: 8, color: 0xffe0b0 },       // гостиная
-    { x: 2.5, y: 2.6, z: 0, intensity: 8, color: 0xffe0b0 },        // кухня
-    { x: -2.5, y: base2 + 2.5, z: -2, intensity: 6, color: 0xffe0b0 },
-    { x: 2.5, y: base2 + 2.5, z: -2, intensity: 6, color: 0xffe0b0 }
-];
+// Mirror (with envmap reflection)
+const mirrorMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff, roughness: 0.05, metalness: 0.9, envMapIntensity: 1.5
+});
+const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.02), mirrorMat);
+mirror.position.set(-3.5, 1.7, 4.97);
+houseGroup.add(mirror);
 
-roomLights.slice(0, QUALITY.maxPointLights).forEach(l => {
-    const light = new THREE.PointLight(l.color, l.intensity, 8, 2);
-    light.position.set(l.x, l.y, l.z);
+// ============================================================
+// 11. LIGHT SWITCHES
+// ============================================================
+const roomLights = {}; // roomName -> [light objects]
+const lightSwitches = [];
+
+function addRoomLight(roomName, x, y, z, color, intensity) {
+    if (!roomLights[roomName]) roomLights[roomName] = [];
+    const light = new THREE.PointLight(color, intensity, 8, 2);
+    light.position.set(x, y, z);
     light.castShadow = false;
     scene.add(light);
-    // Визуальный плафон
+
+    // Fixture
     const shade = new THREE.Mesh(
         new THREE.SphereGeometry(0.12, 12, 8),
-        new THREE.MeshStandardMaterial({ color: 0xfff8e8, emissive: 0xffe0b0, emissiveIntensity: 2 })
+        matEmissiveWhite
     );
     shade.position.copy(light.position);
+    shade.material = shade.material.clone();
+    shade.material.emissiveIntensity = 1.5;
     scene.add(shade);
-});
 
-// Оконные RectAreaLights (для реалистичного света из окон)
-if (QUALITY.rectAreaLights) {
-    const windowLights = [
-        { x: -3.0, y: 1.6, z: -D/2 + WALL_T, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
-        { x: 2.4, y: 1.6, z: -D/2 + WALL_T, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
-        { x: -W/2 + WALL_T, y: 1.6, z: -2.4, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
-    ];
-    windowLights.forEach(wl => {
-        const rl = new THREE.RectAreaLight(0xfff5e0, 3.0, wl.w, wl.h);
-        rl.position.set(wl.x, wl.y, wl.z);
-        rl.lookAt(...wl.target);
-        scene.add(rl);
+    roomLights[roomName].push({ light, shade, baseIntensity: intensity, on: true });
+    return light;
+}
+
+// Register room lights
+addRoomLight('living', -2.5, 2.6, 0, 0xffe0b0, 6);
+addRoomLight('kitchen', 2.5, 2.6, -2, 0xffe0b0, 5);
+addRoomLight('bedroom1', -2.5, base2 + 2.5, -2, 0xffe0b0, 5);
+addRoomLight('bedroom2', 2.5, base2 + 2.5, -2, 0xffe0b0, 5);
+addRoomLight('bathroom1', -4, 2.5, 4, 0xfff5e0, 4);
+
+// Limit point lights on mobile
+if (isMobile) {
+    const allLights = Object.values(roomLights).flat();
+    allLights.slice(QUALITY.maxPointLights).forEach(l => {
+        l.light.intensity = 0;
+        l.on = false;
     });
 }
 
+function createSwitch(x, y, z, rotationY, roomName) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, y, z);
+    pivot.rotation.y = rotationY;
+    houseGroup.add(pivot);
+
+    // Plate
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.012), matWhite);
+    pivot.add(plate);
+
+    // Toggle
+    const toggle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.02), matSwitchOn.clone());
+    toggle.position.z = 0.015;
+    pivot.add(toggle);
+
+    const obj = {
+        mesh: pivot, type: 'switch', roomName, on: true, toggle, roomLights
+    };
+    interactables.push(obj);
+    lightSwitches.push(obj);
+    return obj;
+}
+
+// Add switches on walls
+createSwitch(-2.9, 1.2, -D/2 + WALL_T/2 + 0.06, 0, 'living');
+createSwitch(3.2, 1.2, -D/2 + WALL_T/2 + 0.06, 0, 'kitchen');
+createSwitch(-2.9, base2 + 1.2, -D/2 + WALL_T/2 + 0.06, 0, 'bedroom1');
+createSwitch(3.2, base2 + 1.2, -D/2 + WALL_T/2 + 0.06, 0, 'bedroom2');
+
 // ============================================================
-// 11. ОКРУЖЕНИЕ (УЧАСТОК)
+// 12. ENVIRONMENT
 // ============================================================
-// Газон
-const grassPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    matGrass
-);
+const grassPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), matGrass);
 grassPlane.rotation.x = -Math.PI / 2;
 grassPlane.position.y = -0.11;
 grassPlane.receiveShadow = true;
 scene.add(grassPlane);
+floorMeshes.push(grassPlane); // walkable
 
-// Плитка (дорожка)
+// Path
 const pathMat = new THREE.MeshPhysicalMaterial({
     map: makeTex(tileCanvas),
-    normalMap: makeTex(generateNormalMap(tileCanvas, 0.8), false),
-    roughness: 0.35, metalness: 0.05, clearcoat: 0.4,
-    envMapIntensity: 1.0
+    normalMap: makeTex(generateNormalMap(tileCanvas, 1.0), false),
+    roughness: 0.35, metalness: 0.05, clearcoat: 0.4, envMapIntensity: 1.0
 });
 pathMat.map.repeat.set(1, 4);
 pathMat.normalMap.repeat.set(1, 4);
@@ -1381,107 +1312,27 @@ path.rotation.x = -Math.PI / 2;
 path.position.set(-0.5, 0.005, -11);
 path.receiveShadow = true;
 scene.add(path);
+floorMeshes.push(path);
 
-// Забор с воротами
-function buildFence() {
-    const fenceGroup = new THREE.Group();
-    const postGeo = new THREE.BoxGeometry(0.1, 1.3, 0.1);
-    const postMat = matDarkWood;
-
-    // Посты вдоль периметра
-    const postSpacing = 2.5;
-    const min = -18, max = 18;
-
-    for (let i = min; i <= max; i += postSpacing) {
-        // Север (с проёмом под ворота)
-        if (i < -2 || i > 2) {
-            const p = new THREE.Mesh(postGeo, postMat);
-            p.position.set(i, 0.65, min);
-            p.castShadow = true;
-            fenceGroup.add(p);
-        }
-        // Юг
-        const ps = new THREE.Mesh(postGeo, postMat);
-        ps.position.set(i, 0.65, max);
-        ps.castShadow = true;
-        fenceGroup.add(ps);
-        // Запад
-        const pw = new THREE.Mesh(postGeo, postMat);
-        pw.position.set(min, 0.65, i);
-        pw.castShadow = true;
-        fenceGroup.add(pw);
-        // Восток
-        const pe = new THREE.Mesh(postGeo, postMat);
-        pe.position.set(max, 0.65, i);
-        pe.castShadow = true;
-        fenceGroup.add(pe);
-    }
-
-    // Горизонтальные планки
-    const railMat = matDarkWood;
-    const railGeoEW = new THREE.BoxGeometry(max - min, 0.06, 0.05);
-    for (const z of [min, max]) {
-        for (const y of [0.4, 1.1]) {
-            const r = new THREE.Mesh(railGeoEW, railMat);
-            r.position.set(0, y, z);
-            r.castShadow = true;
-            fenceGroup.add(r);
-        }
-    }
-    const railGeoNS = new THREE.BoxGeometry(0.05, 0.06, max - min);
-    for (const x of [min, max]) {
-        for (const y of [0.4, 1.1]) {
-            const r = new THREE.Mesh(railGeoNS, railMat);
-            r.position.set(x, y, 0);
-            r.castShadow = true;
-            fenceGroup.add(r);
-        }
-    }
-    scene.add(fenceGroup);
-}
-buildFence();
-
-// Калитка
-const gateGroup = new THREE.Group();
-gateGroup.position.set(2, 0, -18);
-const gatePanel = new THREE.Mesh(
-    new THREE.BoxGeometry(3.8, 1.2, 0.08),
-    matDarkWood
-);
-gatePanel.position.set(-1.9, 0.65, 0);
-gatePanel.castShadow = true;
-gateGroup.add(gatePanel);
-scene.add(gateGroup);
-interactables.push({ mesh: gateGroup, type: 'gate', open: false, angle: 0 });
-
-// Деревья
+// Trees (with LOD)
 function makeTree(x, z, scale = 1) {
     const tree = new THREE.Group();
     const trunkH = 2.0 * scale;
-    const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, trunkH, 8),
-        matBark
-    );
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, trunkH, 8), matBark);
     trunk.position.y = trunkH / 2;
-    trunk.castShadow = true;
-    trunk.receiveShadow = true;
+    trunk.castShadow = true; trunk.receiveShadow = true;
     tree.add(trunk);
 
-    // Крона — 3 сферы
     const foliageGeo = new THREE.SphereGeometry(1.3 * scale, 10, 8);
     for (let i = 0; i < 3; i++) {
         const f = new THREE.Mesh(foliageGeo, matLeaves);
-        f.position.set(
-            (Math.random() - 0.5) * 0.8 * scale,
+        f.position.set((Math.random() - 0.5) * 0.8 * scale,
             trunkH + 0.8 * scale + i * 0.4 * scale,
-            (Math.random() - 0.5) * 0.8 * scale
-        );
+            (Math.random() - 0.5) * 0.8 * scale);
         f.scale.setScalar(0.7 + Math.random() * 0.4);
         f.castShadow = true;
-        f.receiveShadow = true;
         tree.add(f);
     }
-
     tree.position.set(x, 0, z);
     tree.rotation.y = Math.random() * Math.PI * 2;
     scene.add(tree);
@@ -1491,131 +1342,68 @@ makeTree(12, -12, 1.0);
 makeTree(-12, 12, 1.1);
 makeTree(12, 12, 1.3);
 makeTree(-15, 0, 1.0);
-makeTree(15, 5, 0.9);
-
-// Кустарники
-for (let i = 0; i < 8; i++) {
-    const bush = new THREE.Mesh(
-        new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 8, 6),
-        matLeaves
-    );
-    bush.position.set(
-        (Math.random() - 0.5) * 30,
-        0.3,
-        (Math.random() - 0.5) * 30
-    );
-    bush.scale.y = 0.7;
-    bush.castShadow = true;
-    bush.receiveShadow = true;
-    scene.add(bush);
-}
 
 // ============================================================
-// 12. ПОСТОБРАБОТКА (кинематографический пайплайн)
+// 13. POST-PROCESSING
 // ============================================================
 const composer = new EffectComposer(renderer);
 composer.setPixelRatio(QUALITY.pixelRatio);
 composer.setSize(window.innerWidth, window.innerHeight);
+composer.addPass(new RenderPass(scene, camera));
 
-// Основной рендер-пасс
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-
-// Bloom (свечение ярких участков)
 if (QUALITY.bloom) {
-    const bloomPass = new UnrealBloomPass(
+    composer.addPass(new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        QUALITY.bloomStrength,
-        QUALITY.bloomRadius,
-        0.85  // threshold
-    );
-    composer.addPass(bloomPass);
+        QUALITY.bloomStrength, QUALITY.bloomRadius, 0.85
+    ));
 }
 
-// Кинематографический пасс (цветокоррекция, зерно, виньетка, хроматическая аберрация)
 const CinematicShader = {
     uniforms: {
-        tDiffuse: { value: null },
-        time: { value: 0 },
+        tDiffuse: { value: null }, time: { value: 0 },
         resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-        vignetteStrength: { value: 0.55 },
-        grainStrength: { value: 0.035 },
-        chromaticStrength: { value: 0.0018 }
+        vignetteStrength: { value: 0.5 },
+        grainStrength: { value: 0.03 },
+        chromaticStrength: { value: 0.0015 }
     },
-    vertexShader: /* glsl */`
+    vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader: `
+        uniform sampler2D tDiffuse; uniform float time; uniform vec2 resolution;
+        uniform float vignetteStrength; uniform float grainStrength; uniform float chromaticStrength;
         varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: /* glsl */`
-        uniform sampler2D tDiffuse;
-        uniform float time;
-        uniform vec2 resolution;
-        uniform float vignetteStrength;
-        uniform float grainStrength;
-        uniform float chromaticStrength;
-        varying vec2 vUv;
-
-        float random(vec2 p) {
-            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-        }
-
-        void main() {
-            vec2 uv = vUv;
-            vec2 dir = uv - 0.5;
-            float dist = length(dir);
-
-            // Хроматическая аберрация (радиальная)
-            vec2 offset = dir * dist * chromaticStrength;
-            float r = texture2D(tDiffuse, uv + offset).r;
-            float g = texture2D(tDiffuse, uv).g;
-            float b = texture2D(tDiffuse, uv - offset).b;
-            vec3 color = vec3(r, g, b);
-
-            // Виньетка
-            float vig = smoothstep(0.95, 0.25, dist * 2.0);
-            color *= mix(1.0, vig, vignetteStrength);
-
-            // Цветокоррекция: тёплые блики, холодные тени
-            float luma = dot(color, vec3(0.299, 0.587, 0.114));
-            vec3 shadows = vec3(0.94, 0.97, 1.06);
-            vec3 highlights = vec3(1.06, 1.02, 0.97);
-            vec3 grade = mix(shadows, highlights, smoothstep(0.0, 1.0, luma));
-            color *= grade;
-
-            // Лёгкий подъём насыщенности
-            float lum2 = dot(color, vec3(0.299, 0.587, 0.114));
-            color = mix(vec3(lum2), color, 1.1);
-
-            // Зерно
-            float grain = random(uv * resolution + time * 60.0);
-            color += (grain - 0.5) * grainStrength;
-
-            gl_FragColor = vec4(color, 1.0);
+        float rand(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
+        void main(){
+            vec2 uv=vUv; vec2 dir=uv-0.5; float d=length(dir);
+            vec2 off=dir*d*chromaticStrength;
+            float r=texture2D(tDiffuse,uv+off).r;
+            float g=texture2D(tDiffuse,uv).g;
+            float b=texture2D(tDiffuse,uv-off).b;
+            vec3 col=vec3(r,g,b);
+            float vig=smoothstep(0.95,0.25,d*2.0);
+            col*=mix(1.0,vig,vignetteStrength);
+            float luma=dot(col,vec3(0.299,0.587,0.114));
+            col*=mix(vec3(0.94,0.97,1.06),vec3(1.06,1.02,0.97),smoothstep(0.0,1.0,luma));
+            float l2=dot(col,vec3(0.299,0.587,0.114));
+            col=mix(vec3(l2),col,1.1);
+            float grain=rand(uv*resolution+time*60.0);
+            col+=(grain-0.5)*grainStrength;
+            gl_FragColor=vec4(col,1.0);
         }
     `
 };
-
 const cinematicPass = new ShaderPass(CinematicShader);
 composer.addPass(cinematicPass);
 
-// SMAA (сглаживание) — только на десктопе
 let smaaPass = null;
 if (QUALITY.smaa) {
     smaaPass = new SMAAPass(window.innerWidth * QUALITY.pixelRatio, window.innerHeight * QUALITY.pixelRatio);
     composer.addPass(smaaPass);
 }
-
-// Финальный output-пасс (tonemap + sRGB)
-const outputPass = new OutputPass();
-composer.addPass(outputPass);
+composer.addPass(new OutputPass());
 
 // ============================================================
-// 13. УПРАВЛЕНИЕ (ПК + МОБИЛЬНЫЕ)
+// 14. CONTROLS
 // ============================================================
-// --- ПК ---
 let isLocked = false;
 const MOUSE_SENS = 0.002;
 const TOUCH_SENS = 0.003;
@@ -1633,22 +1421,17 @@ document.addEventListener('pointerlockchange', () => {
     if (isLocked) hideHint();
 });
 
-// Блокер
 const blockerEl = document.getElementById('blocker');
 const startGame = (e) => {
     e.preventDefault();
+    initAudio();
     if (isMobile) {
         blockerEl.classList.add('hidden');
         hideHint();
     } else {
         try {
-            const promise = renderer.domElement.requestPointerLock();
-            if (promise && promise.catch) {
-                promise.catch(() => {
-                    blockerEl.classList.add('hidden');
-                    hideHint();
-                });
-            }
+            const p = renderer.domElement.requestPointerLock();
+            if (p && p.catch) p.catch(() => { blockerEl.classList.add('hidden'); hideHint(); });
         } catch (_) {
             blockerEl.classList.add('hidden');
             hideHint();
@@ -1656,9 +1439,7 @@ const startGame = (e) => {
     }
 };
 blockerEl.addEventListener('pointerdown', startGame);
-blockerEl.addEventListener('click', startGame);
 
-// Клавиатура
 const keys = { w: false, a: false, s: false, d: false, shift: false };
 let jumpRequested = false;
 
@@ -1669,14 +1450,9 @@ document.addEventListener('keydown', (e) => {
         case 'KeyA': case 'ArrowLeft': keys.a = true; break;
         case 'KeyD': case 'ArrowRight': keys.d = true; break;
         case 'ShiftLeft': case 'ShiftRight': keys.shift = true; break;
-        case 'Space':
-            e.preventDefault();
-            jumpRequested = true;
-            break;
+        case 'Space': e.preventDefault(); jumpRequested = true; break;
         case 'KeyE': interact(); break;
-        case 'Escape':
-            if (isLocked) document.exitPointerLock();
-            break;
+        case 'Escape': if (isLocked) document.exitPointerLock(); break;
     }
 });
 document.addEventListener('keyup', (e) => {
@@ -1689,7 +1465,7 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
-// --- МОБИЛЬНЫЕ ЭЛЕМЕНТЫ ---
+// Mobile
 const mobileUI = document.getElementById('mobile-ui');
 const lookZone = document.getElementById('look-zone');
 const joyZone = document.getElementById('joy-zone');
@@ -1698,80 +1474,59 @@ const btnJump = document.getElementById('btn-jump');
 const btnRun = document.getElementById('btn-run');
 const btnUse = document.getElementById('btn-use');
 
-if (isMobile) {
-    mobileUI.classList.add('visible');
-}
+if (isMobile) mobileUI.classList.add('visible');
 
-// Джойстик
-let joyActive = false;
-let joyId = null;
+let joyActive = false, joyId = null;
 let joyCenter = { x: 0, y: 0 };
 const joyVec = new THREE.Vector2(0, 0);
 const joyMax = 55;
 
 joyZone.addEventListener('pointerdown', (e) => {
     if (joyActive) return;
-    joyActive = true;
-    joyId = e.pointerId;
+    joyActive = true; joyId = e.pointerId;
     joyZone.setPointerCapture(e.pointerId);
     const rect = joyZone.getBoundingClientRect();
     joyCenter.x = rect.left + rect.width / 2;
     joyCenter.y = rect.top + rect.height / 2;
     updateJoy(e);
 });
-
 joyZone.addEventListener('pointermove', (e) => {
     if (!joyActive || e.pointerId !== joyId) return;
     updateJoy(e);
 });
-
 const endJoy = (e) => {
     if (e.pointerId !== joyId) return;
-    joyActive = false;
-    joyId = null;
+    joyActive = false; joyId = null;
     joyVec.set(0, 0);
-    joyKnob.style.transform = 'translate(0, 0)';
+    joyKnob.style.transform = 'translate(0,0)';
     try { joyZone.releasePointerCapture(e.pointerId); } catch(_) {}
 };
 joyZone.addEventListener('pointerup', endJoy);
 joyZone.addEventListener('pointercancel', endJoy);
 
 function updateJoy(e) {
-    let dx = e.clientX - joyCenter.x;
-    let dy = e.clientY - joyCenter.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > joyMax) {
-        dx = dx / dist * joyMax;
-        dy = dy / dist * joyMax;
-    }
-    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    let dx = e.clientX - joyCenter.x, dy = e.clientY - joyCenter.y;
+    const d = Math.hypot(dx, dy);
+    if (d > joyMax) { dx = dx / d * joyMax; dy = dy / d * joyMax; }
+    joyKnob.style.transform = `translate(${dx}px,${dy}px)`;
     joyVec.set(dx / joyMax, dy / joyMax);
 }
 
-// Обзор (свайп справа)
-let lookId = null;
-let lookLastX = 0, lookLastY = 0;
-
+let lookId = null, lookLastX = 0, lookLastY = 0;
 lookZone.addEventListener('pointerdown', (e) => {
     if (lookId !== null) return;
     lookId = e.pointerId;
-    lookLastX = e.clientX;
-    lookLastY = e.clientY;
+    lookLastX = e.clientX; lookLastY = e.clientY;
     lookZone.setPointerCapture(e.pointerId);
 });
-
 lookZone.addEventListener('pointermove', (e) => {
     if (e.pointerId !== lookId) return;
-    const dx = e.clientX - lookLastX;
-    const dy = e.clientY - lookLastY;
-    lookLastX = e.clientX;
-    lookLastY = e.clientY;
-
+    const dx = e.clientX - lookLastX, dy = e.clientY - lookLastY;
+    lookLastX = e.clientX; lookLastY = e.clientY;
     player.rotation.y -= dx * TOUCH_SENS;
     camera.rotation.x -= dy * TOUCH_SENS;
     camera.rotation.x = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, camera.rotation.x));
 });
-
 const endLook = (e) => {
     if (e.pointerId !== lookId) return;
     lookId = null;
@@ -1780,55 +1535,55 @@ const endLook = (e) => {
 lookZone.addEventListener('pointerup', endLook);
 lookZone.addEventListener('pointercancel', endLook);
 
-// Кнопка прыжка
 btnJump.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    jumpRequested = true;
+    e.preventDefault(); jumpRequested = true;
     btnJump.classList.add('pressed');
     if (navigator.vibrate) navigator.vibrate(15);
 });
 btnJump.addEventListener('pointerup', () => btnJump.classList.remove('pressed'));
-btnJump.addEventListener('pointercancel', () => btnJump.classList.remove('pressed'));
 
-// Кнопка бега (toggle)
 let mobileRunning = false;
 btnRun.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     mobileRunning = !mobileRunning;
     btnRun.classList.toggle('active', mobileRunning);
-    if (navigator.vibrate) navigator.vibrate(10);
 });
-
-// Кнопка действия
 btnUse.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    interact();
+    e.preventDefault(); interact();
     if (navigator.vibrate) navigator.vibrate(20);
 });
 
 // ============================================================
-// 14. ФИЗИКА / КОЛЛИЗИИ
+// 15. PHYSICS (raycast floors + AABB walls + step-up)
 // ============================================================
-const PLAYER_RADIUS = 0.3;
-const GRAVITY = 18;
+const GRAVITY = 20;
 const WALK_SPEED = 3.5;
 const RUN_SPEED = 6.5;
-const JUMP_POWER = 6.0;
+const JUMP_POWER = 6.5;
+const STEP_HEIGHT = 0.35; // max auto-step
 
 const velocity = new THREE.Vector3();
 let onGround = false;
 
-function checkCollision(x, z, y) {
-    // Проходим по всем AABB
+const floorRaycaster = new THREE.Raycaster();
+
+function getFloorY(x, z, fromY) {
+    floorRaycaster.set(new THREE.Vector3(x, fromY, z), new THREE.Vector3(0, -1, 0));
+    floorRaycaster.far = 30;
+    const hits = floorRaycaster.intersectObjects(floorMeshes, false);
+    if (hits.length > 0) return hits[0].point.y;
+    return -1;
+}
+
+function checkWallCollision(x, z, playerY) {
+    const feet = playerY - PLAYER_HEIGHT;
+    const head = playerY;
     for (const box of colliders) {
-        // Проверяем по XZ с учётом радиуса
         if (x + PLAYER_RADIUS > box.min.x && x - PLAYER_RADIUS < box.max.x &&
             z + PLAYER_RADIUS > box.min.z && z - PLAYER_RADIUS < box.max.z) {
-            // Проверяем по Y: если игрок ниже верха коллайдера (стоит на нём/застревает)
-            // Считаем коллайдер вертикальным препятствием, если его верх выше ступней и низ ниже головы
-            const playerFeet = y - 1.7;
-            const playerHead = y;
-            if (box.max.y > playerFeet + 0.15 && box.min.y < playerHead) {
+            // Only collide if the box top is significantly above feet (i.e. it's a wall)
+            // AND the box bottom is below head (it's in the way)
+            if (box.max.y > feet + STEP_HEIGHT && box.min.y < head - 0.05) {
                 return true;
             }
         }
@@ -1837,111 +1592,105 @@ function checkCollision(x, z, y) {
 }
 
 function movePlayer(dx, dz) {
-    const px = player.position.x;
-    const pz = player.position.z;
     const py = player.position.y;
-
-    // Разделяем движение по осям для скольжения
-    if (!checkCollision(px + dx, pz, py)) {
-        player.position.x = px + dx;
+    if (!checkWallCollision(player.position.x + dx, player.position.z, py)) {
+        player.position.x += dx;
     }
-    if (!checkCollision(player.position.x, pz + dz, py)) {
-        player.position.z = pz + dz;
+    if (!checkWallCollision(player.position.x, player.position.z + dz, py)) {
+        player.position.z += dz;
     }
 }
 
 // ============================================================
-// 15. ВЗАИМОДЕЙСТВИЕ (двери, калитка)
+// 16. INTERACTION
 // ============================================================
 const crosshairEl = document.getElementById('crosshair');
 const interactPromptEl = document.getElementById('interact-prompt');
 const raycaster = new THREE.Raycaster();
 const interactRay = new THREE.Vector2(0, 0);
-
 let currentInteractable = null;
 
 function findInteractable() {
     raycaster.setFromCamera(interactRay, camera);
     raycaster.far = 3.0;
-
-    const meshList = [];
-    for (const item of interactables) {
-        meshList.push(item.mesh);
-        item.mesh.traverse(c => { if (c.isMesh) meshList.push(c); });
+    const list = [];
+    for (const it of interactables) {
+        it.mesh.traverse(c => { if (c.isMesh) list.push(c); });
     }
-
-    const hits = raycaster.intersectObjects(meshList, false);
-    if (hits.length > 0) {
-        let obj = hits[0].object;
-        while (obj && !interactables.find(i => i.mesh === obj)) {
-            obj = obj.parent;
-        }
-        return interactables.find(i => i.mesh === obj) || null;
+    const hits = raycaster.intersectObjects(list, false);
+    if (hits.length === 0) return null;
+    let obj = hits[0].object;
+    while (obj && !interactables.find(i => i.mesh === obj || i.mesh === obj.parent)) {
+        obj = obj.parent;
     }
-    return null;
+    return interactables.find(i => i.mesh === obj || i.mesh === obj?.parent) || null;
 }
 
 function interact() {
     const target = currentInteractable;
     if (!target) return;
 
-    if (target.type === 'door' || target.type === 'gate') {
+    if (target.type === 'door' || target.type === 'gate' || target.type === 'fridge' || target.type === 'mailbox') {
         target.open = !target.open;
-        // Анимация поворота будет в цикле
+        target.targetAngle = target.open ? (target.type === 'fridge' ? -Math.PI * 0.6 : -Math.PI / 2) : 0;
+        playDoorSound();
         if (navigator.vibrate) navigator.vibrate(30);
+    } else if (target.type === 'switch') {
+        target.on = !target.on;
+        target.toggle.material = target.on ? matSwitchOn.clone() : matSwitchOff.clone();
+        const lights = roomLights[target.roomName] || [];
+        for (const l of lights) {
+            l.on = target.on;
+            if (target.on) l.light.intensity = l.baseIntensity;
+            else l.light.intensity = 0;
+            l.shade.material.emissiveIntensity = target.on ? 1.5 : 0.05;
+        }
+        playSwitchSound();
+    } else if (target.type === 'tv') {
+        target.on = !target.on;
+        if (target.on) {
+            target.light.intensity = 0.6;
+            target.screen.emissiveIntensity = 0.35;
+        } else {
+            target.light.intensity = 0;
+            target.screen.emissiveIntensity = 0;
+        }
+        playSwitchSound();
     }
 }
 
 function updateInteractables(delta) {
-    // Плавный поворот дверей
-    for (const item of interactables) {
-        if (item.type === 'door' || item.type === 'gate') {
-            const targetAngle = item.open ? -Math.PI / 2 : 0;
-            item.angle += (targetAngle - item.angle) * Math.min(1, delta * 8);
-            item.mesh.rotation.y = item.angle;
+    for (const it of interactables) {
+        if (it.type === 'door' || it.type === 'gate' || it.type === 'fridge' || it.type === 'mailbox') {
+            it.angle += (it.targetAngle - it.angle) * Math.min(1, delta * 8);
+            it.mesh.rotation.y = it.angle;
         }
     }
 }
 
 // ============================================================
-// 16. HUD / FPS / HINT
-// ============================================================
-const fpsEl = document.getElementById('fps');
-const hintEl = document.getElementById('hint');
-let hintHidden = false;
-
-function hideHint() {
-    if (hintHidden) return;
-    hintHidden = true;
-    hintEl.classList.add('hidden');
-    setTimeout(() => hintEl.style.display = 'none', 700);
-}
-
-let fpsAccum = 0, fpsFrames = 0, fpsLastUpdate = 0;
-
-// ============================================================
-// 17. АНИМАЦИОННЫЙ ЦИКЛ
+// 17. ANIMATION LOOP
 // ============================================================
 const clock = new THREE.Clock();
 let elapsed = 0;
+const fpsEl = document.getElementById('fps');
+let fpsAccum = 0, fpsFrames = 0;
+
+let lastFootstep = 0;
+let isMoving = false;
 
 function animate() {
     requestAnimationFrame(animate);
-
     const delta = Math.min(clock.getDelta(), 0.05);
     elapsed += delta;
 
-    // ---- Управление движением ----
-    let moveX = 0, moveZ = 0;
-    let wantRun = false;
-
+    // ---- Movement ----
+    let moveX = 0, moveZ = 0, wantRun = false;
     if (isMobile) {
-        // Мобильный джойстик
         moveX = joyVec.x;
-        moveZ = joyVec.y; // положительный Y = вниз = назад
+        moveZ = joyVec.y;
         wantRun = mobileRunning;
     }
-
     if (isLocked) {
         if (keys.w) moveZ -= 1;
         if (keys.s) moveZ += 1;
@@ -1949,29 +1698,27 @@ function animate() {
         if (keys.d) moveX += 1;
         wantRun = keys.shift;
     }
-
-    // Нормализация
     const moveLen = Math.hypot(moveX, moveZ);
-    if (moveLen > 1) {
-        moveX /= moveLen;
-        moveZ /= moveLen;
-    }
+    if (moveLen > 1) { moveX /= moveLen; moveZ /= moveLen; }
 
-    // Направление в мировых координатах (с учётом поворота игрока)
     const yaw = player.rotation.y;
-    const sinY = Math.sin(yaw);
-    const cosY = Math.cos(yaw);
-
+    const sinY = Math.sin(yaw), cosY = Math.cos(yaw);
     const speed = wantRun ? RUN_SPEED : WALK_SPEED;
-    const worldDX = (moveX * cosY - moveZ * sinY) * speed * delta;
-    const worldDZ = (moveX * sinY + moveZ * cosY) * speed * delta;
+    const wdx = (moveX * cosY - moveZ * sinY) * speed * delta;
+    const wdz = (moveX * sinY + moveZ * cosY) * speed * delta;
 
-    if (moveLen > 0.05) {
-        movePlayer(worldDX, worldDZ);
+    isMoving = moveLen > 0.05;
+    if (isMoving) {
+        movePlayer(wdx, wdz);
         hideHint();
+        // Footstep sound
+        if (elapsed - lastFootstep > 0.4) {
+            playFootstep();
+            lastFootstep = elapsed;
+        }
     }
 
-    // ---- Прыжок и гравитация ----
+    // ---- Jump / Gravity ----
     if (jumpRequested && onGround) {
         velocity.y = JUMP_POWER;
         onGround = false;
@@ -1981,62 +1728,59 @@ function animate() {
     velocity.y -= GRAVITY * delta;
     player.position.y += velocity.y * delta;
 
-    // Проверка приземления (пол 1 этажа = y=1.7; перекрытие = H + SLAB + 1.7)
-    const floors = [1.7, H + SLAB + 1.7];
-    let landed = false;
-    for (const floorY of floors) {
-        if (player.position.y <= floorY && player.position.y > floorY - 0.5) {
-            // Проверяем, что мы НЕ падаем сквозь
-            if (velocity.y <= 0) {
-                player.position.y = floorY;
+    // Detect floor below player (cast from slightly above head)
+    const floorY = getFloorY(player.position.x, player.position.z, player.position.y + 0.5);
+    const feetTarget = floorY + PLAYER_HEIGHT;
+
+    if (floorY > -0.5) {
+        if (velocity.y <= 0) {
+            // Standing or falling
+            if (player.position.y <= feetTarget + 0.01) {
+                player.position.y = feetTarget;
                 velocity.y = 0;
                 onGround = true;
-                landed = true;
-                break;
+            } else if (player.position.y <= feetTarget + STEP_HEIGHT && onGround) {
+                // Step up small ledge
+                player.position.y = feetTarget;
+                velocity.y = 0;
+                onGround = true;
+            } else {
+                onGround = false;
             }
+        } else {
+            onGround = false;
         }
     }
-    if (!landed) onGround = false;
 
-    // Ограничение (не улетать в небо)
-    if (player.position.y > 20) {
-        player.position.y = 20;
-        velocity.y = 0;
-    }
+    if (player.position.y > 20) { player.position.y = 20; velocity.y = 0; }
+    if (player.position.y < -5) { player.position.set(0, PLAYER_HEIGHT + 0.01, 14); velocity.y = 0; }
 
-    // ---- Взаимодействия ----
+    // ---- Interaction ----
     updateInteractables(delta);
     currentInteractable = findInteractable();
 
-    const crosshair = document.getElementById('crosshair');
+    const cr = document.getElementById('crosshair');
     if (currentInteractable) {
-        crosshair.classList.add('active');
+        cr.classList.add('active');
         interactPromptEl.classList.add('visible');
         interactPromptEl.textContent = isMobile ? 'Использовать' : 'Нажмите E';
         btnUse.classList.add('available');
     } else {
-        crosshair.classList.remove('active');
+        cr.classList.remove('active');
         interactPromptEl.classList.remove('visible');
         btnUse.classList.remove('available');
     }
 
-    // ---- Обновление Uniform для кинематографического шейдера ----
+    // ---- Post-processing uniforms ----
     cinematicPass.uniforms.time.value = elapsed;
 
-    // ---- Обновление солнца (лёгкая анимация) ----
-    // (не двигаем, чтобы стабильные тени)
-
     // ---- FPS ----
-    fpsAccum += delta;
-    fpsFrames++;
+    fpsAccum += delta; fpsFrames++;
     if (fpsAccum >= 0.5) {
-        const fps = Math.round(fpsFrames / fpsAccum);
-        fpsEl.textContent = fps + ' FPS';
-        fpsAccum = 0;
-        fpsFrames = 0;
+        fpsEl.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
+        fpsAccum = 0; fpsFrames = 0;
     }
 
-    // ---- Рендер ----
     composer.render();
 }
 
@@ -2050,38 +1794,35 @@ function onResize() {
     renderer.setSize(w, h);
     composer.setSize(w, h);
     cinematicPass.uniforms.resolution.value.set(w, h);
-    if (smaaPass) {
-        smaaPass.setSize(w * QUALITY.pixelRatio, h * QUALITY.pixelRatio);
-    }
+    if (smaaPass) smaaPass.setSize(w * QUALITY.pixelRatio, h * QUALITY.pixelRatio);
 }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
 // ============================================================
-// 19. СТАРТ
+// 19. START
 // ============================================================
-// Небольшая задержка для "плавного" старта
-document.getElementById('loading-bar').style.width = '100%';
+const hintEl = document.getElementById('hint');
+let hintHidden = false;
+function hideHint() {
+    if (hintHidden) return;
+    hintHidden = true;
+    hintEl.classList.add('hidden');
+    setTimeout(() => hintEl.style.display = 'none', 700);
+}
 
+document.getElementById('loading-bar').style.width = '100%';
 setTimeout(() => {
     document.getElementById('loading').style.opacity = '0';
-    setTimeout(() => {
-        document.getElementById('loading').style.display = 'none';
-    }, 400);
+    setTimeout(() => document.getElementById('loading').style.display = 'none', 400);
 }, 500);
 
-// Начальный поворот — смотрим на дом
 player.rotation.y = Math.PI;
-
-// Запуск
 animate();
-
-// Автоскрытие подсказки через 8 секунд
 setTimeout(hideHint, 8000);
 
-console.log('%c Modern House 3D — Cinematic ', 'background: #4a7fff; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: bold;');
-console.log('Platform:', isMobile ? 'Mobile' : 'Desktop', '| Quality:', QUALITY);
-console.log('Colliders:', colliders.length, '| Interactables:', interactables.length);
+console.log('%c Modern House 3D — Refactored ', 'background:#4a7fff;color:#fff;padding:4px 12px;border-radius:4px;font-weight:bold;');
+console.log('Floors:', floorMeshes.length, '| Walls:', colliders.length, '| Interactables:', interactables.length);
 </script>
 </body>
 </html>
