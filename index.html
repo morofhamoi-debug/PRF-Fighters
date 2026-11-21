@@ -1,1127 +1,2069 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Modern House 3D — AAA-качество в браузере</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #000;
-            color: #fff;
-        }
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px 20px;
-            border-radius: 20px;
-            pointer-events: none;
-            z-index: 10;
-            font-size: 14px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 5;
-            box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
-        }
-        #blocker {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 20;
-            cursor: pointer;
-            backdrop-filter: blur(3px);
-        }
-        #blocker div {
-            text-align: center;
-            background: rgba(20, 20, 30, 0.9);
-            padding: 30px 50px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        #blocker h1 {
-            margin: 0 0 10px;
-            font-size: 28px;
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
-        #blocker p {
-            margin: 5px 0;
-            opacity: 0.7;
-            font-size: 14px;
-        }
-        /* Мобильные элементы управления */
-        #joystick-container {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 120px;
-            height: 120px;
-            z-index: 15;
-            display: none;
-            pointer-events: none;
-        }
-        #joystick-base {
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            position: relative;
-            pointer-events: none;
-        }
-        #joystick-knob {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-        #look-area {
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 50%;
-            height: 100%;
-            z-index: 14;
-            display: none;
-            pointer-events: none;
-        }
-        #jump-btn {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 70px;
-            height: 70px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            z-index: 15;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 12px;
-            text-align: center;
-            pointer-events: auto;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        #jump-btn:active {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        @media (pointer: coarse) {
-            #joystick-container, #look-area, #jump-btn {
-                display: flex;
-            }
-            #joystick-container {
-                display: block;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Modern House 3D — Cinematic</title>
+<style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+        margin: 0; padding: 0; overflow: hidden;
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #000; color: #fff;
+        width: 100%; height: 100%;
+        touch-action: none;
+        user-select: none; -webkit-user-select: none;
+    }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; }
+
+    /* HUD */
+    #crosshair {
+        position: absolute; top: 50%; left: 50%;
+        width: 8px; height: 8px;
+        border: 1.5px solid rgba(255,255,255,0.9);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none; z-index: 5;
+        box-shadow: 0 0 4px rgba(0,0,0,0.8), inset 0 0 4px rgba(0,0,0,0.3);
+        transition: transform 0.15s;
+    }
+    #crosshair.active { transform: translate(-50%,-50%) scale(1.5); border-color: #ffcc00; }
+
+    #hint {
+        position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.55);
+        padding: 8px 18px; border-radius: 100px;
+        font-size: 13px; letter-spacing: 0.5px;
+        pointer-events: none; z-index: 10;
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.12);
+        white-space: nowrap;
+        opacity: 1; transition: opacity 0.6s;
+        max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
+    }
+    #hint.hidden { opacity: 0; }
+
+    #fps {
+        position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
+        background: rgba(0,0,0,0.5);
+        padding: 4px 10px; border-radius: 6px;
+        font-size: 11px; font-family: monospace;
+        pointer-events: none; z-index: 10;
+        color: #7fff7f;
+    }
+
+    /* Стартовый экран */
+    #blocker {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at center, rgba(20,25,35,0.85) 0%, rgba(5,5,10,0.98) 100%);
+        z-index: 30; cursor: pointer;
+        transition: opacity 0.5s;
+    }
+    #blocker.hidden { opacity: 0; pointer-events: none; }
+    #blocker .panel {
+        text-align: center; padding: 40px 50px;
+        background: rgba(15, 18, 26, 0.85);
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(20px);
+        max-width: 90vw;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    #blocker h1 {
+        margin: 0 0 8px;
+        font-size: clamp(22px, 5vw, 32px);
+        font-weight: 200;
+        letter-spacing: 6px;
+        background: linear-gradient(135deg, #fff 0%, #a8c0ff 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    #blocker .sub {
+        opacity: 0.6; font-size: 12px;
+        letter-spacing: 3px; margin-bottom: 25px;
+        text-transform: uppercase;
+    }
+    #blocker .play-btn {
+        display: inline-block;
+        padding: 14px 44px;
+        background: linear-gradient(135deg, #4a7fff, #2a5edd);
+        border-radius: 100px;
+        font-size: 15px; font-weight: 500;
+        letter-spacing: 2px; text-transform: uppercase;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 8px 24px rgba(74,127,255,0.4);
+    }
+    #blocker:hover .play-btn { transform: scale(1.05); box-shadow: 0 12px 32px rgba(74,127,255,0.6); }
+    #blocker .controls-hint {
+        margin-top: 22px;
+        opacity: 0.45; font-size: 11px;
+        line-height: 1.9;
+    }
+    #blocker .controls-hint kbd {
+        display: inline-block;
+        padding: 1px 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        font-family: monospace;
+        border: 1px solid rgba(255,255,255,0.15);
+        margin: 0 2px;
+    }
+
+    /* Загрузочный индикатор */
+    #loading {
+        position: absolute; bottom: 40px; left: 50%;
+        transform: translateX(-50%);
+        text-align: center; z-index: 25;
+        font-size: 11px; letter-spacing: 3px;
+        opacity: 0.7;
+    }
+    #loading .bar {
+        width: 200px; height: 2px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        margin: 10px auto 0;
+        overflow: hidden;
+    }
+    #loading .bar div {
+        width: 0%; height: 100%;
+        background: linear-gradient(90deg, #4a7fff, #a8c0ff);
+        transition: width 0.3s;
+    }
+
+    /* ================= МОБИЛЬНОЕ УПРАВЛЕНИЕ ================= */
+    #mobile-ui { display: none; }
+    #mobile-ui.visible { display: block; }
+
+    /* Джойстик */
+    #joy-zone {
+        position: absolute;
+        left: max(20px, env(safe-area-inset-left));
+        bottom: max(20px, env(safe-area-inset-bottom));
+        width: 150px; height: 150px;
+        z-index: 15;
+        pointer-events: auto;
+        touch-action: none;
+    }
+    #joy-base {
+        position: absolute;
+        width: 140px; height: 140px;
+        left: 5px; top: 5px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 70%, transparent 100%);
+        border: 2px solid rgba(255,255,255,0.15);
+        backdrop-filter: blur(8px);
+    }
+    #joy-knob {
+        position: absolute;
+        width: 60px; height: 60px;
+        left: 40px; top: 40px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), rgba(120,150,200,0.35));
+        border: 2px solid rgba(255,255,255,0.4);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 2px 6px rgba(255,255,255,0.3);
+        transition: transform 0.05s linear;
+        pointer-events: none;
+    }
+
+    /* Зона обзора (drag) */
+    #look-zone {
+        position: absolute;
+        right: 0; top: 0;
+        width: 55%; height: 100%;
+        z-index: 14;
+        pointer-events: auto;
+        touch-action: none;
+    }
+
+    /* Кнопки действий */
+    .action-btn {
+        position: absolute;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(0,0,0,0.35));
+        border: 2px solid rgba(255,255,255,0.3);
+        color: #fff;
+        font-size: 11px; font-weight: 600; letter-spacing: 1px;
+        display: flex; align-items: center; justify-content: center;
+        text-align: center;
+        z-index: 16;
+        pointer-events: auto;
+        touch-action: none;
+        user-select: none;
+        backdrop-filter: blur(6px);
+        transition: transform 0.1s, background 0.1s;
+    }
+    .action-btn:active, .action-btn.pressed {
+        transform: scale(0.9);
+        background: radial-gradient(circle at 30% 30%, rgba(120,180,255,0.6), rgba(74,127,255,0.4));
+        border-color: rgba(120,180,255,0.8);
+    }
+
+    #btn-jump {
+        right: max(24px, env(safe-area-inset-right));
+        bottom: max(24px, env(safe-area-inset-bottom));
+        width: 78px; height: 78px;
+        font-size: 22px;
+    }
+    #btn-run {
+        right: max(24px, env(safe-area-inset-right));
+        bottom: calc(max(24px, env(safe-area-inset-bottom)) + 95px);
+        width: 62px; height: 62px;
+    }
+    #btn-use {
+        right: calc(max(24px, env(safe-area-inset-right)) + 95px);
+        bottom: max(24px, env(safe-area-inset-bottom));
+        width: 62px; height: 62px;
+        font-size: 14px;
+        opacity: 0.6;
+        transition: opacity 0.2s, transform 0.1s, background 0.1s;
+    }
+    #btn-use.available {
+        opacity: 1;
+        border-color: rgba(255,204,0,0.8);
+        box-shadow: 0 0 20px rgba(255,204,0,0.5);
+    }
+    #btn-use.available:active { transform: scale(0.9); }
+
+    /* Индикатор бега */
+    #btn-run.active {
+        background: radial-gradient(circle at 30% 30%, rgba(255,200,50,0.6), rgba(200,120,0,0.4));
+        border-color: rgba(255,200,50,0.8);
+    }
+
+    /* Уведомление об объекте взаимодействия */
+    #interact-prompt {
+        position: absolute;
+        top: 58%; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 12px;
+        letter-spacing: 1px;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.2s;
+        border: 1px solid rgba(255,204,0,0.3);
+        white-space: nowrap;
+    }
+    #interact-prompt.visible { opacity: 1; }
+
+    @media (max-height: 480px) {
+        #joy-zone { width: 120px; height: 120px; }
+        #joy-base { width: 110px; height: 110px; }
+        #joy-knob { width: 50px; height: 50px; left: 30px; top: 30px; }
+        .action-btn { transform: scale(0.85); }
+    }
+
+    #blocker .mobile-badge {
+        display: none;
+        margin-top: 12px;
+        font-size: 11px;
+        color: #7fff7f;
+        letter-spacing: 2px;
+    }
+    body.mobile #blocker .mobile-badge { display: block; }
+    body.mobile #blocker .pc-only { display: none; }
+    body:not(.mobile) #blocker .mobile-only { display: none; }
+</style>
 </head>
 <body>
-    <div id="info">WASD — движение | Мышь — обзор | Shift — бег | Space — прыжок | E — взаимодействие</div>
+<div id="app">
     <div id="crosshair"></div>
+    <div id="hint">WASD — движение · Мышь — обзор · Shift — бег · Space — прыжок · E — действие</div>
+    <div id="fps">--- FPS</div>
+    <div id="interact-prompt"></div>
+
+    <div id="mobile-ui">
+        <div id="look-zone"></div>
+        <div id="joy-zone">
+            <div id="joy-base"></div>
+            <div id="joy-knob"></div>
+        </div>
+        <div class="action-btn" id="btn-jump">↑</div>
+        <div class="action-btn" id="btn-run">RUN</div>
+        <div class="action-btn" id="btn-use">USE</div>
+    </div>
+
     <div id="blocker">
-        <div>
-            <h1>MODERN HOUSE 3D</h1>
-            <p>Нажмите, чтобы войти</p>
-            <p style="font-size:12px; opacity:0.5; margin-top:15px;">10×10 м · Два этажа · Полная обстановка</p>
+        <div class="panel">
+            <h1>MODERN HOUSE</h1>
+            <div class="sub">Cinematic 3D Experience</div>
+            <div class="play-btn">Играть</div>
+            <div class="controls-hint pc-only">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> движение &nbsp;·&nbsp;
+                <kbd>Shift</kbd> бег &nbsp;·&nbsp; <kbd>Space</kbd> прыжок &nbsp;·&nbsp;
+                <kbd>E</kbd> действие &nbsp;·&nbsp; <kbd>Esc</kbd> пауза
+            </div>
+            <div class="controls-hint mobile-only">
+                Джойстик слева — движение &nbsp;·&nbsp; Свайп справа — обзор<br>
+                Кнопки справа — прыжок, бег, действие
+            </div>
+            <div class="mobile-badge">📱 Мобильный режим</div>
         </div>
     </div>
-    <div id="joystick-container">
-        <div id="joystick-base"><div id="joystick-knob"></div></div>
+
+    <div id="loading">
+        <div>ЗАГРУЗКА СЦЕНЫ</div>
+        <div class="bar"><div id="loading-bar"></div></div>
     </div>
-    <div id="look-area"></div>
-    <div id="jump-btn">JUMP</div>
+</div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { Sky } from 'three/addons/objects/Sky.js';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+// ============================================================
+// 0. ОПРЕДЕЛЕНИЕ ПЛАТФОРМЫ И КАЧЕСТВА
+// ============================================================
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && window.innerWidth < 1200);
+
+if (isMobile) document.body.classList.add('mobile');
+
+const QUALITY = isMobile ? {
+    pixelRatio: 1.0,
+    shadowMapSize: 1024,
+    shadowMapType: THREE.PCFShadowMap,
+    bloom: true, bloomStrength: 0.35,
+    bloomRadius: 0.4,
+    smaa: false,
+    useGTAO: false,
+    sunShadow: true,
+    rectAreaLights: false,
+    textureSize: 512,
+    maxPointLights: 2
+} : {
+    pixelRatio: Math.min(window.devicePixelRatio, 2),
+    shadowMapSize: 4096,
+    shadowMapType: THREE.PCFSoftShadowMap,
+    bloom: true, bloomStrength: 0.4,
+    bloomRadius: 0.5,
+    smaa: true,
+    useGTAO: true,
+    sunShadow: true,
+    rectAreaLights: true,
+    textureSize: 1024,
+    maxPointLights: 5
+};
+
+// ============================================================
+// 1. RENDERER
+// ============================================================
+const renderer = new THREE.WebGLRenderer({
+    antialias: false, // используем SMAA постобработку
+    powerPreference: 'high-performance',
+    stencil: false
+});
+renderer.setPixelRatio(QUALITY.pixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = QUALITY.shadowMapType;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('app').appendChild(renderer.domElement);
+
+// ============================================================
+// 2. СЦЕНА + КАМЕРА
+// ============================================================
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0xa8c4d8, 0.008);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.05, 500);
+camera.rotation.order = 'YXZ';
+
+const player = new THREE.Object3D();
+player.position.set(0, 1.7, 14);
+player.add(camera);
+scene.add(player);
+
+// ============================================================
+// 3. НЕБО + ОКРУЖЕНИЕ (HDRI через PMREM)
+// ============================================================
+RectAreaLightUniformsLib.init();
+
+const sky = new Sky();
+sky.scale.setScalar(10000);
+scene.add(sky);
+
+const skyU = sky.material.uniforms;
+skyU['turbidity'].value = 8;
+skyU['rayleigh'].value = 2.5;
+skyU['mieCoefficient'].value = 0.005;
+skyU['mieDirectionalG'].value = 0.82;
+
+// Позиция солнца (утро)
+const sunElevation = 28;
+const sunAzimuth = 145;
+const sunPhi = THREE.MathUtils.degToRad(90 - sunElevation);
+const sunTheta = THREE.MathUtils.degToRad(sunAzimuth);
+const sunPos = new THREE.Vector3();
+sunPos.setFromSphericalCoords(1, sunPhi, sunTheta);
+skyU['sunPosition'].value.copy(sunPos);
+
+// Создаём environment map для PBR-отражений
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+const skyScene = new THREE.Scene();
+const skyCopy = sky.clone();
+skyScene.add(skyCopy);
+const envMap = pmrem.fromScene(skyScene, 0.04).texture;
+scene.environment = envMap;
+
+// ============================================================
+// 4. ОСВЕЩЕНИЕ
+// ============================================================
+const sunLight = new THREE.DirectionalLight(0xfff0dd, 3.5);
+sunLight.position.copy(sunPos).multiplyScalar(40);
+sunLight.target.position.set(0, 0, 0);
+scene.add(sunLight.target);
+
+if (QUALITY.sunShadow) {
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = QUALITY.shadowMapSize;
+    sunLight.shadow.mapSize.height = QUALITY.shadowMapSize;
+    sunLight.shadow.camera.near = 1;
+    sunLight.shadow.camera.far = 100;
+    sunLight.shadow.camera.left = -25;
+    sunLight.shadow.camera.right = 25;
+    sunLight.shadow.camera.top = 25;
+    sunLight.shadow.camera.bottom = -25;
+    sunLight.shadow.bias = -0.0003;
+    sunLight.shadow.normalBias = 0.02;
+    sunLight.shadow.radius = 4;
+}
+scene.add(sunLight);
+
+const hemiLight = new THREE.HemisphereLight(0xa8c4d8, 0x3a4a2a, 0.6);
+scene.add(hemiLight);
+
+const ambient = new THREE.AmbientLight(0xffffff, 0.15);
+scene.add(ambient);
+
+// ============================================================
+// 5. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (с нормал-мапами)
+// ============================================================
+const TS = QUALITY.textureSize;
+
+function createCanvas(size) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    return c;
+}
+
+function makeTex(canvas, isColor = true) {
+    const t = new THREE.CanvasTexture(canvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = isMobile ? 4 : 16;
+    t.colorSpace = isColor ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.needsUpdate = true;
+    return t;
+}
+
+function generateNormalMap(sourceCanvas, strength = 1.5) {
+    const w = sourceCanvas.width, h = sourceCanvas.height;
+    const srcCtx = sourceCanvas.getContext('2d');
+    const src = srcCtx.getImageData(0, 0, w, h).data;
+
+    const out = createCanvas(w);
+    const outCtx = out.getContext('2d');
+    const outImg = outCtx.createImageData(w, h);
+    const d = outImg.data;
+
+    const lum = (idx) => (src[idx] * 0.299 + src[idx+1] * 0.587 + src[idx+2] * 0.114);
+
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const l = lum((y * w + ((x - 1 + w) % w)) * 4);
+            const r = lum((y * w + ((x + 1) % w)) * 4);
+            const t = lum((((y - 1 + h) % h) * w + x) * 4);
+            const b = lum((((y + 1) % h) * w + x) * 4);
+
+            let dx = (l - r) / 255 * strength;
+            let dy = (t - b) / 255 * strength;
+            let dz = 1;
+            const len = Math.hypot(dx, dy, dz);
+            dx /= len; dy /= len; dz /= len;
+
+            d[idx] = (dx * 0.5 + 0.5) * 255;
+            d[idx+1] = (dy * 0.5 + 0.5) * 255;
+            d[idx+2] = (dz * 0.5 + 0.5) * 255;
+            d[idx+3] = 255;
+        }
+    }
+    outCtx.putImageData(outImg, 0, 0);
+    return out;
+}
+
+function generateRoughnessMap(sourceCanvas, base = 0.8, variance = 0.2) {
+    const w = sourceCanvas.width, h = sourceCanvas.height;
+    const srcCtx = sourceCanvas.getContext('2d');
+    const src = srcCtx.getImageData(0, 0, w, h).data;
+
+    const out = createCanvas(w);
+    const outCtx = out.getContext('2d');
+    const outImg = outCtx.createImageData(w, h);
+    const d = outImg.data;
+
+    for (let i = 0; i < w * h; i++) {
+        const idx = i * 4;
+        const lum = (src[idx] * 0.299 + src[idx+1] * 0.587 + src[idx+2] * 0.114) / 255;
+        const r = Math.max(0, Math.min(1, base + (lum - 0.5) * variance));
+        const v = r * 255;
+        d[idx] = d[idx+1] = d[idx+2] = v;
+        d[idx+3] = 255;
+    }
+    outCtx.putImageData(outImg, 0, 0);
+    return out;
+}
+
+// ---------- ДЕРЕВО (паркет) ----------
+function createWoodCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
+
+    // Фон
+    ctx.fillStyle = '#8b6b4a';
+    ctx.fillRect(0, 0, w, h);
+
+    // Доски (полосы)
+    const plankH = h / 5;
+    for (let p = 0; p < 5; p++) {
+        const y = p * plankH;
+        const hue = 28 + Math.random() * 12;
+        const light = 42 + Math.random() * 12;
+        ctx.fillStyle = `hsl(${hue}, 38%, ${light}%)`;
+        ctx.fillRect(0, y, w, plankH - 2);
+
+        // Тёмная линия между досками
+        ctx.fillStyle = `rgba(20,10,0,0.6)`;
+        ctx.fillRect(0, y + plankH - 2, w, 2);
+
+        // Волокна дерева
+        for (let i = 0; i < 80; i++) {
+            const fy = y + Math.random() * (plankH - 4);
+            const startX = Math.random() * w;
+            const len = 30 + Math.random() * (w / 2);
+            ctx.strokeStyle = `hsla(${hue}, 30%, ${light - 15 + Math.random() * 20}%, ${0.15 + Math.random() * 0.25})`;
+            ctx.lineWidth = 0.5 + Math.random() * 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, fy);
+            for (let x = startX; x < startX + len && x < w; x += 4) {
+                ctx.lineTo(x, fy + Math.sin(x * 0.05 + p) * 1.5);
             }
-        }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-
-        // ============================================================
-        // 1. БАЗОВАЯ НАСТРОЙКА СЦЕНЫ
-        // ============================================================
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Небо
-        scene.fog = new THREE.Fog(0x87CEEB, 30, 80);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
-        camera.position.set(0, 1.7, 12); // Начальная позиция перед домом
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        document.body.appendChild(renderer.domElement);
-
-        // ============================================================
-        // 2. ПРОЦЕДУРНЫЕ ТЕКСТУРЫ (PBR)
-        // ============================================================
-        function createCanvasTexture(width, height, drawFn) {
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            drawFn(ctx, width, height);
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            tex.anisotropy = 8;
-            tex.colorSpace = THREE.SRGBColorSpace;
-            return tex;
+            ctx.stroke();
         }
 
-        // --- Дерево (паркет) ---
-        function woodTexture(baseHue = 30, lightness = 45) {
-            return createCanvasTexture(512, 512, (ctx, w, h) => {
-                ctx.fillStyle = `hsl(${baseHue}, 40%, ${lightness}%)`;
-                ctx.fillRect(0, 0, w, h);
-                for (let i = 0; i < 200; i++) {
-                    const x = Math.random() * w;
-                    const y = Math.random() * h;
-                    const len = 20 + Math.random() * 80;
-                    const angle = (Math.random() - 0.5) * 0.2;
-                    ctx.save();
-                    ctx.translate(x, y);
-                    ctx.rotate(angle);
-                    ctx.strokeStyle = `hsla(${baseHue + 10}, 30%, ${lightness - 15 + Math.random() * 20}%, ${0.1 + Math.random() * 0.2})`;
-                    ctx.lineWidth = 1 + Math.random() * 3;
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(len, 0);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-                // Потёртости
-                for (let i = 0; i < 50; i++) {
-                    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.05})`;
-                    ctx.beginPath();
-                    ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 20, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
+        // Стыки досок (вертикальные)
+        const splitX = Math.random() * w;
+        ctx.fillStyle = 'rgba(20,10,0,0.4)';
+        ctx.fillRect(splitX, y, 1.5, plankH - 2);
 
-        // --- Бетон / штукатурка ---
-        function plasterTexture(baseColor = '#d4cfc7') {
-            return createCanvasTexture(512, 512, (ctx, w, h) => {
-                ctx.fillStyle = baseColor;
-                ctx.fillRect(0, 0, w, h);
-                for (let i = 0; i < 8000; i++) {
-                    const gray = 180 + Math.random() * 60;
-                    ctx.fillStyle = `rgba(${gray},${gray},${gray},${Math.random() * 0.15})`;
-                    ctx.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 3);
-                }
-                // Мелкие трещины
-                ctx.strokeStyle = 'rgba(0,0,0,0.03)';
-                for (let i = 0; i < 20; i++) {
-                    ctx.beginPath();
-                    ctx.moveTo(Math.random() * w, Math.random() * h);
-                    ctx.lineTo(Math.random() * w, Math.random() * h);
-                    ctx.stroke();
-                }
-            });
+        // Потёртости / блики
+        for (let i = 0; i < 25; i++) {
+            ctx.fillStyle = `rgba(255,240,210,${Math.random() * 0.06})`;
+            ctx.beginPath();
+            ctx.arc(Math.random() * w, y + Math.random() * plankH, Math.random() * 30, 0, Math.PI * 2);
+            ctx.fill();
         }
+    }
+    return c;
+}
 
-        // --- Керамическая плитка ---
-        function tileTexture(baseColor = '#c0b8a8', groutColor = '#a09888') {
-            return createCanvasTexture(512, 512, (ctx, w, h) => {
-                ctx.fillStyle = groutColor;
-                ctx.fillRect(0, 0, w, h);
-                const tileW = 128, tileH = 128;
-                for (let y = 0; y < h; y += tileH) {
-                    for (let x = 0; x < w; x += tileW) {
-                        const variation = Math.random() * 20 - 10;
-                        ctx.fillStyle = `hsl(30, 10%, ${70 + variation}%)`;
-                        ctx.fillRect(x + 2, y + 2, tileW - 4, tileH - 4);
-                        // Блик
-                        const grad = ctx.createLinearGradient(x, y, x + tileW, y + tileH);
-                        grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-                        grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-                        grad.addColorStop(1, 'rgba(0,0,0,0.05)');
-                        ctx.fillStyle = grad;
-                        ctx.fillRect(x + 2, y + 2, tileW - 4, tileH - 4);
-                    }
-                }
-            });
+// ---------- ШТУКАТУРКА СТЕН ----------
+function createWallCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
+    ctx.fillStyle = '#e8e3da';
+    ctx.fillRect(0, 0, w, h);
+
+    // Мелкая зернистость
+    const img = ctx.getImageData(0, 0, w, h);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const n = (Math.random() - 0.5) * 20;
+        d[i] = Math.max(0, Math.min(255, d[i] + n));
+        d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
+        d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+    }
+    ctx.putImageData(img, 0, 0);
+
+    // Пятна и потёртости
+    for (let i = 0; i < 40; i++) {
+        ctx.fillStyle = `rgba(120,110,100,${Math.random() * 0.04})`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * w, Math.random() * h, 20 + Math.random() * 60, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Мелкие трещины
+    for (let i = 0; i < 8; i++) {
+        ctx.strokeStyle = 'rgba(80,70,60,0.08)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        let x = Math.random() * w, y = Math.random() * h;
+        ctx.moveTo(x, y);
+        for (let s = 0; s < 10; s++) {
+            x += (Math.random() - 0.5) * 30;
+            y += Math.random() * 20;
+            ctx.lineTo(x, y);
         }
+        ctx.stroke();
+    }
+    return c;
+}
 
-        // --- Металл (холодильник, плита) ---
-        function metalTexture() {
-            return createCanvasTexture(512, 512, (ctx, w, h) => {
-                const grad = ctx.createLinearGradient(0, 0, w, h);
-                grad.addColorStop(0, '#e0e0e0');
-                grad.addColorStop(0.3, '#b0b0b0');
-                grad.addColorStop(0.5, '#d0d0d0');
-                grad.addColorStop(0.7, '#a0a0a0');
-                grad.addColorStop(1, '#e0e0e0');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, w, h);
-                // Шлифовка
-                for (let i = 0; i < 3000; i++) {
-                    ctx.strokeStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
-                    ctx.beginPath();
-                    const y = Math.random() * h;
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(w, y + (Math.random() - 0.5) * 2);
-                    ctx.stroke();
-                }
-            });
-        }
+// ---------- ПЛИТКА ----------
+function createTileCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
 
-        // --- Ткань (диван, кровать) ---
-        function fabricTexture(baseHue = 200, lightness = 40) {
-            return createCanvasTexture(512, 512, (ctx, w, h) => {
-                ctx.fillStyle = `hsl(${baseHue}, 20%, ${lightness}%)`;
-                ctx.fillRect(0, 0, w, h);
-                // Плетение
-                for (let y = 0; y < h; y += 4) {
-                    for (let x = 0; x < w; x += 4) {
-                        const shade = Math.random() * 20 - 10;
-                        ctx.fillStyle = `hsla(${baseHue}, 20%, ${lightness + shade}%, 0.6)`;
-                        ctx.fillRect(x, y, 4, 4);
-                    }
-                }
-                // Ворс
-                for (let i = 0; i < 2000; i++) {
-                    ctx.fillStyle = `hsla(${baseHue}, 20%, ${lightness + Math.random() * 20}%, 0.3)`;
-                    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
-                }
-            });
-        }
+    ctx.fillStyle = '#9a9085';
+    ctx.fillRect(0, 0, w, h);
 
-        // --- Стекло (для окон и душевой) ---
-        function glassTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(200, 220, 240, 0.3)';
-            ctx.fillRect(0, 0, 256, 256);
-            // Блики
-            const grad = ctx.createLinearGradient(0, 0, 256, 256);
-            grad.addColorStop(0, 'rgba(255,255,255,0.4)');
+    const tileSize = w / 4;
+    const gap = 3;
+    for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+            const v = Math.random() * 15 - 7;
+            const base = 175 + v;
+            ctx.fillStyle = `rgb(${base}, ${base - 5}, ${base - 12})`;
+            ctx.fillRect(x * tileSize + gap, y * tileSize + gap, tileSize - gap * 2, tileSize - gap * 2);
+
+            // Мраморные прожилки
+            ctx.strokeStyle = `rgba(120,110,100,0.15)`;
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                const sx = x * tileSize + Math.random() * tileSize;
+                const sy = y * tileSize + Math.random() * tileSize;
+                ctx.moveTo(sx, sy);
+                ctx.bezierCurveTo(
+                    sx + Math.random() * 60 - 30, sy + Math.random() * 60 - 30,
+                    sx + Math.random() * 60 - 30, sy + Math.random() * 60 - 30,
+                    sx + Math.random() * 80 - 40, sy + Math.random() * 80 - 40
+                );
+                ctx.stroke();
+            }
+
+            // Блик
+            const grad = ctx.createLinearGradient(
+                x * tileSize, y * tileSize,
+                x * tileSize + tileSize, y * tileSize + tileSize
+            );
+            grad.addColorStop(0, 'rgba(255,255,255,0.15)');
             grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-            grad.addColorStop(1, 'rgba(255,255,255,0.2)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.1)');
             ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 256, 256);
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            return tex;
+            ctx.fillRect(x * tileSize + gap, y * tileSize + gap, tileSize - gap * 2, tileSize - gap * 2);
         }
+    }
+    return c;
+}
 
-        // Создаём текстуры
-        const floorWoodTex = woodTexture(30, 45);
-        const wallPlasterTex = plasterTexture('#d4cfc7');
-        const tileTex = tileTexture();
-        const metalTex = metalTexture();
-        const fabricTex = fabricTexture(210, 35);
-        const glassTex = glassTexture();
+// ---------- МЕТАЛЛ ----------
+function createMetalCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#d8d8d8');
+    grad.addColorStop(0.3, '#a8a8a8');
+    grad.addColorStop(0.7, '#b8b8b8');
+    grad.addColorStop(1, '#c8c8c8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
 
-        // ============================================================
-        // 3. МАТЕРИАЛЫ (PBR)
-        // ============================================================
-        const materials = {
-            wood: new THREE.MeshStandardMaterial({ map: floorWoodTex, roughness: 0.7, metalness: 0.0 }),
-            wall: new THREE.MeshStandardMaterial({ map: wallPlasterTex, roughness: 0.9, metalness: 0.0 }),
-            ceiling: new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.95, metalness: 0.0 }),
-            tile: new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.3, metalness: 0.1 }),
-            metal: new THREE.MeshStandardMaterial({ map: metalTex, roughness: 0.3, metalness: 0.8 }),
-            fabric: new THREE.MeshStandardMaterial({ map: fabricTex, roughness: 0.9, metalness: 0.0 }),
-            glass: new THREE.MeshPhysicalMaterial({
-                map: glassTex,
-                roughness: 0.05,
-                metalness: 0.0,
-                transmission: 0.9,
-                transparent: true,
-                opacity: 0.4,
-                ior: 1.5,
-                thickness: 0.1
-            }),
-            darkWood: new THREE.MeshStandardMaterial({ map: woodTexture(25, 25), roughness: 0.6, metalness: 0.0 }),
-            white: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.0 }),
-            black: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.3 }),
-            grass: new THREE.MeshStandardMaterial({ color: 0x3a7d34, roughness: 1.0, metalness: 0.0 }),
-            concrete: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9, metalness: 0.0 })
-        };
+    // Вертикальная шлифовка
+    for (let i = 0; i < 4000; i++) {
+        ctx.strokeStyle = `rgba(255,255,255,${Math.random() * 0.08})`;
+        const x = Math.random() * w;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + (Math.random() - 0.5) * 2, h);
+        ctx.stroke();
+    }
+    return c;
+}
 
-        // ============================================================
-        // 4. ОСВЕЩЕНИЕ
-        // ============================================================
-        // Солнце (DirectionalLight)
-        const sunLight = new THREE.DirectionalLight(0xfff5e6, 3.0);
-        sunLight.position.set(15, 25, 10);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.near = 0.5;
-        sunLight.shadow.camera.far = 60;
-        sunLight.shadow.camera.left = -20;
-        sunLight.shadow.camera.right = 20;
-        sunLight.shadow.camera.top = 20;
-        sunLight.shadow.camera.bottom = -20;
-        sunLight.shadow.bias = -0.0001;
-        scene.add(sunLight);
-        scene.add(sunLight.target);
+// ---------- ТКАНЬ ----------
+function createFabricCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
 
-        // Общий свет (HemisphereLight)
-        const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x3a7d34, 0.8);
-        scene.add(hemiLight);
+    ctx.fillStyle = '#3a4a5c';
+    ctx.fillRect(0, 0, w, h);
 
-        // Заполняющий свет (AmbientLight)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-        scene.add(ambientLight);
-
-        // Внутренние точечные светильники (добавим позже)
-
-        // ============================================================
-        // 5. ПОСТРОЕНИЕ ДОМА
-        // ============================================================
-        const houseGroup = new THREE.Group();
-        scene.add(houseGroup);
-
-        // Размеры дома
-        const W = 10;   // ширина (X)
-        const D = 10;   // глубина (Z)
-        const H = 2.8;  // высота этажа
-        const SLAB = 0.3; // толщина перекрытия
-        const WALL_THICK = 0.2; // толщина внешних стен
-        const INNER_WALL = 0.1; // толщина внутренних перегородок
-
-        // Коллайдеры (AABB)
-        const colliders = [];
-
-        // Функция добавления коллайдера
-        function addCollider(mesh, isWall = false) {
-            const box = new THREE.Box3().setFromObject(mesh);
-            // Расширяем для надёжности
-            box.expandByScalar(0.02);
-            colliders.push({ box, mesh });
+    // Плетение
+    const stitch = 4;
+    for (let y = 0; y < h; y += stitch) {
+        for (let x = 0; x < w; x += stitch) {
+            const shade = (x + y) % (stitch * 2) === 0 ? 15 : -15;
+            ctx.fillStyle = `rgba(${60 + shade}, ${80 + shade}, ${100 + shade}, 0.4)`;
+            ctx.fillRect(x, y, stitch, stitch);
         }
+    }
+    // Ворс
+    for (let i = 0; i < 3000; i++) {
+        ctx.fillStyle = `rgba(${100 + Math.random() * 60}, ${120 + Math.random() * 60}, ${150 + Math.random() * 60}, 0.15)`;
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+    }
+    return c;
+}
 
-        // Функция создания стены с проёмами (упрощённо: сплошная стена, проёмы вырезаются отдельными сегментами)
-        // Для простоты создаём стены как набор сегментов.
-        function createWallSegment(x, y, z, w, h, d, material) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mesh = new THREE.Mesh(geo, material);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            houseGroup.add(mesh);
-            addCollider(mesh, true);
-            return mesh;
-        }
+// ---------- ТРАВА (для газона) ----------
+function createGrassCanvas() {
+    const c = createCanvas(TS);
+    const ctx = c.getContext('2d');
+    const w = TS, h = TS;
+    ctx.fillStyle = '#2e5025';
+    ctx.fillRect(0, 0, w, h);
 
-        // ---- ПОЛ ПЕРВОГО ЭТАЖА ----
-        const floor1Geo = new THREE.BoxGeometry(W, 0.1, D);
-        const floor1 = new THREE.Mesh(floor1Geo, materials.wood);
-        floor1.position.set(0, -0.05, 0);
-        floor1.receiveShadow = true;
-        houseGroup.add(floor1);
+    for (let i = 0; i < 8000; i++) {
+        const g = 60 + Math.random() * 80;
+        const r = 40 + Math.random() * 40;
+        ctx.strokeStyle = `rgb(${r}, ${g}, ${30 + Math.random() * 30})`;
+        ctx.lineWidth = 0.5 + Math.random() * 1.5;
+        const x = Math.random() * w, y = Math.random() * h;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + (Math.random() - 0.5) * 4, y - 2 - Math.random() * 4);
+        ctx.stroke();
+    }
+    // Пятна земли
+    for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgba(60,45,30,${Math.random() * 0.15})`;
+        ctx.beginPath();
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 30, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    return c;
+}
 
-        // ---- ПОЛ ВТОРОГО ЭТАЖА (перекрытие) ----
-        const floor2Geo = new THREE.BoxGeometry(W, SLAB, D);
-        const floor2 = new THREE.Mesh(floor2Geo, materials.wood);
-        floor2.position.set(0, H + SLAB / 2, 0);
-        floor2.receiveShadow = true;
-        floor2.castShadow = true;
-        houseGroup.add(floor2);
-        addCollider(floor2, false);
+// ---------- Создаём все текстуры ----------
+const woodCanvas = createWoodCanvas();
+const wallCanvas = createWallCanvas();
+const tileCanvas = createTileCanvas();
+const metalCanvas = createMetalCanvas();
+const fabricCanvas = createFabricCanvas();
+const grassCanvas = createGrassCanvas();
 
-        // ---- ВНЕШНИЕ СТЕНЫ (толщиной 0.2) ----
-        // Северная стена (z = -5)
-        // Разбиваем на сегменты для окон и дверей
-        // Окна: ширина 1.2, высота 1.5, подоконник 0.9
-        // Дверь: ширина 0.9, высота 2.1
-        function buildExteriorWall(axis, fixedCoord, startCoord, endCoord, height, yOffset, openings = []) {
-            // axis: 'x' (стена вдоль X) или 'z' (вдоль Z)
-            const segments = [];
-            let cursor = startCoord;
-            openings.sort((a, b) => a.start - b.start);
-            for (const op of openings) {
-                if (op.start > cursor) {
-                    segments.push({ start: cursor, end: op.start, type: 'solid' });
+// ============================================================
+// 6. МАТЕРИАЛЫ (PBR с нормалями)
+// ============================================================
+const matWood = new THREE.MeshPhysicalMaterial({
+    map: makeTex(woodCanvas),
+    normalMap: makeTex(generateNormalMap(woodCanvas, 1.2), false),
+    roughnessMap: makeTex(generateRoughnessMap(woodCanvas, 0.55, 0.3), false),
+    roughness: 1, metalness: 0,
+    clearcoat: 0.3, clearcoatRoughness: 0.4,
+    envMapIntensity: 0.8
+});
+matWood.map.repeat.set(2, 2);
+matWood.normalMap.repeat.set(2, 2);
+matWood.roughnessMap.repeat.set(2, 2);
+
+const matWall = new THREE.MeshStandardMaterial({
+    map: makeTex(wallCanvas),
+    normalMap: makeTex(generateNormalMap(wallCanvas, 0.8), false),
+    roughness: 0.95, metalness: 0,
+    envMapIntensity: 0.3
+});
+matWall.map.repeat.set(2, 2);
+matWall.normalMap.repeat.set(2, 2);
+
+const matCeiling = new THREE.MeshStandardMaterial({
+    color: 0xf5f2ee, roughness: 0.95, metalness: 0,
+    envMapIntensity: 0.2
+});
+
+const matTile = new THREE.MeshPhysicalMaterial({
+    map: makeTex(tileCanvas),
+    normalMap: makeTex(generateNormalMap(tileCanvas, 0.6), false),
+    roughnessMap: makeTex(generateRoughnessMap(tileCanvas, 0.15, 0.2), false),
+    roughness: 1, metalness: 0.05,
+    clearcoat: 0.6, clearcoatRoughness: 0.15,
+    envMapIntensity: 1.2
+});
+matTile.map.repeat.set(3, 3);
+matTile.normalMap.repeat.set(3, 3);
+matTile.roughnessMap.repeat.set(3, 3);
+
+const matMetal = new THREE.MeshPhysicalMaterial({
+    map: makeTex(metalCanvas),
+    normalMap: makeTex(generateNormalMap(metalCanvas, 0.4), false),
+    roughnessMap: makeTex(generateRoughnessMap(metalCanvas, 0.35, 0.15), false),
+    roughness: 1, metalness: 0.9,
+    clearcoat: 0.2,
+    envMapIntensity: 1.5
+});
+
+const matFabric = new THREE.MeshStandardMaterial({
+    map: makeTex(fabricCanvas),
+    normalMap: makeTex(generateNormalMap(fabricCanvas, 2.5), false),
+    roughness: 0.95, metalness: 0,
+    envMapIntensity: 0.4
+});
+matFabric.map.repeat.set(2, 2);
+matFabric.normalMap.repeat.set(2, 2);
+
+const matDarkWood = new THREE.MeshPhysicalMaterial({
+    color: 0x3a2a1e, roughness: 0.5, metalness: 0,
+    clearcoat: 0.5, clearcoatRoughness: 0.3,
+    envMapIntensity: 0.9
+});
+
+const matWhite = new THREE.MeshStandardMaterial({
+    color: 0xffffff, roughness: 0.35, metalness: 0,
+    envMapIntensity: 0.9
+});
+
+const matBlack = new THREE.MeshStandardMaterial({
+    color: 0x0a0a0a, roughness: 0.3, metalness: 0.4,
+    envMapIntensity: 0.8
+});
+
+const matGlass = new THREE.MeshPhysicalMaterial({
+    color: 0xc8dfff,
+    transmission: 0.95,
+    transparent: true,
+    opacity: 0.4,
+    roughness: 0.03,
+    metalness: 0,
+    ior: 1.52,
+    thickness: 0.02,
+    clearcoat: 1,
+    clearcoatRoughness: 0.02,
+    envMapIntensity: 1.8
+});
+
+const matGrass = new THREE.MeshStandardMaterial({
+    map: makeTex(grassCanvas),
+    normalMap: makeTex(generateNormalMap(grassCanvas, 2.0), false),
+    roughness: 1, metalness: 0,
+    envMapIntensity: 0.4
+});
+matGrass.map.repeat.set(20, 20);
+matGrass.normalMap.repeat.set(20, 20);
+
+const matConcrete = new THREE.MeshStandardMaterial({
+    color: 0x9a9a9a, roughness: 0.9, metalness: 0.05,
+    envMapIntensity: 0.4
+});
+
+const matRoof = new THREE.MeshStandardMaterial({
+    color: 0x2a2a30, roughness: 0.65, metalness: 0.15,
+    envMapIntensity: 0.7
+});
+
+const matBark = new THREE.MeshStandardMaterial({
+    color: 0x4a3520, roughness: 0.95, metalness: 0
+});
+
+const matLeaves = new THREE.MeshStandardMaterial({
+    color: 0x2d5520, roughness: 1, metalness: 0,
+    envMapIntensity: 0.3
+});
+
+// ============================================================
+// 7. ГЕОМЕТРИЯ ДОМА
+// ============================================================
+const houseGroup = new THREE.Group();
+scene.add(houseGroup);
+
+const W = 10, D = 10, H = 2.8, SLAB = 0.3, WALL_T = 0.2, INNER_T = 0.1;
+const colliders = [];
+const interactables = [];
+
+function addBoxCollider(mesh) {
+    mesh.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(mesh);
+    box.expandByScalar(0.02);
+    colliders.push(box);
+    return mesh;
+}
+
+function makeBox(w, h, d, x, y, z, mat, parent = houseGroup, collide = true) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    parent.add(m);
+    if (collide) addBoxCollider(m);
+    return m;
+}
+
+// --- Пол 1 этажа ---
+const floor1 = makeBox(W, 0.12, D, 0, -0.06, 0, matWood, houseGroup, false);
+floor1.receiveShadow = true;
+
+// --- Перекрытие (пол 2 этажа) ---
+makeBox(W, SLAB, D, 0, H + SLAB / 2, 0, matConcrete, houseGroup, true);
+
+// --- Внешние стены с проёмами ---
+function buildWall(axis, fixed, from, to, baseY, height, openings) {
+    // openings: {start, end, bottom, top, type}
+    openings.sort((a, b) => a.start - b.start);
+    let cursor = from;
+    const segs = [];
+    for (const op of openings) {
+        if (op.start > cursor) segs.push({ start: cursor, end: op.start, solid: true });
+        segs.push({ ...op, solid: false });
+        cursor = op.end;
+    }
+    if (cursor < to) segs.push({ start: cursor, end: to, solid: true });
+
+    for (const s of segs) {
+        const len = s.end - s.start;
+        if (len < 0.01) continue;
+        const cx = axis === 'x' ? (s.start + s.end) / 2 : fixed;
+        const cz = axis === 'x' ? fixed : (s.start + s.end) / 2;
+        const w = axis === 'x' ? len : WALL_T;
+        const d = axis === 'x' ? WALL_T : len;
+
+        if (s.solid) {
+            makeBox(w, height, d, cx, baseY + height / 2, cz, matWall);
+        } else {
+            // Под окном
+            if (s.bottom > 0.01) {
+                makeBox(w, s.bottom, d, cx, baseY + s.bottom / 2, cz, matWall);
+            }
+            // Над проёмом
+            const topH = height - s.top;
+            if (topH > 0.01) {
+                makeBox(w, topH, d, cx, baseY + s.top + topH / 2, cz, matWall);
+            }
+            // Стекло
+            if (s.type === 'window') {
+                const gw = axis === 'x' ? len - 0.1 : 0.04;
+                const gd = axis === 'x' ? 0.04 : len - 0.1;
+                const gh = s.top - s.bottom;
+                const glass = new THREE.Mesh(
+                    new THREE.BoxGeometry(gw, gh, gd),
+                    matGlass
+                );
+                glass.position.set(cx, baseY + s.bottom + gh / 2, cz);
+                glass.castShadow = false;
+                glass.receiveShadow = false;
+                houseGroup.add(glass);
+                // Рама
+                const frameMat = matDarkWood;
+                const fw = axis === 'x' ? len : WALL_T + 0.06;
+                const fd = axis === 'x' ? WALL_T + 0.06 : len;
+                const fThick = 0.06;
+                // Верх
+                makeBox(fw, fThick, fd, cx, baseY + s.top, cz, frameMat, houseGroup, false);
+                // Низ
+                makeBox(fw, fThick, fd, cx, baseY + s.bottom, cz, frameMat, houseGroup, false);
+                // Боковые
+                if (axis === 'x') {
+                    makeBox(fThick, gh, fd, s.start, baseY + s.bottom + gh/2, cz, frameMat, houseGroup, false);
+                    makeBox(fThick, gh, fd, s.end, baseY + s.bottom + gh/2, cz, frameMat, houseGroup, false);
+                } else {
+                    makeBox(fw, gh, fThick, cx, baseY + s.bottom + gh/2, s.start, frameMat, houseGroup, false);
+                    makeBox(fw, gh, fThick, cx, baseY + s.bottom + gh/2, s.end, frameMat, houseGroup, false);
                 }
-                segments.push({ start: op.start, end: op.end, type: op.type, bottom: op.bottom, top: op.top });
-                cursor = op.end;
-            }
-            if (cursor < endCoord) {
-                segments.push({ start: cursor, end: endCoord, type: 'solid' });
-            }
-            for (const seg of segments) {
-                const len = seg.end - seg.start;
-                if (len <= 0.01) continue;
-                if (seg.type === 'solid') {
-                    // Сплошной сегмент
-                    let w, d, x, z;
-                    if (axis === 'x') {
-                        w = len;
-                        d = WALL_THICK;
-                        x = (seg.start + seg.end) / 2;
-                        z = fixedCoord;
-                    } else {
-                        w = WALL_THICK;
-                        d = len;
-                        x = fixedCoord;
-                        z = (seg.start + seg.end) / 2;
-                    }
-                    createWallSegment(x, yOffset + height / 2, z, w, height, d, materials.wall);
-                } else if (seg.type === 'window') {
-                    // Нижняя часть (подоконник)
-                    const bottomH = seg.bottom;
-                    if (bottomH > 0.01) {
-                        let w, d, x, z;
-                        if (axis === 'x') {
-                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
-                        } else {
-                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
-                        }
-                        createWallSegment(x, yOffset + bottomH / 2, z, w, bottomH, d, materials.wall);
-                    }
-                    // Верхняя часть (над окном)
-                    const topH = height - seg.top;
-                    if (topH > 0.01) {
-                        let w, d, x, z;
-                        if (axis === 'x') {
-                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
-                        } else {
-                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
-                        }
-                        createWallSegment(x, yOffset + seg.top + topH / 2, z, w, topH, d, materials.wall);
-                    }
-                    // Стекло
-                    let w, d, x, z;
-                    if (axis === 'x') {
-                        w = len; d = 0.05; x = (seg.start + seg.end) / 2; z = fixedCoord;
-                    } else {
-                        w = 0.05; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
-                    }
-                    const glassH = seg.top - seg.bottom;
-                    const glassGeo = new THREE.BoxGeometry(w, glassH, d);
-                    const glassMesh = new THREE.Mesh(glassGeo, materials.glass);
-                    glassMesh.position.set(x, yOffset + seg.bottom + glassH / 2, z);
-                    glassMesh.castShadow = false;
-                    glassMesh.receiveShadow = true;
-                    houseGroup.add(glassMesh);
-                } else if (seg.type === 'door') {
-                    // Верхняя перемычка
-                    const topH = height - seg.top;
-                    if (topH > 0.01) {
-                        let w, d, x, z;
-                        if (axis === 'x') {
-                            w = len; d = WALL_THICK; x = (seg.start + seg.end) / 2; z = fixedCoord;
-                        } else {
-                            w = WALL_THICK; d = len; x = fixedCoord; z = (seg.start + seg.end) / 2;
-                        }
-                        createWallSegment(x, yOffset + seg.top + topH / 2, z, w, topH, d, materials.wall);
-                    }
-                    // Дверь (просто проём, без створки для простоты)
-                }
             }
         }
+    }
+}
 
-        // Северная стена (z = -5), окна и входная дверь
-        buildExteriorWall('x', -5, -5, 5, H, 0, [
-            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: -1.0, end: 0.0, type: 'door', bottom: 0, top: 2.1 },
-            { start: 1.5, end: 2.7, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
+// --- Внешние стены 1 этажа ---
+buildWall('x', -D/2, -W/2, W/2, 0, H, [
+    { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: -1.0, end: 0.0, bottom: 0, top: 2.2, type: 'door' },
+    { start: 1.8, end: 3.0, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('x', D/2, -W/2, W/2, 0, H, [
+    { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: 2.4, end: 3.6, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('z', -W/2, -D/2, D/2, 0, H, [
+    { start: -3.0, end: -1.8, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: 1.8, end: 3.0, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('z', W/2, -D/2, D/2, 0, H, [
+    { start: -3.0, end: -1.8, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: 1.0, end: 2.2, bottom: 0.9, top: 2.4, type: 'window' }
+]);
 
-        // Южная стена (z = 5) — окна
-        buildExteriorWall('x', 5, -5, 5, H, 0, [
-            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: 2.3, end: 3.5, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
+// --- Внешние стены 2 этажа ---
+const base2 = H + SLAB;
+buildWall('x', -D/2, -W/2, W/2, base2, H, [
+    { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: 1.8, end: 3.0, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('x', D/2, -W/2, W/2, base2, H, [
+    { start: -3.6, end: -2.4, bottom: 0.9, top: 2.4, type: 'window' },
+    { start: 2.4, end: 3.6, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('z', -W/2, -D/2, D/2, base2, H, [
+    { start: -3.0, end: -1.8, bottom: 0.9, top: 2.4, type: 'window' }
+]);
+buildWall('z', W/2, -D/2, D/2, base2, H, [
+    { start: 1.0, end: 2.2, bottom: 0.9, top: 2.4, type: 'window' }
+]);
 
-        // Западная стена (x = -5)
-        buildExteriorWall('z', -5, -5, 5, H, 0, [
-            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: 2.0, end: 3.2, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
+// --- Внутренние стены 1 этажа ---
+makeBox(INNER_T, H, 4, 0, H/2, -3, matWall);   // x=0, z от -5 до -1
+makeBox(INNER_T, H, 4, 0, H/2, 3, matWall);    // x=0, z от 1 до 5
+makeBox(INNER_T, H - 2.2, 2, 0, 2.2 + (H-2.2)/2, 0, matWall); // перемычка
 
-        // Восточная стена (x = 5)
-        buildExteriorWall('z', 5, -5, 5, H, 0, [
-            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: 1.0, end: 2.2, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
+// Ванная (юго-запад): x=-5..-3, z=3..5
+makeBox(2, H, INNER_T, -4, H/2, 3, matWall);
+makeBox(INNER_T, H, 1.8, -3, H/2, 4.1, matWall);
+makeBox(INNER_T, H - 2.1, 0.2, -3, 2.1 + (H-2.1)/2, 3.1, matWall); // перемычка двери
 
-        // ---- ВНУТРЕННИЕ ПЕРЕГОРОДКИ (первый этаж) ----
-        // Разделение на гостиную (левая часть) и кухню (правая часть)
-        // Перегородка вдоль Z на x = 0, от z = -5 до z = 5, с проёмом для прохода
-        // Создаём сегменты
-        function createInnerWall(x, z, w, d, h = H, y = 0) {
-            return createWallSegment(x, y + h / 2, z, w, h, d, materials.wall);
+// --- Внутренние стены 2 этажа ---
+makeBox(INNER_T, H, 4, 0, base2 + H/2, -3, matWall);
+makeBox(INNER_T, H, 4, 0, base2 + H/2, 3, matWall);
+makeBox(INNER_T, H - 2.2, 2, 0, base2 + 2.2 + (H-2.2)/2, 0, matWall);
+
+// Ванная 2 этажа (юго-восток)
+makeBox(2, H, INNER_T, 4, base2 + H/2, 3, matWall);
+makeBox(INNER_T, H, 1.8, 3, base2 + H/2, 4.1, matWall);
+
+// --- Входная дверь (открывающаяся) ---
+const doorGroup = new THREE.Group();
+doorGroup.position.set(-0.5, 0, -D/2 - WALL_T/2);
+const doorPanel = new THREE.Mesh(
+    new THREE.BoxGeometry(0.95, 2.1, 0.06),
+    matDarkWood
+);
+doorPanel.position.set(0.475, 1.05, 0);
+doorPanel.castShadow = true;
+doorPanel.receiveShadow = true;
+doorGroup.add(doorPanel);
+// Ручка
+const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8),
+    matMetal
+);
+handle.rotation.z = Math.PI / 2;
+handle.position.set(0.85, 1.05, 0.05);
+doorGroup.add(handle);
+houseGroup.add(doorGroup);
+interactables.push({ mesh: doorGroup, type: 'door', open: false, angle: 0 });
+addBoxCollider(doorPanel);
+
+// --- Крыша (двускатная) ---
+function createRoof() {
+    const roofGroup = new THREE.Group();
+    const overhang = 0.6;
+    const roofW = W + overhang * 2;
+    const roofD = D + overhang * 2;
+    const ridgeH = 1.8;
+
+    // Два ската
+    const slopeGeo = new THREE.BufferGeometry();
+    const halfD = roofD / 2;
+    const slopeLength = Math.hypot(halfD, ridgeH);
+
+    // Передний скат
+    const front = new THREE.Mesh(
+        new THREE.BoxGeometry(roofW, 0.15, slopeLength),
+        matRoof
+    );
+    front.position.set(0, ridgeH / 2, -roofD / 4);
+    front.rotation.x = -Math.atan2(ridgeH, halfD);
+    front.castShadow = true;
+    front.receiveShadow = true;
+    roofGroup.add(front);
+
+    // Задний скат
+    const back = new THREE.Mesh(
+        new THREE.BoxGeometry(roofW, 0.15, slopeLength),
+        matRoof
+    );
+    back.position.set(0, ridgeH / 2, roofD / 4);
+    back.rotation.x = Math.atan2(ridgeH, halfD);
+    back.castShadow = true;
+    back.receiveShadow = true;
+    roofGroup.add(back);
+
+    // Фронтоны (треугольники) — 2 шт
+    const triShape = new THREE.Shape();
+    triShape.moveTo(-roofD / 2 + overhang, 0);
+    triShape.lineTo(roofD / 2 - overhang, 0);
+    triShape.lineTo(0, ridgeH);
+    triShape.closePath();
+    const triGeo = new THREE.ExtrudeGeometry(triShape, { depth: 0.15, bevelEnabled: false });
+
+    const frontWall = new THREE.Mesh(triGeo, matWall);
+    frontWall.rotation.y = Math.PI / 2;
+    frontWall.position.set(-W / 2, 0, 0);
+    frontWall.castShadow = true;
+    roofGroup.add(frontWall);
+
+    const backWall = new THREE.Mesh(triGeo, matWall);
+    backWall.rotation.y = -Math.PI / 2;
+    backWall.position.set(W / 2, 0, 0);
+    backWall.castShadow = true;
+    roofGroup.add(backWall);
+
+    roofGroup.position.y = base2 + H;
+    return roofGroup;
+}
+houseGroup.add(createRoof());
+
+// ============================================================
+// 8. ЛЕСТНИЦА
+// ============================================================
+const stairGroup = new THREE.Group();
+const steps = 14;
+const stepH = (H + SLAB) / steps;
+const stepD = 0.26;
+const stepW = 1.1;
+const stairX = -4.2;
+const stairStartZ = -0.5;
+
+for (let i = 0; i < steps; i++) {
+    const step = makeBox(
+        stepW, stepH, stepD,
+        stairX, stepH * i + stepH / 2, stairStartZ + i * stepD,
+        matWood, stairGroup, false
+    );
+}
+// Площадка наверху
+makeBox(stepW, 0.15, 1.0, stairX, H + SLAB - 0.075, stairStartZ + steps * stepD, matWood, stairGroup, false);
+// Перила
+for (let i = 0; i < 6; i++) {
+    const rail = makeBox(0.04, 1.0, 0.04,
+        stairX - stepW/2, stepH * (i*2) + 0.5, stairStartZ + (i*2) * stepD,
+        matDarkWood, stairGroup, false);
+}
+// Поручень
+const handrailGeo = new THREE.BoxGeometry(0.06, 0.06, 3.8);
+const handrail = new THREE.Mesh(handrailGeo, matDarkWood);
+handrail.position.set(stairX - stepW/2, 1.3, stairStartZ + 1.9);
+handrail.rotation.x = -Math.atan2(stepH * steps, stepD * steps);
+handrail.castShadow = true;
+stairGroup.add(handrail);
+
+houseGroup.add(stairGroup);
+
+// ============================================================
+// 9. МЕБЕЛЬ
+// ============================================================
+// ---- ГОСТИНАЯ ----
+// Диван
+makeBox(2.4, 0.5, 0.9, -2.6, 0.25, -1.5, matFabric);
+makeBox(2.4, 0.7, 0.25, -2.6, 0.85, -1.85, matFabric); // спинка
+makeBox(0.25, 0.6, 0.9, -3.7, 0.5, -1.5, matFabric);  // подлокотник
+makeBox(0.25, 0.6, 0.9, -1.5, 0.5, -1.5, matFabric);  // подлокотник
+// Подушки
+for (let i = 0; i < 3; i++) {
+    makeBox(0.6, 0.15, 0.6, -3.3 + i * 0.7, 0.58, -1.5, matFabric);
+}
+
+// Журнальный столик
+makeBox(1.1, 0.05, 0.7, -2.6, 0.45, 0.2, matDarkWood);
+for (const [dx, dz] of [[-0.5,-0.3],[-0.5,0.3],[0.5,-0.3],[0.5,0.3]]) {
+    makeBox(0.05, 0.45, 0.05, -2.6 + dx, 0.225, 0.2 + dz, matDarkWood);
+}
+
+// ТВ-тумба + телевизор
+makeBox(1.8, 0.5, 0.4, -2.6, 0.25, -4.7, matDarkWood);
+makeBox(1.5, 0.85, 0.08, -2.6, 1.4, -4.75, matBlack);
+// Свечение экрана
+const tvLight = new THREE.PointLight(0x4466cc, 0.8, 3);
+tvLight.position.set(-2.6, 1.4, -4.5);
+scene.add(tvLight);
+
+// Шкаф-стеллаж
+makeBox(1.2, 2.0, 0.4, -4.6, 1.0, -3.5, matWood);
+// Полки
+for (let i = 0; i < 4; i++) {
+    makeBox(1.15, 0.03, 0.38, -4.6, 0.5 + i * 0.4, -3.5, matDarkWood);
+}
+
+// Ковёр
+const rugGeo = new THREE.PlaneGeometry(2.5, 1.8);
+const rug = new THREE.Mesh(rugGeo, new THREE.MeshStandardMaterial({
+    color: 0x5a4030, roughness: 1, metalness: 0
+}));
+rug.rotation.x = -Math.PI / 2;
+rug.position.set(-2.6, 0.01, 0.2);
+rug.receiveShadow = true;
+houseGroup.add(rug);
+
+// ---- КУХНЯ ----
+// Нижние шкафы
+makeBox(3.2, 0.85, 0.6, 2.6, 0.425, -4.6, matWood);
+// Столешница
+makeBox(3.2, 0.05, 0.62, 2.6, 0.875, -4.6, matConcrete);
+// Верхние шкафы
+makeBox(3.2, 0.7, 0.35, 2.6, 2.0, -4.75, matWood);
+
+// Холодильник
+makeBox(0.8, 1.9, 0.7, 4.3, 0.95, -4.5, matMetal);
+// Ручка холодильника
+makeBox(0.04, 0.5, 0.06, 4.65, 1.1, -4.15, matDarkWood);
+
+// Плита
+makeBox(0.6, 0.05, 0.6, 1.4, 0.92, -4.6, matBlack);
+// Конфорки
+for (const [x, z] of [[-0.15,-0.15],[-0.15,0.15],[0.15,-0.15],[0.15,0.15]]) {
+    const burner = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, 0.01, 16),
+        new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 })
+    );
+    burner.position.set(1.4 + x, 0.95, -4.6 + z);
+    houseGroup.add(burner);
+}
+
+// Раковина
+makeBox(0.7, 0.03, 0.45, 3.2, 0.91, -4.6, matMetal);
+// Кран
+const faucet = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
+    matMetal
+);
+faucet.position.set(3.2, 1.05, -4.45);
+houseGroup.add(faucet);
+
+// Обеденный стол
+makeBox(1.6, 0.05, 0.9, 2.6, 0.75, -2.3, matDarkWood);
+for (const [dx, dz] of [[-0.7,-0.35],[-0.7,0.35],[0.7,-0.35],[0.7,0.35]]) {
+    makeBox(0.06, 0.75, 0.06, 2.6 + dx, 0.375, -2.3 + dz, matDarkWood);
+}
+// Стулья
+for (const [x, z] of [[1.8,-2.8],[3.4,-2.8],[1.8,-1.8],[3.4,-1.8]]) {
+    makeBox(0.4, 0.05, 0.4, x, 0.45, z, matWood);
+    makeBox(0.4, 0.4, 0.05, x, 0.7, z - 0.18, matWood); // спинка
+    // Ножки
+    for (const [dx, dz] of [[-0.15,-0.15],[-0.15,0.15],[0.15,-0.15],[0.15,0.15]]) {
+        makeBox(0.03, 0.45, 0.03, x + dx, 0.225, z + dz, matDarkWood);
+    }
+}
+
+// ---- ВАННАЯ 1 этажа ----
+makeBox(0.45, 0.4, 0.6, -4.5, 0.2, 4.4, matWhite); // унитаз
+makeBox(0.4, 0.5, 0.15, -4.5, 0.55, 4.15, matWhite); // бачок
+makeBox(0.7, 0.15, 0.45, -3.5, 0.85, 4.5, matTile); // раковина
+// Душевая кабина (стекло + поддон)
+makeBox(1.2, 0.1, 1.2, -4.3, 0.05, 3.6, matTile);
+const showerGlass = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 2.0, 0.02),
+    matGlass
+);
+showerGlass.position.set(-4.3, 1.1, 4.18);
+houseGroup.add(showerGlass);
+
+// ---- СПАЛЬНЯ 1 (2 этаж, левая) ----
+makeBox(1.9, 0.3, 2.1, -2.6, base2 + 0.15, -2.0, matFabric); // матрас
+makeBox(1.9, 0.05, 2.1, -2.6, base2 + 0.35, -2.0, matWhite); // простыня
+makeBox(0.15, 0.06, 2.1, -2.6, base2 + 0.38, -2.0, matFabric); // одеяло
+makeBox(2.0, 0.9, 0.1, -2.6, base2 + 0.65, -3.1, matDarkWood); // изголовье
+// Подушки
+makeBox(0.6, 0.15, 0.4, -3.1, base2 + 0.45, -2.6, matWhite);
+makeBox(0.6, 0.15, 0.4, -2.1, base2 + 0.45, -2.6, matWhite);
+// Тумбочки
+makeBox(0.5, 0.5, 0.4, -3.6, base2 + 0.25, -2.6, matWood);
+makeBox(0.5, 0.5, 0.4, -1.6, base2 + 0.25, -2.6, matWood);
+// Шкаф
+makeBox(1.4, 2.1, 0.6, -4.0, base2 + 1.05, -3.8, matWood);
+// Дверцы шкафа
+makeBox(0.68, 2.0, 0.02, -4.35, base2 + 1.05, -3.5, matDarkWood);
+makeBox(0.68, 2.0, 0.02, -3.65, base2 + 1.05, -3.5, matDarkWood);
+
+// ---- СПАЛЬНЯ 2 (2 этаж, правая) ----
+makeBox(1.9, 0.3, 2.1, 2.6, base2 + 0.15, -2.0, matFabric);
+makeBox(1.9, 0.05, 2.1, 2.6, base2 + 0.35, -2.0, matWhite);
+makeBox(0.15, 0.06, 2.1, 2.6, base2 + 0.38, -2.0, matFabric);
+makeBox(2.0, 0.9, 0.1, 2.6, base2 + 0.65, -3.1, matDarkWood);
+makeBox(0.6, 0.15, 0.4, 2.1, base2 + 0.45, -2.6, matWhite);
+makeBox(0.6, 0.15, 0.4, 3.1, base2 + 0.45, -2.6, matWhite);
+makeBox(0.5, 0.5, 0.4, 1.6, base2 + 0.25, -2.6, matWood);
+makeBox(0.5, 0.5, 0.4, 3.6, base2 + 0.25, -2.6, matWood);
+makeBox(1.4, 2.1, 0.6, 4.0, base2 + 1.05, -3.8, matWood);
+makeBox(0.68, 2.0, 0.02, 3.65, base2 + 1.05, -3.5, matDarkWood);
+makeBox(0.68, 2.0, 0.02, 4.35, base2 + 1.05, -3.5, matDarkWood);
+
+// ---- ВАННАЯ 2 этажа ----
+makeBox(0.45, 0.4, 0.6, 4.5, base2 + 0.2, 4.4, matWhite);
+makeBox(0.4, 0.5, 0.15, 4.5, base2 + 0.55, 4.15, matWhite);
+makeBox(0.7, 0.15, 0.45, 3.5, base2 + 0.85, 4.5, matTile);
+
+// ============================================================
+// 10. ВНУТРЕННЕЕ ОСВЕЩЕНИЕ + ОКОННЫЕ СВЕТИЛЬНИКИ
+// ============================================================
+// Точечные (тёплые) в комнатах
+const roomLights = [
+    { x: -2.5, y: 2.6, z: 0, intensity: 8, color: 0xffe0b0 },       // гостиная
+    { x: 2.5, y: 2.6, z: 0, intensity: 8, color: 0xffe0b0 },        // кухня
+    { x: -2.5, y: base2 + 2.5, z: -2, intensity: 6, color: 0xffe0b0 },
+    { x: 2.5, y: base2 + 2.5, z: -2, intensity: 6, color: 0xffe0b0 }
+];
+
+roomLights.slice(0, QUALITY.maxPointLights).forEach(l => {
+    const light = new THREE.PointLight(l.color, l.intensity, 8, 2);
+    light.position.set(l.x, l.y, l.z);
+    light.castShadow = false;
+    scene.add(light);
+    // Визуальный плафон
+    const shade = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 12, 8),
+        new THREE.MeshStandardMaterial({ color: 0xfff8e8, emissive: 0xffe0b0, emissiveIntensity: 2 })
+    );
+    shade.position.copy(light.position);
+    scene.add(shade);
+});
+
+// Оконные RectAreaLights (для реалистичного света из окон)
+if (QUALITY.rectAreaLights) {
+    const windowLights = [
+        { x: -3.0, y: 1.6, z: -D/2 + WALL_T, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
+        { x: 2.4, y: 1.6, z: -D/2 + WALL_T, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
+        { x: -W/2 + WALL_T, y: 1.6, z: -2.4, w: 1.2, h: 1.5, target: [0, 1.6, 0] },
+    ];
+    windowLights.forEach(wl => {
+        const rl = new THREE.RectAreaLight(0xfff5e0, 3.0, wl.w, wl.h);
+        rl.position.set(wl.x, wl.y, wl.z);
+        rl.lookAt(...wl.target);
+        scene.add(rl);
+    });
+}
+
+// ============================================================
+// 11. ОКРУЖЕНИЕ (УЧАСТОК)
+// ============================================================
+// Газон
+const grassPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    matGrass
+);
+grassPlane.rotation.x = -Math.PI / 2;
+grassPlane.position.y = -0.11;
+grassPlane.receiveShadow = true;
+scene.add(grassPlane);
+
+// Плитка (дорожка)
+const pathMat = new THREE.MeshPhysicalMaterial({
+    map: makeTex(tileCanvas),
+    normalMap: makeTex(generateNormalMap(tileCanvas, 0.8), false),
+    roughness: 0.35, metalness: 0.05, clearcoat: 0.4,
+    envMapIntensity: 1.0
+});
+pathMat.map.repeat.set(1, 4);
+pathMat.normalMap.repeat.set(1, 4);
+const path = new THREE.Mesh(new THREE.PlaneGeometry(2, 10), pathMat);
+path.rotation.x = -Math.PI / 2;
+path.position.set(-0.5, 0.005, -11);
+path.receiveShadow = true;
+scene.add(path);
+
+// Забор с воротами
+function buildFence() {
+    const fenceGroup = new THREE.Group();
+    const postGeo = new THREE.BoxGeometry(0.1, 1.3, 0.1);
+    const postMat = matDarkWood;
+
+    // Посты вдоль периметра
+    const postSpacing = 2.5;
+    const min = -18, max = 18;
+
+    for (let i = min; i <= max; i += postSpacing) {
+        // Север (с проёмом под ворота)
+        if (i < -2 || i > 2) {
+            const p = new THREE.Mesh(postGeo, postMat);
+            p.position.set(i, 0.65, min);
+            p.castShadow = true;
+            fenceGroup.add(p);
+        }
+        // Юг
+        const ps = new THREE.Mesh(postGeo, postMat);
+        ps.position.set(i, 0.65, max);
+        ps.castShadow = true;
+        fenceGroup.add(ps);
+        // Запад
+        const pw = new THREE.Mesh(postGeo, postMat);
+        pw.position.set(min, 0.65, i);
+        pw.castShadow = true;
+        fenceGroup.add(pw);
+        // Восток
+        const pe = new THREE.Mesh(postGeo, postMat);
+        pe.position.set(max, 0.65, i);
+        pe.castShadow = true;
+        fenceGroup.add(pe);
+    }
+
+    // Горизонтальные планки
+    const railMat = matDarkWood;
+    const railGeoEW = new THREE.BoxGeometry(max - min, 0.06, 0.05);
+    for (const z of [min, max]) {
+        for (const y of [0.4, 1.1]) {
+            const r = new THREE.Mesh(railGeoEW, railMat);
+            r.position.set(0, y, z);
+            r.castShadow = true;
+            fenceGroup.add(r);
+        }
+    }
+    const railGeoNS = new THREE.BoxGeometry(0.05, 0.06, max - min);
+    for (const x of [min, max]) {
+        for (const y of [0.4, 1.1]) {
+            const r = new THREE.Mesh(railGeoNS, railMat);
+            r.position.set(x, y, 0);
+            r.castShadow = true;
+            fenceGroup.add(r);
+        }
+    }
+    scene.add(fenceGroup);
+}
+buildFence();
+
+// Калитка
+const gateGroup = new THREE.Group();
+gateGroup.position.set(2, 0, -18);
+const gatePanel = new THREE.Mesh(
+    new THREE.BoxGeometry(3.8, 1.2, 0.08),
+    matDarkWood
+);
+gatePanel.position.set(-1.9, 0.65, 0);
+gatePanel.castShadow = true;
+gateGroup.add(gatePanel);
+scene.add(gateGroup);
+interactables.push({ mesh: gateGroup, type: 'gate', open: false, angle: 0 });
+
+// Деревья
+function makeTree(x, z, scale = 1) {
+    const tree = new THREE.Group();
+    const trunkH = 2.0 * scale;
+    const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, trunkH, 8),
+        matBark
+    );
+    trunk.position.y = trunkH / 2;
+    trunk.castShadow = true;
+    trunk.receiveShadow = true;
+    tree.add(trunk);
+
+    // Крона — 3 сферы
+    const foliageGeo = new THREE.SphereGeometry(1.3 * scale, 10, 8);
+    for (let i = 0; i < 3; i++) {
+        const f = new THREE.Mesh(foliageGeo, matLeaves);
+        f.position.set(
+            (Math.random() - 0.5) * 0.8 * scale,
+            trunkH + 0.8 * scale + i * 0.4 * scale,
+            (Math.random() - 0.5) * 0.8 * scale
+        );
+        f.scale.setScalar(0.7 + Math.random() * 0.4);
+        f.castShadow = true;
+        f.receiveShadow = true;
+        tree.add(f);
+    }
+
+    tree.position.set(x, 0, z);
+    tree.rotation.y = Math.random() * Math.PI * 2;
+    scene.add(tree);
+}
+makeTree(-12, -12, 1.2);
+makeTree(12, -12, 1.0);
+makeTree(-12, 12, 1.1);
+makeTree(12, 12, 1.3);
+makeTree(-15, 0, 1.0);
+makeTree(15, 5, 0.9);
+
+// Кустарники
+for (let i = 0; i < 8; i++) {
+    const bush = new THREE.Mesh(
+        new THREE.SphereGeometry(0.4 + Math.random() * 0.3, 8, 6),
+        matLeaves
+    );
+    bush.position.set(
+        (Math.random() - 0.5) * 30,
+        0.3,
+        (Math.random() - 0.5) * 30
+    );
+    bush.scale.y = 0.7;
+    bush.castShadow = true;
+    bush.receiveShadow = true;
+    scene.add(bush);
+}
+
+// ============================================================
+// 12. ПОСТОБРАБОТКА (кинематографический пайплайн)
+// ============================================================
+const composer = new EffectComposer(renderer);
+composer.setPixelRatio(QUALITY.pixelRatio);
+composer.setSize(window.innerWidth, window.innerHeight);
+
+// Основной рендер-пасс
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// Bloom (свечение ярких участков)
+if (QUALITY.bloom) {
+    const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        QUALITY.bloomStrength,
+        QUALITY.bloomRadius,
+        0.85  // threshold
+    );
+    composer.addPass(bloomPass);
+}
+
+// Кинематографический пасс (цветокоррекция, зерно, виньетка, хроматическая аберрация)
+const CinematicShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        time: { value: 0 },
+        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        vignetteStrength: { value: 0.55 },
+        grainStrength: { value: 0.035 },
+        chromaticStrength: { value: 0.0018 }
+    },
+    vertexShader: /* glsl */`
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: /* glsl */`
+        uniform sampler2D tDiffuse;
+        uniform float time;
+        uniform vec2 resolution;
+        uniform float vignetteStrength;
+        uniform float grainStrength;
+        uniform float chromaticStrength;
+        varying vec2 vUv;
+
+        float random(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
         }
 
-        // Перегородка x = 0 (разделяет гостиную и кухню), с проходом шириной 1.2 м по центру
-        // От z = -5 до z = -1
-        createInnerWall(0, -3, INNER_WALL, 4, H, 0);
-        // От z = 1 до z = 5
-        createInnerWall(0, 3, INNER_WALL, 4, H, 0);
-        // Верхняя перемычка над проходом (от z = -1 до z = 1)
-        createInnerWall(0, 0, INNER_WALL, 2, H - 2.1, 2.1); // перемычка
+        void main() {
+            vec2 uv = vUv;
+            vec2 dir = uv - 0.5;
+            float dist = length(dir);
 
-        // Ванная комната на первом этаже (в углу, например, юго-запад)
-        // Стены ванной: x от -5 до -3, z от 3 до 5
-        // Перегородка вдоль X на z = 3, от x = -5 до x = -3
-        createInnerWall(-4, 3, 2, INNER_WALL, H, 0);
-        // Перегородка вдоль Z на x = -3, от z = 3 до z = 5
-        createInnerWall(-3, 4, INNER_WALL, 2, H, 0);
-        // Дверь в ванную (проём в перегородке x = -3, z от 3.2 до 4.1) — упрощённо: оставим проём, не создавая стену
+            // Хроматическая аберрация (радиальная)
+            vec2 offset = dir * dist * chromaticStrength;
+            float r = texture2D(tDiffuse, uv + offset).r;
+            float g = texture2D(tDiffuse, uv).g;
+            float b = texture2D(tDiffuse, uv - offset).b;
+            vec3 color = vec3(r, g, b);
 
-        // ---- ВТОРОЙ ЭТАЖ ----
-        // Внешние стены второго этажа (аналогично, но с другими окнами)
-        // Северная стена (z = -5), y = H + SLAB
-        buildExteriorWall('x', -5, -5, 5, H, H + SLAB, [
-            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: 1.5, end: 2.7, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
-        // Южная стена (z = 5)
-        buildExteriorWall('x', 5, -5, 5, H, H + SLAB, [
-            { start: -3.5, end: -2.3, type: 'window', bottom: 0.9, top: 2.4 },
-            { start: 2.3, end: 3.5, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
-        // Западная стена (x = -5)
-        buildExteriorWall('z', -5, -5, 5, H, H + SLAB, [
-            { start: -3.0, end: -1.8, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
-        // Восточная стена (x = 5)
-        buildExteriorWall('z', 5, -5, 5, H, H + SLAB, [
-            { start: 1.0, end: 2.2, type: 'window', bottom: 0.9, top: 2.4 }
-        ]);
+            // Виньетка
+            float vig = smoothstep(0.95, 0.25, dist * 2.0);
+            color *= mix(1.0, vig, vignetteStrength);
 
-        // Внутренние перегородки второго этажа
-        // Спальня 1 (левая часть), Спальня 2 (правая часть), Ванная
-        // Перегородка вдоль Z на x = 0
-        createInnerWall(0, -3, INNER_WALL, 4, H, H + SLAB);
-        createInnerWall(0, 3, INNER_WALL, 4, H, H + SLAB);
-        createInnerWall(0, 0, INNER_WALL, 2, H - 2.1, H + SLAB + 2.1); // перемычка
+            // Цветокоррекция: тёплые блики, холодные тени
+            float luma = dot(color, vec3(0.299, 0.587, 0.114));
+            vec3 shadows = vec3(0.94, 0.97, 1.06);
+            vec3 highlights = vec3(1.06, 1.02, 0.97);
+            vec3 grade = mix(shadows, highlights, smoothstep(0.0, 1.0, luma));
+            color *= grade;
 
-        // Перегородка для ванной на втором этаже (например, в юго-восточном углу)
-        // x от 3 до 5, z от 3 до 5
-        createInnerWall(4, 3, 2, INNER_WALL, H, H + SLAB); // вдоль X на z=3
-        createInnerWall(3, 4, INNER_WALL, 2, H, H + SLAB); // вдоль Z на x=3
+            // Лёгкий подъём насыщенности
+            float lum2 = dot(color, vec3(0.299, 0.587, 0.114));
+            color = mix(vec3(lum2), color, 1.1);
 
-        // ---- КРЫША ----
-        // Простая двускатная крыша
-        const roofGeo = new THREE.ConeGeometry(7.5, 1.8, 4);
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.9, metalness: 0.1 });
-        const roof = new THREE.Mesh(roofGeo, roofMat);
-        roof.position.set(0, H * 2 + SLAB + 0.9, 0);
-        roof.rotation.y = Math.PI / 4;
-        roof.castShadow = true;
-        roof.receiveShadow = true;
-        houseGroup.add(roof);
+            // Зерно
+            float grain = random(uv * resolution + time * 60.0);
+            color += (grain - 0.5) * grainStrength;
 
-        // ---- ЛЕСТНИЦА ----
-        // Расположим вдоль западной стены (x = -4), от z = -1 до z = 3
-        const stairGroup = new THREE.Group();
-        const steps = 12;
-        const stepH = H / steps; // 2.8 / 12 ≈ 0.233
-        const stepW = 1.0; // ширина
-        const stepD = 0.28; // глубина
-        for (let i = 0; i < steps; i++) {
-            const stepGeo = new THREE.BoxGeometry(stepW, stepH, stepD);
-            const stepMesh = new THREE.Mesh(stepGeo, materials.darkWood);
-            stepMesh.position.set(-4.2, stepH * i + stepH / 2, -1 + i * stepD);
-            stepMesh.castShadow = true;
-            stepMesh.receiveShadow = true;
-            stairGroup.add(stepMesh);
-            addCollider(stepMesh, false);
+            gl_FragColor = vec4(color, 1.0);
         }
-        // Перила (упрощённо)
-        houseGroup.add(stairGroup);
+    `
+};
 
-        // ============================================================
-        // 6. МЕБЕЛЬ (ПРОЦЕДУРНАЯ)
-        // ============================================================
-        // Вспомогательная функция для создания блока
-        function createBox(w, h, d, x, y, z, material, parent = houseGroup) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mesh = new THREE.Mesh(geo, material);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            parent.add(mesh);
-            addCollider(mesh, false);
-            return mesh;
-        }
+const cinematicPass = new ShaderPass(CinematicShader);
+composer.addPass(cinematicPass);
 
-        // ---- ГОСТИНАЯ (левая часть первого этажа) ----
-        // Диван
-        createBox(2.2, 0.8, 0.9, -2.5, 0.4, -1.0, materials.fabric); // основание
-        createBox(2.2, 0.5, 0.3, -2.5, 0.9, -1.35, materials.fabric); // спинка
-        createBox(2.2, 0.2, 0.9, -2.5, 0.8, -1.0, materials.fabric); // подушки
+// SMAA (сглаживание) — только на десктопе
+let smaaPass = null;
+if (QUALITY.smaa) {
+    smaaPass = new SMAAPass(window.innerWidth * QUALITY.pixelRatio, window.innerHeight * QUALITY.pixelRatio);
+    composer.addPass(smaaPass);
+}
 
-        // Журнальный столик
-        createBox(1.0, 0.4, 0.6, -2.5, 0.2, 1.5, materials.darkWood);
+// Финальный output-пасс (tonemap + sRGB)
+const outputPass = new OutputPass();
+composer.addPass(outputPass);
 
-        // Телевизор (на стене или тумбе)
-        createBox(1.6, 0.9, 0.1, -2.5, 1.5, -4.8, materials.black); // экран
-        createBox(1.8, 0.5, 0.4, -2.5, 0.25, -4.8, materials.darkWood); // тумба
+// ============================================================
+// 13. УПРАВЛЕНИЕ (ПК + МОБИЛЬНЫЕ)
+// ============================================================
+// --- ПК ---
+let isLocked = false;
+const MOUSE_SENS = 0.002;
+const TOUCH_SENS = 0.003;
 
-        // Шкаф в гостиной
-        createBox(1.0, 2.0, 0.5, -4.5, 1.0, -3.5, materials.wood);
+document.addEventListener('mousemove', (e) => {
+    if (!isLocked) return;
+    player.rotation.y -= e.movementX * MOUSE_SENS;
+    camera.rotation.x -= e.movementY * MOUSE_SENS;
+    camera.rotation.x = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, camera.rotation.x));
+});
 
-        // ---- КУХНЯ (правая часть первого этажа) ----
-        // Кухонные шкафы (нижние)
-        createBox(3.0, 0.9, 0.6, 2.5, 0.45, -4.5, materials.wood);
-        // Верхние шкафы
-        createBox(3.0, 0.7, 0.4, 2.5, 2.0, -4.7, materials.wood);
-        // Холодильник
-        createBox(0.8, 1.8, 0.7, 4.2, 0.9, -4.5, materials.metal);
-        // Плита
-        createBox(0.6, 0.1, 0.6, 1.5, 0.95, -4.5, materials.black);
-        // Раковина
-        createBox(0.8, 0.2, 0.5, 3.0, 0.9, -4.5, materials.tile);
-        // Обеденный стол
-        createBox(1.5, 0.05, 0.9, 2.5, 0.75, -2.0, materials.darkWood);
-        // Стулья (4 шт)
-        createBox(0.4, 0.45, 0.4, 1.8, 0.22, -2.0, materials.darkWood);
-        createBox(0.4, 0.45, 0.4, 3.2, 0.22, -2.0, materials.darkWood);
-        createBox(0.4, 0.45, 0.4, 1.8, 0.22, -1.4, materials.darkWood);
-        createBox(0.4, 0.45, 0.4, 3.2, 0.22, -1.4, materials.darkWood);
+document.addEventListener('pointerlockchange', () => {
+    isLocked = document.pointerLockElement === renderer.domElement;
+    document.getElementById('blocker').classList.toggle('hidden', isLocked);
+    if (isLocked) hideHint();
+});
 
-        // ---- ВАННАЯ (первый этаж, юго-запад) ----
-        // Унитаз
-        createBox(0.4, 0.6, 0.6, -4.5, 0.3, 4.0, materials.white);
-        // Раковина
-        createBox(0.6, 0.15, 0.4, -4.5, 0.8, 4.7, materials.tile);
-        // Душ (стеклянная кабина)
-        createBox(1.2, 2.0, 1.2, -4.0, 1.0, 4.2, materials.glass); // упрощённо
+// Блокер
+const blockerEl = document.getElementById('blocker');
+blockerEl.addEventListener('click', () => {
+    if (isMobile) {
+        blockerEl.classList.add('hidden');
+        hideHint();
+    } else {
+        renderer.domElement.requestPointerLock();
+    }
+});
 
-        // ---- СПАЛЬНЯ 1 (второй этаж, левая часть) ----
-        // Кровать
-        createBox(1.8, 0.4, 2.0, -2.5, H + SLAB + 0.2, -2.0, materials.fabric); // матрас
-        createBox(1.9, 0.8, 0.1, -2.5, H + SLAB + 0.6, -3.0, materials.wood); // изголовье
-        // Тумбочки
-        createBox(0.5, 0.5, 0.4, -3.5, H + SLAB + 0.25, -2.5, materials.wood);
-        createBox(0.5, 0.5, 0.4, -1.5, H + SLAB + 0.25, -2.5, materials.wood);
-        // Шкаф
-        createBox(1.2, 2.0, 0.6, -4.0, H + SLAB + 1.0, -3.5, materials.wood);
+// Клавиатура
+const keys = { w: false, a: false, s: false, d: false, shift: false };
+let jumpRequested = false;
 
-        // ---- СПАЛЬНЯ 2 (второй этаж, правая часть) ----
-        createBox(1.8, 0.4, 2.0, 2.5, H + SLAB + 0.2, -2.0, materials.fabric);
-        createBox(1.9, 0.8, 0.1, 2.5, H + SLAB + 0.6, -3.0, materials.wood);
-        createBox(0.5, 0.5, 0.4, 1.5, H + SLAB + 0.25, -2.5, materials.wood);
-        createBox(0.5, 0.5, 0.4, 3.5, H + SLAB + 0.25, -2.5, materials.wood);
-        createBox(1.2, 2.0, 0.6, 4.0, H + SLAB + 1.0, -3.5, materials.wood);
-
-        // ---- ВАННАЯ ВТОРОГО ЭТАЖА ----
-        createBox(0.4, 0.6, 0.6, 4.5, H + SLAB + 0.3, 4.0, materials.white);
-        createBox(0.6, 0.15, 0.4, 4.5, H + SLAB + 0.8, 4.7, materials.tile);
-
-        // ---- ОСВЕЩЕНИЕ ВНУТРИ ----
-        // Точечные светильники в комнатах
-        const interiorLights = [
-            { pos: [-2.5, 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
-            { pos: [2.5, 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
-            { pos: [0, H + SLAB + 2.5, 0], intensity: 1.0, color: 0xfff0d0 },
-            { pos: [-2.5, H + SLAB + 2.5, -2], intensity: 0.8, color: 0xfff0d0 },
-            { pos: [2.5, H + SLAB + 2.5, -2], intensity: 0.8, color: 0xfff0d0 },
-        ];
-        interiorLights.forEach(l => {
-            const light = new THREE.PointLight(l.color, l.intensity, 10, 2);
-            light.position.set(...l.pos);
-            light.castShadow = true;
-            light.shadow.mapSize.width = 512;
-            light.shadow.mapSize.height = 512;
-            light.shadow.bias = -0.001;
-            scene.add(light);
-        });
-
-        // ============================================================
-        // 7. ОКРУЖЕНИЕ (УЧАСТОК)
-        // ============================================================
-        // Газон
-        const grassGeo = new THREE.PlaneGeometry(40, 40);
-        const grass = new THREE.Mesh(grassGeo, materials.grass);
-        grass.rotation.x = -Math.PI / 2;
-        grass.position.y = -0.1;
-        grass.receiveShadow = true;
-        scene.add(grass);
-
-        // Дорожка из плитки (от входной двери)
-        const pathGeo = new THREE.PlaneGeometry(2, 8);
-        const pathMat = new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.8 });
-        const path = new THREE.Mesh(pathGeo, pathMat);
-        path.rotation.x = -Math.PI / 2;
-        path.position.set(0, 0.01, -9);
-        path.receiveShadow = true;
-        scene.add(path);
-
-        // Забор (простой)
-        function createFenceSegment(x, z, w, d) {
-            const geo = new THREE.BoxGeometry(w, 1.2, d);
-            const mesh = new THREE.Mesh(geo, materials.wood);
-            mesh.position.set(x, 0.6, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            scene.add(mesh);
-        }
-        // Забор по периметру (упрощённо)
-        for (let i = -15; i <= 15; i += 3) {
-            createFenceSegment(i, -18, 3, 0.1); // север
-            createFenceSegment(i, 18, 3, 0.1);  // юг
-            createFenceSegment(-18, i, 0.1, 3); // запад
-            createFenceSegment(18, i, 0.1, 3);  // восток
-        }
-
-        // Деревья (простые)
-        function createTree(x, z) {
-            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2.0);
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: 0.9 });
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.set(x, 1.0, z);
-            trunk.castShadow = true;
-            trunk.receiveShadow = true;
-            scene.add(trunk);
-            const foliageGeo = new THREE.SphereGeometry(1.5, 8, 8);
-            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2d6a2d, roughness: 1.0 });
-            const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-            foliage.position.set(x, 2.8, z);
-            foliage.castShadow = true;
-            foliage.receiveShadow = true;
-            scene.add(foliage);
-        }
-        createTree(-12, -10);
-        createTree(12, -10);
-        createTree(-12, 12);
-        createTree(12, 12);
-
-        // ============================================================
-        // 8. УПРАВЛЕНИЕ (ПК + МОБИЛЬНЫЕ)
-        // ============================================================
-        // --- ПК: PointerLockControls ---
-        const controls = new PointerLockControls(camera, renderer.domElement);
-        scene.add(controls.getObject()); // Добавляем объект управления в сцену (камера уже внутри)
-
-        // Перемещение
-        const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
-        let moveForward = false;
-        let moveBackward = false;
-        let moveLeft = false;
-        let moveRight = false;
-        let isRunning = false;
-        let canJump = false;
-
-        // Мобильные переменные
-        let joystickActive = false;
-        let joystickVector = new THREE.Vector2(0, 0);
-        let lookTouchId = null;
-        let lookLastX = 0, lookLastY = 0;
-        let jumpRequested = false;
-
-        // Обработчики клавиатуры
-        document.addEventListener('keydown', (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'ShiftLeft': isRunning = true; break;
-                case 'Space': if (canJump) { velocity.y += 4.0; canJump = false; } break;
-                case 'KeyE': /* взаимодействие */ break;
-            }
-        });
-        document.addEventListener('keyup', (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
-                case 'ShiftLeft': isRunning = false; break;
-            }
-        });
-
-        // Блокировщик (клик для входа)
-        const blocker = document.getElementById('blocker');
-        blocker.addEventListener('click', () => {
-            controls.lock();
-        });
-        controls.addEventListener('lock', () => {
-            blocker.style.display = 'none';
-        });
-        controls.addEventListener('unlock', () => {
-            blocker.style.display = 'flex';
-        });
-
-        // --- Мобильные элементы управления ---
-        const joystickContainer = document.getElementById('joystick-container');
-        const joystickKnob = document.getElementById('joystick-knob');
-        const joystickBase = document.getElementById('joystick-base');
-        const lookArea = document.getElementById('look-area');
-        const jumpBtn = document.getElementById('jump-btn');
-
-        // Виртуальный джойстик
-        joystickContainer.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            joystickActive = true;
-            joystickContainer.setPointerCapture(e.pointerId);
-            updateJoystick(e);
-        });
-        joystickContainer.addEventListener('pointermove', (e) => {
-            if (!joystickActive) return;
-            e.preventDefault();
-            updateJoystick(e);
-        });
-        joystickContainer.addEventListener('pointerup', (e) => {
-            joystickActive = false;
-            joystickKnob.style.transform = `translate(-50%, -50%)`;
-            joystickVector.set(0, 0);
-            joystickContainer.releasePointerCapture(e.pointerId);
-        });
-        joystickContainer.addEventListener('pointercancel', (e) => {
-            joystickActive = false;
-            joystickKnob.style.transform = `translate(-50%, -50%)`;
-            joystickVector.set(0, 0);
-        });
-
-        function updateJoystick(e) {
-            const rect = joystickBase.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            let dx = e.clientX - centerX;
-            let dy = e.clientY - centerY;
-            const maxDist = rect.width / 2;
-            const dist = Math.hypot(dx, dy);
-            if (dist > maxDist) {
-                dx = (dx / dist) * maxDist;
-                dy = (dy / dist) * maxDist;
-            }
-            joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            joystickVector.set(dx / maxDist, dy / maxDist);
-        }
-
-        // Область обзора (drag-to-look)
-        lookArea.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            lookTouchId = e.pointerId;
-            lookLastX = e.clientX;
-            lookLastY = e.clientY;
-            lookArea.setPointerCapture(e.pointerId);
-        });
-        lookArea.addEventListener('pointermove', (e) => {
-            if (e.pointerId !== lookTouchId) return;
-            e.preventDefault();
-            const dx = e.clientX - lookLastX;
-            const dy = e.clientY - lookLastY;
-            lookLastX = e.clientX;
-            lookLastY = e.clientY;
-            // Поворот камеры
-            const sensitivity = 0.005;
-            // Вращаем камеру напрямую (yaw/pitch)
-            // PointerLockControls не используется на мобильных, поэтому вращаем вручную
-            // Но у нас камера внутри controls.getObject(), можно вращать объект
-            const yawObj = controls.getObject();
-            // yaw
-            yawObj.rotation.y -= dx * sensitivity;
-            // pitch (ограничим)
-            camera.rotation.x -= dy * sensitivity;
-            camera.rotation.x = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, camera.rotation.x));
-        });
-        lookArea.addEventListener('pointerup', (e) => {
-            if (e.pointerId === lookTouchId) {
-                lookTouchId = null;
-                lookArea.releasePointerCapture(e.pointerId);
-            }
-        });
-        lookArea.addEventListener('pointercancel', (e) => {
-            if (e.pointerId === lookTouchId) {
-                lookTouchId = null;
-            }
-        });
-
-        // Кнопка прыжка
-        jumpBtn.addEventListener('pointerdown', (e) => {
+document.addEventListener('keydown', (e) => {
+    switch (e.code) {
+        case 'KeyW': case 'ArrowUp': keys.w = true; break;
+        case 'KeyS': case 'ArrowDown': keys.s = true; break;
+        case 'KeyA': case 'ArrowLeft': keys.a = true; break;
+        case 'KeyD': case 'ArrowRight': keys.d = true; break;
+        case 'ShiftLeft': case 'ShiftRight': keys.shift = true; break;
+        case 'Space':
             e.preventDefault();
             jumpRequested = true;
-        });
+            break;
+        case 'KeyE': interact(); break;
+        case 'Escape':
+            if (isLocked) document.exitPointerLock();
+            break;
+    }
+});
+document.addEventListener('keyup', (e) => {
+    switch (e.code) {
+        case 'KeyW': case 'ArrowUp': keys.w = false; break;
+        case 'KeyS': case 'ArrowDown': keys.s = false; break;
+        case 'KeyA': case 'ArrowLeft': keys.a = false; break;
+        case 'KeyD': case 'ArrowRight': keys.d = false; break;
+        case 'ShiftLeft': case 'ShiftRight': keys.shift = false; break;
+    }
+});
 
-        // ============================================================
-        // 9. ФИЗИКА И КОЛЛИЗИИ
-        // ============================================================
-        const playerRadius = 0.3;
-        const playerHeight = 1.7;
-        const gravity = 9.8;
+// --- МОБИЛЬНЫЕ ЭЛЕМЕНТЫ ---
+const mobileUI = document.getElementById('mobile-ui');
+const lookZone = document.getElementById('look-zone');
+const joyZone = document.getElementById('joy-zone');
+const joyKnob = document.getElementById('joy-knob');
+const btnJump = document.getElementById('btn-jump');
+const btnRun = document.getElementById('btn-run');
+const btnUse = document.getElementById('btn-use');
 
-        // Проверка коллизии для позиции (x, z)
-        function checkCollision(x, z) {
-            // Проверяем AABB коллайдеров
-            for (const collider of colliders) {
-                const box = collider.box;
-                // Расширяем box на радиус игрока
-                const expanded = box.clone().expandByScalar(playerRadius);
-                if (x > expanded.min.x && x < expanded.max.x &&
-                    z > expanded.min.z && z < expanded.max.z) {
-                    // Проверяем по Y (упрощённо: игрок на земле или на этаже)
-                    return true;
-                }
+if (isMobile) {
+    mobileUI.classList.add('visible');
+}
+
+// Джойстик
+let joyActive = false;
+let joyId = null;
+let joyCenter = { x: 0, y: 0 };
+const joyVec = new THREE.Vector2(0, 0);
+const joyMax = 55;
+
+joyZone.addEventListener('pointerdown', (e) => {
+    if (joyActive) return;
+    joyActive = true;
+    joyId = e.pointerId;
+    joyZone.setPointerCapture(e.pointerId);
+    const rect = joyZone.getBoundingClientRect();
+    joyCenter.x = rect.left + rect.width / 2;
+    joyCenter.y = rect.top + rect.height / 2;
+    updateJoy(e);
+});
+
+joyZone.addEventListener('pointermove', (e) => {
+    if (!joyActive || e.pointerId !== joyId) return;
+    updateJoy(e);
+});
+
+const endJoy = (e) => {
+    if (e.pointerId !== joyId) return;
+    joyActive = false;
+    joyId = null;
+    joyVec.set(0, 0);
+    joyKnob.style.transform = 'translate(0, 0)';
+    try { joyZone.releasePointerCapture(e.pointerId); } catch(_) {}
+};
+joyZone.addEventListener('pointerup', endJoy);
+joyZone.addEventListener('pointercancel', endJoy);
+
+function updateJoy(e) {
+    let dx = e.clientX - joyCenter.x;
+    let dy = e.clientY - joyCenter.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > joyMax) {
+        dx = dx / dist * joyMax;
+        dy = dy / dist * joyMax;
+    }
+    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    joyVec.set(dx / joyMax, dy / joyMax);
+}
+
+// Обзор (свайп справа)
+let lookId = null;
+let lookLastX = 0, lookLastY = 0;
+
+lookZone.addEventListener('pointerdown', (e) => {
+    if (lookId !== null) return;
+    lookId = e.pointerId;
+    lookLastX = e.clientX;
+    lookLastY = e.clientY;
+    lookZone.setPointerCapture(e.pointerId);
+});
+
+lookZone.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== lookId) return;
+    const dx = e.clientX - lookLastX;
+    const dy = e.clientY - lookLastY;
+    lookLastX = e.clientX;
+    lookLastY = e.clientY;
+
+    player.rotation.y -= dx * TOUCH_SENS;
+    camera.rotation.x -= dy * TOUCH_SENS;
+    camera.rotation.x = Math.max(-Math.PI/2 + 0.05, Math.min(Math.PI/2 - 0.05, camera.rotation.x));
+});
+
+const endLook = (e) => {
+    if (e.pointerId !== lookId) return;
+    lookId = null;
+    try { lookZone.releasePointerCapture(e.pointerId); } catch(_) {}
+};
+lookZone.addEventListener('pointerup', endLook);
+lookZone.addEventListener('pointercancel', endLook);
+
+// Кнопка прыжка
+btnJump.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    jumpRequested = true;
+    btnJump.classList.add('pressed');
+    if (navigator.vibrate) navigator.vibrate(15);
+});
+btnJump.addEventListener('pointerup', () => btnJump.classList.remove('pressed'));
+btnJump.addEventListener('pointercancel', () => btnJump.classList.remove('pressed'));
+
+// Кнопка бега (toggle)
+let mobileRunning = false;
+btnRun.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    mobileRunning = !mobileRunning;
+    btnRun.classList.toggle('active', mobileRunning);
+    if (navigator.vibrate) navigator.vibrate(10);
+});
+
+// Кнопка действия
+btnUse.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    interact();
+    if (navigator.vibrate) navigator.vibrate(20);
+});
+
+// ============================================================
+// 14. ФИЗИКА / КОЛЛИЗИИ
+// ============================================================
+const PLAYER_RADIUS = 0.3;
+const GRAVITY = 18;
+const WALK_SPEED = 3.5;
+const RUN_SPEED = 6.5;
+const JUMP_POWER = 6.0;
+
+const velocity = new THREE.Vector3();
+let onGround = false;
+
+function checkCollision(x, z, y) {
+    // Проходим по всем AABB
+    for (const box of colliders) {
+        // Проверяем по XZ с учётом радиуса
+        if (x + PLAYER_RADIUS > box.min.x && x - PLAYER_RADIUS < box.max.x &&
+            z + PLAYER_RADIUS > box.min.z && z - PLAYER_RADIUS < box.max.z) {
+            // Проверяем по Y: если игрок ниже верха коллайдера (стоит на нём/застревает)
+            // Считаем коллайдер вертикальным препятствием, если его верх выше ступней и низ ниже головы
+            const playerFeet = y - 1.7;
+            const playerHead = y;
+            if (box.max.y > playerFeet + 0.15 && box.min.y < playerHead) {
+                return true;
             }
-            return false;
         }
+    }
+    return false;
+}
 
-        // Перемещение с учётом коллизий (скольжение)
-        function moveWithCollision(dx, dz) {
-            const obj = controls.getObject();
-            const newX = obj.position.x + dx;
-            const newZ = obj.position.z + dz;
-            // Проверяем X
-            if (!checkCollision(newX, obj.position.z)) {
-                obj.position.x = newX;
-            }
-            // Проверяем Z
-            if (!checkCollision(obj.position.x, newZ)) {
-                obj.position.z = newZ;
+function movePlayer(dx, dz) {
+    const px = player.position.x;
+    const pz = player.position.z;
+    const py = player.position.y;
+
+    // Разделяем движение по осям для скольжения
+    if (!checkCollision(px + dx, pz, py)) {
+        player.position.x = px + dx;
+    }
+    if (!checkCollision(player.position.x, pz + dz, py)) {
+        player.position.z = pz + dz;
+    }
+}
+
+// ============================================================
+// 15. ВЗАИМОДЕЙСТВИЕ (двери, калитка)
+// ============================================================
+const crosshairEl = document.getElementById('crosshair');
+const interactPromptEl = document.getElementById('interact-prompt');
+const raycaster = new THREE.Raycaster();
+const interactRay = new THREE.Vector2(0, 0);
+
+let currentInteractable = null;
+
+function findInteractable() {
+    raycaster.setFromCamera(interactRay, camera);
+    raycaster.far = 3.0;
+
+    const meshList = [];
+    for (const item of interactables) {
+        meshList.push(item.mesh);
+        item.mesh.traverse(c => { if (c.isMesh) meshList.push(c); });
+    }
+
+    const hits = raycaster.intersectObjects(meshList, false);
+    if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !interactables.find(i => i.mesh === obj)) {
+            obj = obj.parent;
+        }
+        return interactables.find(i => i.mesh === obj) || null;
+    }
+    return null;
+}
+
+function interact() {
+    const target = currentInteractable;
+    if (!target) return;
+
+    if (target.type === 'door' || target.type === 'gate') {
+        target.open = !target.open;
+        // Анимация поворота будет в цикле
+        if (navigator.vibrate) navigator.vibrate(30);
+    }
+}
+
+function updateInteractables(delta) {
+    // Плавный поворот дверей
+    for (const item of interactables) {
+        if (item.type === 'door' || item.type === 'gate') {
+            const targetAngle = item.open ? -Math.PI / 2 : 0;
+            item.angle += (targetAngle - item.angle) * Math.min(1, delta * 8);
+            item.mesh.rotation.y = item.angle;
+        }
+    }
+}
+
+// ============================================================
+// 16. HUD / FPS / HINT
+// ============================================================
+const fpsEl = document.getElementById('fps');
+const hintEl = document.getElementById('hint');
+let hintHidden = false;
+
+function hideHint() {
+    if (hintHidden) return;
+    hintHidden = true;
+    hintEl.classList.add('hidden');
+    setTimeout(() => hintEl.style.display = 'none', 700);
+}
+
+let fpsAccum = 0, fpsFrames = 0, fpsLastUpdate = 0;
+
+// ============================================================
+// 17. АНИМАЦИОННЫЙ ЦИКЛ
+// ============================================================
+const clock = new THREE.Clock();
+let elapsed = 0;
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = Math.min(clock.getDelta(), 0.05);
+    elapsed += delta;
+
+    // ---- Управление движением ----
+    let moveX = 0, moveZ = 0;
+    let wantRun = false;
+
+    if (isMobile) {
+        // Мобильный джойстик
+        moveX = joyVec.x;
+        moveZ = joyVec.y; // положительный Y = вниз = назад
+        wantRun = mobileRunning;
+    }
+
+    if (isLocked) {
+        if (keys.w) moveZ -= 1;
+        if (keys.s) moveZ += 1;
+        if (keys.a) moveX -= 1;
+        if (keys.d) moveX += 1;
+        wantRun = keys.shift;
+    }
+
+    // Нормализация
+    const moveLen = Math.hypot(moveX, moveZ);
+    if (moveLen > 1) {
+        moveX /= moveLen;
+        moveZ /= moveLen;
+    }
+
+    // Направление в мировых координатах (с учётом поворота игрока)
+    const yaw = player.rotation.y;
+    const sinY = Math.sin(yaw);
+    const cosY = Math.cos(yaw);
+
+    const speed = wantRun ? RUN_SPEED : WALK_SPEED;
+    const worldDX = (moveX * cosY - moveZ * sinY) * speed * delta;
+    const worldDZ = (moveX * sinY + moveZ * cosY) * speed * delta;
+
+    if (moveLen > 0.05) {
+        movePlayer(worldDX, worldDZ);
+        hideHint();
+    }
+
+    // ---- Прыжок и гравитация ----
+    if (jumpRequested && onGround) {
+        velocity.y = JUMP_POWER;
+        onGround = false;
+    }
+    jumpRequested = false;
+
+    velocity.y -= GRAVITY * delta;
+    player.position.y += velocity.y * delta;
+
+    // Проверка приземления (пол 1 этажа = y=1.7; перекрытие = H + SLAB + 1.7)
+    const floors = [1.7, H + SLAB + 1.7];
+    let landed = false;
+    for (const floorY of floors) {
+        if (player.position.y <= floorY && player.position.y > floorY - 0.5) {
+            // Проверяем, что мы НЕ падаем сквозь
+            if (velocity.y <= 0) {
+                player.position.y = floorY;
+                velocity.y = 0;
+                onGround = true;
+                landed = true;
+                break;
             }
         }
+    }
+    if (!landed) onGround = false;
 
-        // ============================================================
-        // 10. АНИМАЦИОННЫЙ ЦИКЛ
-        // ============================================================
-        const clock = new THREE.Clock();
+    // Ограничение (не улетать в небо)
+    if (player.position.y > 20) {
+        player.position.y = 20;
+        velocity.y = 0;
+    }
 
-        function animate() {
-            requestAnimationFrame(animate);
+    // ---- Взаимодействия ----
+    updateInteractables(delta);
+    currentInteractable = findInteractable();
 
-            const delta = Math.min(clock.getDelta(), 0.1);
+    const crosshair = document.getElementById('crosshair');
+    if (currentInteractable) {
+        crosshair.classList.add('active');
+        interactPromptEl.classList.add('visible');
+        interactPromptEl.textContent = isMobile ? 'Использовать' : 'Нажмите E';
+        btnUse.classList.add('available');
+    } else {
+        crosshair.classList.remove('active');
+        interactPromptEl.classList.remove('visible');
+        btnUse.classList.remove('available');
+    }
 
-            // --- Мобильное управление ---
-            if (joystickActive) {
-                // Джойстик: X — влево/вправо, Y — вперёд/назад
-                const forward = -joystickVector.y;
-                const right = joystickVector.x;
-                const speed = isRunning ? 6.0 : 3.0;
-                const dx = right * speed * delta;
-                const dz = forward * speed * delta;
-                moveWithCollision(dx, dz);
-            }
+    // ---- Обновление Uniform для кинематографического шейдера ----
+    cinematicPass.uniforms.time.value = elapsed;
 
-            // --- ПК управление ---
-            if (controls.isLocked) {
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= gravity * delta;
+    // ---- Обновление солнца (лёгкая анимация) ----
+    // (не двигаем, чтобы стабильные тени)
 
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
+    // ---- FPS ----
+    fpsAccum += delta;
+    fpsFrames++;
+    if (fpsAccum >= 0.5) {
+        const fps = Math.round(fpsFrames / fpsAccum);
+        fpsEl.textContent = fps + ' FPS';
+        fpsAccum = 0;
+        fpsFrames = 0;
+    }
 
-                const speed = isRunning ? 80.0 : 40.0;
-                if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+    // ---- Рендер ----
+    composer.render();
+}
 
-                const dx = -velocity.x * delta;
-                const dz = -velocity.z * delta;
-                moveWithCollision(dx, dz);
+// ============================================================
+// 18. RESIZE
+// ============================================================
+function onResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    composer.setSize(w, h);
+    cinematicPass.uniforms.resolution.value.set(w, h);
+    if (smaaPass) {
+        smaaPass.setSize(w * QUALITY.pixelRatio, h * QUALITY.pixelRatio);
+    }
+}
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
-                // Прыжок
-                if (jumpRequested && canJump) {
-                    velocity.y += 4.0;
-                    canJump = false;
-                    jumpRequested = false;
-                }
+// ============================================================
+// 19. СТАРТ
+// ============================================================
+// Небольшая задержка для "плавного" старта
+document.getElementById('loading-bar').style.width = '100%';
 
-                // Гравитация по Y
-                const obj = controls.getObject();
-                obj.position.y += velocity.y * delta;
+setTimeout(() => {
+    document.getElementById('loading').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+    }, 400);
+}, 500);
 
-                // Проверка приземления (упрощённо: пол на y=0 или на перекрытии)
-                if (obj.position.y < 1.7) {
-                    velocity.y = 0;
-                    obj.position.y = 1.7;
-                    canJump = true;
-                }
-                // На втором этаже (если игрок поднялся по лестнице)
-                // Упрощённо: если позиция в зоне лестницы, позволяем подняться
-                // (В реальном проекте нужна сложная логика, но для демо достаточно)
+// Начальный поворот — смотрим на дом
+player.rotation.y = Math.PI;
 
-                // Ограничение по высоте (чтобы не улететь)
-                if (obj.position.y > 10) {
-                    velocity.y = 0;
-                    obj.position.y = 10;
-                }
-            }
+// Запуск
+animate();
 
-            // Мобильный прыжок
-            if (jumpRequested && canJump) {
-                velocity.y = 4.0;
-                canJump = false;
-                jumpRequested = false;
-            }
+// Автоскрытие подсказки через 8 секунд
+setTimeout(hideHint, 8000);
 
-            // Обновление камеры (PointerLockControls уже делает это)
-            // Для мобильных камера вращается вручную через lookArea
-
-            renderer.render(scene, camera);
-        }
-
-        // Обработка изменения размера окна
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        // Запуск
-        animate();
-
-        // ============================================================
-        // 11. ДОПОЛНИТЕЛЬНО: ОПРЕДЕЛЕНИЕ МОБИЛЬНОГО УСТРОЙСТВА
-        // ============================================================
-        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-            // Показываем мобильные элементы
-            joystickContainer.style.display = 'block';
-            lookArea.style.display = 'block';
-            jumpBtn.style.display = 'flex';
-            // Скрываем блокировщик (на мобильных он не нужен, но можно оставить для приветствия)
-            // Можно скрыть через 2 секунды или по клику
-            blocker.addEventListener('click', () => {
-                blocker.style.display = 'none';
-            });
-        }
-
-        // Логирование для отладки
-        console.log('Modern House 3D загружен. Коллайдеров:', colliders.length);
-    </script>
-</body>
-</html>
+console.log('%c Modern House 3D — Cinematic ', 'background: #4a7fff; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: bold;');
+console.log('Platform:', isMobile ? 'Mobile' : 'Desktop', '| Quality:', QUALITY);
+console.log('Colliders:', colliders.length, '| Interactables:', interactables.length);
